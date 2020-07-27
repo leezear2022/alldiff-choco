@@ -1,0 +1,111 @@
+/**
+ * This file is part of choco-solver, http://choco-solver.org/
+ *
+ * Copyright (c) 2020, IMT Atlantique. All rights reserved.
+ *
+ * Licensed under the BSD 4-clause license.
+ *
+ * See LICENSE file in the project root for full license information.
+ */
+package org.chocosolver.memory.trailing.trail.chunck;
+
+
+import org.chocosolver.memory.trailing.Stored#E#;
+
+/**
+ * A world devoted to integers.
+ * @author Fabien Hermenier
+ * @author Charles Prud'homme
+ * @since 29/05/2016
+ */
+public class #E#World implements World{
+
+
+    /**
+     * Stack of backtrackable search variables.
+     */
+    private Stored#E#[] variableStack;
+
+    /**
+     * Stack of values (former values that need be restored upon backtracking).
+     */
+    private #e#[] valueStack;
+
+
+    /**
+     * Stack of timestamps indicating the world where the former value
+     * had been written.
+     */
+    private int[] stampStack;
+
+    private int now;
+
+    private int defaultSize;
+
+    private double loadfactor;
+
+    /**
+     * Make a new world.
+     *
+     * @param defaultSize the default world size
+     */
+    public #E#World(int defaultSize, double loadfactor) {
+        this.now = 0;
+        this.loadfactor = loadfactor;
+        this.defaultSize = defaultSize;
+    }
+
+    /**
+     * Reacts when a Stored#E# is modified: push the former value & timestamp
+     * on the stacks.
+     */
+    public void savePreviousState(Stored#E# v, #e# oldValue, int oldStamp) {
+        if (stampStack == null) {
+            valueStack = new #e#[defaultSize];
+            stampStack = new int[defaultSize];
+            variableStack = new Stored#E#[defaultSize];
+        }
+        valueStack[now] = oldValue;
+        variableStack[now] = v;
+        stampStack[now] = oldStamp;
+        now++;
+        if (now == valueStack.length) {
+            resizeUpdateCapacity();
+        }
+    }
+
+    @Override
+    public void revert() {
+        for (int i = now - 1; i >= 0; i--) {
+            variableStack[i]._set(valueStack[i], stampStack[i]);
+        }
+    }
+
+    private void resizeUpdateCapacity() {
+        int newCapacity = (int)(variableStack.length * loadfactor);
+        final Stored#E#[] tmp1 = new Stored#E#[newCapacity];
+        System.arraycopy(variableStack, 0, tmp1, 0, variableStack.length);
+        variableStack = tmp1;
+        final #e#[] tmp2 = new #e#[newCapacity];
+        System.arraycopy(valueStack, 0, tmp2, 0, valueStack.length);
+        valueStack = tmp2;
+        final int[] tmp3 = new int[newCapacity];
+        System.arraycopy(stampStack, 0, tmp3, 0, stampStack.length);
+        stampStack = tmp3;
+    }
+
+    @Override
+    public void clear() {
+        now = 0;
+    }
+
+    @Override
+    public int used() {
+        return now;
+    }
+
+    @Override
+    public int allocated() {
+        return stampStack == null ? 0 : stampStack.length;
+    }
+}
