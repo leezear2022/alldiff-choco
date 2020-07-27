@@ -49,8 +49,8 @@ public class testAllDiff {
 //                "C:\\bench\\X3\\Queens\\Queens-0004-m1.xml",
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
-//                "/Users/lizhe/allDiff_Series/Queens/Queens-m1-s1/Queens-0004-m1.xml",
-                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
+                "/Users/lizhe/allDiff_Series/Queens/Queens-m1-s1/Queens-0008-m1.xml",
+//                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
         };
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
@@ -87,9 +87,9 @@ public class testAllDiff {
 //                    solver.setSearch(Search.minDomLBSearch(decVars));
 //                    solver.setSearch(new ImpactBased(decVars, true));
                     solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
 //                  solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
 //                  solver.setSearch(intVarSearch();
 

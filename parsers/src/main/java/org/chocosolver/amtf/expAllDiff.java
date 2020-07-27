@@ -32,9 +32,11 @@ public class expAllDiff {
 ////                "LatinSquare-xcsp2-bqwh15-106",
 ////                "LatinSquare-xcsp2-bqwh18-141",
 //        };
-        String[] HeuName = {"wdeg", "ABS", "IBS"};
+        String[] HeuNames = {"ABS", "IBS", "WDEG", "CHS"};
         assert args.length == 2;
         Bench_File File_Benchmark = new Bench_File(args[0]);
+        int heuIdx = Integer.parseInt(args[1]);
+        String HeuName = HeuNames[heuIdx];
 //        File_Benchmark.Print();
         String inputFolder = File_Benchmark.path_in;
         String outputFolder = File_Benchmark.path_out;
@@ -64,7 +66,7 @@ public class expAllDiff {
 
         for (String s : series) {
             try {
-                File csv = new File(outputFolder + s + ".csv");
+                File csv = new File(outputFolder + s + "_" + HeuName + ".csv");
                 BufferedWriter bw = new BufferedWriter(new FileWriter(csv, false));
                 bw.write("instance");
                 for (int i = 0; i < algorithms.length; i++) {
@@ -119,7 +121,17 @@ public class expAllDiff {
                             Solver solver = model.getSolver();
                             solver.limitTime("900s");
 //                            solver.setSearch(activityBasedSearch(decVars));
-                            solver.setSearch(Search.defaultSearch(model));
+                            switch (heuIdx) {
+                                case 0:
+                                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
+                                case 1:
+                                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
+                                case 2:
+                                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                                case 3:
+                                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
+                            }
+//                            solver.setSearch(Search.defaultSearch(model));
                             solver.solve();
                             // if (solver.solve()) {
                             // out.printf("solution: ");
