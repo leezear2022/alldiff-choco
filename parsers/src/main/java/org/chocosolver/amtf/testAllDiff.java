@@ -82,14 +82,16 @@ public class testAllDiff {
                     }
                     Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                     Solver solver = model.getSolver();
-                    solver.setSearch(Search.defaultSearch(model));
+//                    solver.setSearch(Search.defaultSearch(model));
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
 //                    solver.setSearch(Search.minDomLBSearch(decVars));
 //                    solver.setSearch(new ImpactBased(decVars, true));
-//                    solver.setSearch(Search.domOverWDegSearch(decVars));
-
-//                    solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
-//                solver.setSearch(intVarSearch();
+                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
+//                  solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
+//                  solver.setSearch(intVarSearch();
 
                     if (solver.solve()) {
                         if (i == runNum - 1) {
