@@ -62,7 +62,7 @@ public class expAllDiff {
 
         for (String s : series) {
             try {
-                File csv = new File(outputFolder + s + "_" + HeuName + ".csv");
+                File csv = new File(outputFolder + "\\" + s + "_" + HeuName + ".csv");
                 BufferedWriter bw = new BufferedWriter(new FileWriter(csv, false));
                 bw.write("instance");
                 for (int i = 0; i < algorithms.length; i++) {
@@ -71,17 +71,14 @@ public class expAllDiff {
                 }
                 bw.newLine();
                 // 读取实例集s下的所有实例文件名
-                File[] instances = new File(inputFolder + s).listFiles();
+                File[] instances = new File(inputFolder + "\\" + s).listFiles();
                 List<File> fileList = Arrays.asList(instances);
-                Collections.sort(fileList, new Comparator<File>() {
-                    @Override
-                    public int compare(File o1, File o2) {
-                        if (o1.isDirectory() && o2.isFile())
-                            return -1;
-                        if (o1.isFile() && o2.isDirectory())
-                            return 1;
-                        return o1.getName().compareTo(o2.getName());
-                    }
+                fileList.sort((o1, o2) -> {
+                    if (o1.isDirectory() && o2.isFile())
+                        return -1;
+                    if (o1.isFile() && o2.isDirectory())
+                        return 1;
+                    return o1.getName().compareTo(o2.getName());
                 });
 
                 for (File ins : fileList) {
@@ -109,7 +106,7 @@ public class expAllDiff {
                                 e.printStackTrace();
                             }
 
-                            if(Measurer.numAllDiff>0){
+                            if (Measurer.numAllDiff <= 0) {
                                 break;
                             }
 
@@ -120,17 +117,23 @@ public class expAllDiff {
                             }
                             Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                             Solver solver = model.getSolver();
-                            solver.limitTime("1800s");
+                            solver.limitTime("1200s");
 //                            solver.setSearch(activityBasedSearch(decVars));
                             switch (heuIdx) {
                                 case 0:
                                     solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
+                                    break;
                                 case 1:
                                     solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
+                                    break;
                                 case 2:
                                     solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                                    break;
                                 case 3:
                                     solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
+                                    break;
+                                default:
+                                    break;
                             }
 //                            solver.setSearch(Search.defaultSearch(model));
                             solver.solve();
