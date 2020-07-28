@@ -47,18 +47,14 @@ public class expAllDiff {
 
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
-                "AC",
+                "AC_REGIN",
                 "ACFair",
-//                "ACFast2",
                 "ACZhang18",
                 "ACZhang18M",
                 "ACZhang20",
-//                "ACFast2",
-//                "ACFastM",
                 "ACNaive",
                 "BC",
         };
-
         int runNum = 1;
         long node = 0;
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2;
@@ -112,6 +108,11 @@ public class expAllDiff {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+
+                            if(Measurer.numAllDiff>0){
+                                break;
+                            }
+
                             IntVar[] decVars = (IntVar[]) model.getHook("decisions");
 
                             if (decVars == null) {
@@ -119,7 +120,7 @@ public class expAllDiff {
                             }
                             Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                             Solver solver = model.getSolver();
-                            solver.limitTime("900s");
+                            solver.limitTime("1800s");
 //                            solver.setSearch(activityBasedSearch(decVars));
                             switch (heuIdx) {
                                 case 0:

@@ -18,6 +18,7 @@ import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_N
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.Measurer;
 
 /**
  * Propagator for AllDifferent AC constraint for integer variables
@@ -63,6 +64,7 @@ public class PropAllDiffAC_Naive extends Propagator<IntVar> {
         } else {
             this.filter = new AlgoAllDiffAC_NaiveBitSet(variables, this);
         }
+        Measurer.numAllDiff++;
     }
 
     //***********************************************************************************

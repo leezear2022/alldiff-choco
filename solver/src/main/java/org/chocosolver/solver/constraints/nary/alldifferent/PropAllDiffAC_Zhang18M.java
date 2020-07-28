@@ -6,6 +6,7 @@ import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Z
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.Measurer;
 
 //import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffACFast2;
 
@@ -30,6 +31,7 @@ public class PropAllDiffAC_Zhang18M extends Propagator<IntVar> {
     public PropAllDiffAC_Zhang18M(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
         this.filter = new AlgoAllDiffAC_Zhang18M(variables, this);
+        Measurer.numAllDiff++;
     }
 
     //***********************************************************************************

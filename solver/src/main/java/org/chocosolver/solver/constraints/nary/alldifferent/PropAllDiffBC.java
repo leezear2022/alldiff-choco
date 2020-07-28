@@ -16,6 +16,7 @@ import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.events.IntEventType;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.Measurer;
 
 /**
  * Based on: </br>
@@ -35,6 +36,7 @@ public class PropAllDiffBC extends Propagator<IntVar> {
         super(variables, PropagatorPriority.LINEAR, false);
         filter = new AlgoAllDiffBC(this);
         filter.reset(vars);
+        Measurer.numAllDiff++;
     }
 
     @Override
@@ -44,6 +46,7 @@ public class PropAllDiffBC extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
+        Measurer.enterProp();
         filter.filter();
     }
 

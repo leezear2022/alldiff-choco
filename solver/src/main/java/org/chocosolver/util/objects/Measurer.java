@@ -18,13 +18,15 @@ public class Measurer {
     public static long numP1;
     public static long numP2;
     public static long numP1AndP2;
+    public static long numAllDiff;
 
     //    public static boolean HASNOTNONE;
     private static boolean HASNONE;
     private static boolean HASNOTSKIPPED;
     private static boolean HASNOTP1;
     private static boolean HASNOTP2;
-    private static boolean HASNOTP1ANDP2;
+//    private static boolean HASNOTP1ANDP2;
+
 //    public static propState curPropState;
 //    public static long numNone;
 //    public static long numSkip;
@@ -147,6 +149,7 @@ public class Measurer {
         numProp = 0L;
         numDelValuesP1 = 0L;
         numDelValuesP2 = 0L;
+        numAllDiff = 0l;
 
         propStatisticsMask = 0;
         numNone = 0;
