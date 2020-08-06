@@ -14,6 +14,7 @@ import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinder;
+import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.objects.setDataStructures.SetType;
@@ -96,8 +97,15 @@ public class AlgoAllDiffAC {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
+        Measurer.enterProp();
+        long startTime = System.nanoTime();
         findMaximumMatching();
-        return filter();
+        Measurer.matchingTime += System.nanoTime() - startTime;
+
+        startTime = System.nanoTime();
+        boolean filter = filter();
+        Measurer.filterTime += System.nanoTime() - startTime;
+        return filter;
     }
 
     //***********************************************************************************

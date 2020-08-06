@@ -12,6 +12,7 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.sort.ArraySort;
 
 import java.util.Comparator;
@@ -81,12 +82,15 @@ public class AlgoAllDiffBC {
     }
 
     public void filter() throws ContradictionException {
+        Measurer.enterProp();
+        long startTime = System.nanoTime();
         boolean again;
         do {
             sortIt();
             again = filterLower();
             again |= filterUpper();
         } while (again);
+        Measurer.filterTime += System.nanoTime() - startTime;
     }
 
     private void sortIt() {
