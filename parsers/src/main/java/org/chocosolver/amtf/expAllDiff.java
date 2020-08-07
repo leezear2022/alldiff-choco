@@ -47,7 +47,7 @@ public class expAllDiff {
         System.out.println(series);
 
         //获取时间
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd:HH:mm:ss");
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd_HH_mm_ss");
         String dateTime = LocalDateTime.now().format(dateTimeFormatter);
 
         XCSPParser parser = new XCSPParser();
@@ -68,7 +68,7 @@ public class expAllDiff {
 
         for (String s : series) {
             try {
-                File csv = new File(outputFolder + s + "_" + HeuName + "_" + dateTime + ".csv");
+                File csv = new File(outputFolder + "//" + s + "_" + HeuName + "_" + dateTime + ".csv");
                 BufferedWriter bw = new BufferedWriter(new FileWriter(csv, false));
                 bw.write("instance");
                 for (int i = 0; i < algorithms.length; i++) {
@@ -77,7 +77,7 @@ public class expAllDiff {
                 }
                 bw.newLine();
                 // 读取实例集s下的所有实例文件名
-                File[] instances = new File(inputFolder + s).listFiles();
+                File[] instances = new File(inputFolder + "//" + s).listFiles();
                 List<File> fileList = Arrays.asList(instances);
                 fileList.sort((o1, o2) -> {
                     if (o1.isDirectory() && o2.isFile())
@@ -103,7 +103,7 @@ public class expAllDiff {
                         numP2 = 0f;
                         numP1AndP2 = 0f;
                         dateTime = LocalDateTime.now().format(dateTimeFormatter);
-                        out.println(algorithm + "_" + dateTime + "======>");
+                        out.println(algorithm + " [" + dateTime + "]======>");
                         for (int i = 0; i < runNum; i++) {
                             Measurer.initial();
                             Model model = new Model();
@@ -113,7 +113,7 @@ public class expAllDiff {
                                 e.printStackTrace();
                             }
 
-                            if (Measurer.numAllDiff > 0) {
+                            if (Measurer.numAllDiff <= 0) {
                                 break;
                             }
 
@@ -129,14 +129,19 @@ public class expAllDiff {
                             switch (heuIdx) {
                                 case 0:
                                     solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
+                                    break;
                                 case 1:
                                     solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
+                                    break;
                                 case 2:
                                     solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                                    break;
                                 case 3:
                                     solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
-                                case 4:
+                                    break;
+                                default:
                                     solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
+                                    break;
                             }
 //                            solver.setSearch(Search.defaultSearch(model));
                             solver.solve();

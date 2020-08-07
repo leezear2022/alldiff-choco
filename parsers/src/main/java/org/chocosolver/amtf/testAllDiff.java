@@ -51,7 +51,7 @@ public class testAllDiff {
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
 //                "/Users/lizhe/allDiff_Series/Queens/Queens-m1-s1/Queens-0008-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
-                "F:/X3Benchmarks/alldiff/ColouredQueens-m1-s1/ColouredQueens-05.xml",
+                "D:/AllDiffBench/ColouredQueens/ColouredQueens-05.xml",
 //                "G:/AllDiffBench/LatinSquare/qwh-o30-h374-04.xml",
         };
         XCSPParser parser = new XCSPParser();
