@@ -46,7 +46,6 @@ public class PropAllDiffBC extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-        Measurer.enterProp();
         filter.filter();
     }
 

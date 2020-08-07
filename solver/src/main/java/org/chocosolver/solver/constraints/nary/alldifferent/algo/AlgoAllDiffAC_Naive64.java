@@ -360,7 +360,7 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
             int valIdx = var2Val[varIdx];
             gammaFrontier |= valMask[valIdx] & ~gammaMask;
             // 除去第i个变量
-            gammaFrontier &= ~(1L << varIdx);
+//            gammaFrontier &= ~(1L << varIdx);
             // gamma 扩展
             gammaMask |= valMask[valIdx];
             notGamma.remove(varIdx);
@@ -425,7 +425,7 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
         for (int i = nextSetBit(graphLinkedFrontier[varIdx], 0);
              i != BITS_PER_WORD; i = nextSetBit(graphLinkedFrontier[varIdx], 0)) {
             graphLinkedFrontier[varIdx] |= graphLinkedMatrix[i] & ~graphLinkedMatrix[varIdx];
-            graphLinkedFrontier[varIdx] &= ~(1L << i);
+//            graphLinkedFrontier[varIdx] &= ~(1L << i);
             graphLinkedMatrix[varIdx] |= graphLinkedMatrix[i];
             if ((graphLinkedMatrix[varIdx] & 1L << val2Var[valIdx]) != 0L) {
                 return true;

@@ -9,8 +9,8 @@ public class Bench_File {
     public String path_in = null;
     public String path_out = null;
     public ArrayList<String> all;
-    private String file = "/root/Projects/sbt_choco/src/main/java/org.chocosolver.amtf/bench";
-//    private String file = "E:\\Projects\\sbt_choco_docker\\src\\main\\java\\org.chocosolver.amtf\\bench";
+//    private String file = "/root/Projects/sbt_choco/src/main/java/org.chocosolver.amtf/bench";
+    private String file = "src/main/java/org/chocosolver/amtf/bench";
     private int index = 0;
 
     Bench_File(String number) {

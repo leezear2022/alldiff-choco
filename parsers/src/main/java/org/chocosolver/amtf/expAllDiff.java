@@ -32,7 +32,7 @@ public class expAllDiff {
 ////                "LatinSquare-xcsp2-bqwh15-106",
 ////                "LatinSquare-xcsp2-bqwh18-141",
 //        };
-        String[] HeuNames = {"ABS", "IBS", "WDEG", "CHS"};
+        String[] HeuNames = {"ABS", "IBS", "WDEG", "CHS", "DEFAULT"};
         assert args.length == 2;
         Bench_File File_Benchmark = new Bench_File(args[0]);
         int heuIdx = Integer.parseInt(args[1]);
@@ -55,6 +55,7 @@ public class expAllDiff {
                 "ACNaive",
                 "BC",
         };
+
         int runNum = 1;
         long node = 0;
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2;
@@ -73,15 +74,12 @@ public class expAllDiff {
                 // 读取实例集s下的所有实例文件名
                 File[] instances = new File(inputFolder + s).listFiles();
                 List<File> fileList = Arrays.asList(instances);
-                Collections.sort(fileList, new Comparator<File>() {
-                    @Override
-                    public int compare(File o1, File o2) {
-                        if (o1.isDirectory() && o2.isFile())
-                            return -1;
-                        if (o1.isFile() && o2.isDirectory())
-                            return 1;
-                        return o1.getName().compareTo(o2.getName());
-                    }
+                fileList.sort((o1, o2) -> {
+                    if (o1.isDirectory() && o2.isFile())
+                        return -1;
+                    if (o1.isFile() && o2.isDirectory())
+                        return 1;
+                    return o1.getName().compareTo(o2.getName());
                 });
 
                 for (File ins : fileList) {
@@ -109,7 +107,7 @@ public class expAllDiff {
                                 e.printStackTrace();
                             }
 
-                            if(Measurer.numAllDiff>0){
+                            if (Measurer.numAllDiff > 0) {
                                 break;
                             }
 
@@ -120,7 +118,7 @@ public class expAllDiff {
                             }
                             Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                             Solver solver = model.getSolver();
-                            solver.limitTime("1800s");
+                            solver.limitTime("900s");
 //                            solver.setSearch(activityBasedSearch(decVars));
                             switch (heuIdx) {
                                 case 0:
@@ -131,6 +129,8 @@ public class expAllDiff {
                                     solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
                                 case 3:
                                     solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
+                                case 4:
+                                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
                             }
 //                            solver.setSearch(Search.defaultSearch(model));
                             solver.solve();
