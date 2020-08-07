@@ -350,7 +350,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
             // frontier 扩展，从valMask中去掉gammaMask已记录的变量
             int valIdx = var2Val[varIdx];
             gammaFrontier.orAfterMinus(valMask[valIdx], gammaMask);
-            // 除去第i个变量
+//            // 除去第i个变量
             gammaFrontier.clear(varIdx);
             // gamma 扩展
             gammaMask.or(valMask[valIdx]);

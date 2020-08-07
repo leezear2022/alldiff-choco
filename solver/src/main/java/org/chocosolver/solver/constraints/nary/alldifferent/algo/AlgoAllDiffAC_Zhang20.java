@@ -1,6 +1,7 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
+
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.ICause;
@@ -85,6 +86,7 @@ public class AlgoAllDiffAC_Zhang20 {
     protected IIntDeltaMonitor[] monitors;
     private UnaryIntProcedure<Integer> onValRem;
     private Stack<IntTuple2> DE;
+    private boolean initialProp = true;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -195,7 +197,7 @@ public class AlgoAllDiffAC_Zhang20 {
             monitors[i].freeze();
             monitors[i].forEachRemVal(onValRem.set(i));
         }
-
+//        System.out.println("DE: " + DE);
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
@@ -388,27 +390,39 @@ public class AlgoAllDiffAC_Zhang20 {
         }
 
         // 添加非匹配边 val->var; val->t
-        int k;
-        for (int j = 0; j < numValues; ++j) {
-            // t-> free nodes
+        for (int j = 0, k = 0; j < numValues; ++j) {
             if (freeNode.contain(j)) {
                 graph.addArc(arity, j + addArity);
-            } else {
-                valUnmatchedVar[j].iterateValid();
-                while (valUnmatchedVar[j].hasNextValid()) {
-                    k = valUnmatchedVar[j].next();
-                    // val -> var
-                    graph.addArc(j + addArity, k);
-                }
+            }
+            valUnmatchedVar[j].iterateValid();
+            while (valUnmatchedVar[j].hasNextValid()) {
+                k = valUnmatchedVar[j].next();
+                graph.addArc(j + addArity, k);
             }
         }
 
 //        SCCfinder.findAllSCC();
-        if (SCCfinder.findAllSCC_ED(DE)) {
-            Measurer.enterSkip();
-//            System.out.println("xixi");
-            return true;
+//        if (DE.empty()) {
+//            SCCfinder.findAllSCC();
+//        } else {
+//            if (SCCfinder.findAllSCC_ED(DE)) {
+//                Measurer.enterSkip();
+////                System.out.println("xixi");
+//                return true;
+//            }
+//        }
+
+        if (initialProp) {
+            SCCfinder.findAllSCC();
+            initialProp = false;
+        } else {
+            if (SCCfinder.findAllSCC_ED(DE)) {
+                Measurer.enterSkip();
+//                System.out.println("xixi");
+                return true;
+            }
         }
+
         nodeSCC = SCCfinder.getNodesSCC();
 //        System.out.println(Arrays.toString(nodeSCC));
 //        graph.removeNode(numNodes);

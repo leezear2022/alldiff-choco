@@ -1,6 +1,7 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
+
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.ICause;
@@ -339,59 +340,21 @@ public class AlgoAllDiffAC_Fair {
         }
 
         // 添加非匹配边 val->var; val->t
-        int k;
-        for (int j = 0; j < numValues; ++j) {
+        for (int j = 0, k = 0; j < numValues; ++j) {
             if (freeNode.contain(j)) {
                 graph.addArc(arity, j + addArity);
-            } else {
-                valUnmatchedVar[j].iterateValid();
-                while (valUnmatchedVar[j].hasNextValid()) {
-                    k = valUnmatchedVar[j].next();
-                    graph.addArc(j + addArity, k);
-                }
+            }
+            valUnmatchedVar[j].iterateValid();
+            while (valUnmatchedVar[j].hasNextValid()) {
+                k = valUnmatchedVar[j].next();
+                graph.addArc(j + addArity, k);
             }
         }
-
-//        freeNode.contain(i)
-
-////         添加额外的点t
-//        if (numNodes > arity * 2) {
-//            graph.removeNode(numNodes);
-//            graph.addNode(numNodes);
-//            for (int i = 0; i < numValues; i++) {
-//                if (freeNode.contain(i)) {
-//                    graph.addArc(numNodes, i + arity);
-//                } else {
-//                    graph.addArc(i + arity, numNodes);
-//                }
-//            }
-//        }
-
-//        for (int i = 0; i < numValues; i++) {
-//            if (freeNode.contain(i)) {
-//                graph.addArc(numNodes - 1, i + arity);
-//            } else {
-//                graph.addArc(i + arity, numNodes - 1);
-//            }
-//        }
-//        int n2 = numNodes - 1;
-//        if (numNodes - 1 > arity * 2) {// 添加额外的点t
-//            graph.removeNode(n2);
-//            graph.addNode(n2);
-//            for (int i = 0; i < n2; i++) {
-//                if (freeNode.contain(i)) {
-//                    graph.addArc(i, n2);
-//                } else {
-//                    graph.addArc(n2, i);
-//                }
-//            }
-//        }
 
         SCCfinder.findAllSCC();
         nodeSCC = SCCfinder.getNodesSCC();
 //        System.out.println(Arrays.toString(nodeSCC));
 //        graph.removeNode(numNodes);
-
     }
 
     private boolean filter() throws ContradictionException {
