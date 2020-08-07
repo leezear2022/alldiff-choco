@@ -9,6 +9,8 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.Measurer;
 
 import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static java.lang.System.out;
@@ -44,6 +46,9 @@ public class expAllDiff {
         Collections.sort(series);
         System.out.println(series);
 
+        //获取时间
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd:HH:mm:ss");
+        String dateTime = LocalDateTime.now().format(dateTimeFormatter);
 
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
@@ -63,7 +68,7 @@ public class expAllDiff {
 
         for (String s : series) {
             try {
-                File csv = new File(outputFolder + s + "_" + HeuName + ".csv");
+                File csv = new File(outputFolder + s + "_" + HeuName + "_" + dateTime + ".csv");
                 BufferedWriter bw = new BufferedWriter(new FileWriter(csv, false));
                 bw.write("instance");
                 for (int i = 0; i < algorithms.length; i++) {
@@ -97,7 +102,8 @@ public class expAllDiff {
                         numP1 = 0f;
                         numP2 = 0f;
                         numP1AndP2 = 0f;
-                        out.println(algorithm + "======>");
+                        dateTime = LocalDateTime.now().format(dateTimeFormatter);
+                        out.println(algorithm + "_" + dateTime + "======>");
                         for (int i = 0; i < runNum; i++) {
                             Measurer.initial();
                             Model model = new Model();
