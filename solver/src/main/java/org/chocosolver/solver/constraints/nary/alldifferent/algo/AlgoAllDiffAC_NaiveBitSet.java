@@ -351,7 +351,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
             int valIdx = var2Val[varIdx];
             gammaFrontier.orAfterMinus(valMask[valIdx], gammaMask);
 //            // 除去第i个变量
-//            gammaFrontier.clear(varIdx);
+            gammaFrontier.clear(varIdx);
             // gamma 扩展
             gammaMask.or(valMask[valIdx]);
             notGamma.remove(varIdx);
@@ -423,7 +423,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
              i != -1; i = graphLinkedFrontier[varIdx].nextSetBit(0)) {
             // frontier扩张，除掉变量i 因为变量i已被扩展。
             graphLinkedFrontier[varIdx].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[varIdx]);
-//            graphLinkedFrontier[varIdx].clear(i);
+            graphLinkedFrontier[varIdx].clear(i);
             graphLinkedMatrix[varIdx].or(graphLinkedMatrix[i]);
             if (graphLinkedMatrix[varIdx].get(val2Var[valIdx])) {
                 return true;
