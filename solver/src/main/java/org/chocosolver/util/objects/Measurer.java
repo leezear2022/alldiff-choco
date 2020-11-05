@@ -19,6 +19,7 @@ public class Measurer {
     public static long numP2;
     public static long numP1AndP2;
     public static long numAllDiff;
+    public static long maxAllDiffArity;
 
     //    public static boolean HASNOTNONE;
     private static boolean HASNONE;

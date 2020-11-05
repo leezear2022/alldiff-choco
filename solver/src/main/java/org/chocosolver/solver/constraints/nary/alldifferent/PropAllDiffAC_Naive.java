@@ -57,6 +57,9 @@ public class PropAllDiffAC_Naive extends Propagator<IntVar> {
      */
     public PropAllDiffAC_Naive(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
+
+        Measurer.maxAllDiffArity = Math.max(Measurer.maxAllDiffArity, vars.length);
+
         if (vars.length <= 32) {
             this.filter = new AlgoAllDiffAC_Naive32(variables, this);
         } else if (vars.length <= 64) {
