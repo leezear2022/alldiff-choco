@@ -1,5 +1,7 @@
 package org.chocosolver.util.objects;
 
+import java.util.Objects;
+
 public class IntTuple2 {
     public int a;
     public int b;
@@ -50,5 +52,18 @@ public class IntTuple2 {
     @Override
     public String toString() {
         return "(" + a + ", " + b + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        IntTuple2 t = (IntTuple2) o;
+        return a == t.a && b == t.b;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(a, b);
     }
 }

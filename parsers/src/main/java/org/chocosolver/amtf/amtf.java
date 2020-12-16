@@ -3,6 +3,7 @@ package org.chocosolver.amtf;
 import org.chocosolver.util.objects.IntTuple2;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 
 import static java.lang.System.out;
@@ -50,5 +51,21 @@ public class amtf {
             IntTuple2 t = iter.next();
             out.println(t.a + ", " + t.b);
         }
+
+        HashSet<IntTuple2> delta = new HashSet<>();
+        IntTuple2 t3 = new IntTuple2(2,2);
+
+        delta.add(t1);
+        delta.add(t2);
+        delta.add(t3);
+
+        out.println(t1==t3);
+        out.println(t1.equals(t3));
+        out.println(delta.contains(t3));
+
+        for (IntTuple2 t:delta){
+            out.println(t);
+        }
+
     }
 }
