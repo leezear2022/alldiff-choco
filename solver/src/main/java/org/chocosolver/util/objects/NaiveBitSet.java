@@ -41,6 +41,10 @@ public class NaiveBitSet {
         return bitSize;
     }
 
+    public long[] words(){return words;}
+
+    public long words(int bitIndex){return words[bitIndex];}
+
     public void flip() {
         for (int i = 0; i < longSize; ++i) {
             words[i] = ~words[i];
