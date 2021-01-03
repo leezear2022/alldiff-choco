@@ -117,4 +117,11 @@ public interface IStateBitSet  {
     int prevClearBit(int fromIndex);
 
     boolean isEmpty();
+
+    // additional function for alldifferent constraint
+
+    long getWord(int wordIndex);
+
+    void setWord(int wordIndex, long w);
+
 }

@@ -15,7 +15,7 @@ import org.chocosolver.solver.constraints.nary.alldifferent.algo.*;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.objects.Measurer;
+//import org.chocosolver.util.objects.Measurer;
 
 /**
  * Propagator for AllDifferent AC constraint for integer variables
@@ -41,7 +41,7 @@ public class PropAllDiffAC_NaiveR extends Propagator<IntVar> {
     //***********************************************************************************
 
     //    protected AlgoAllDiffAC_Naive filter;
-    protected AlgoAllDiffAC_NaiveBitSetR filter;
+    protected AlgoAllDiffAC_NaiveBitSetNew filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -56,7 +56,6 @@ public class PropAllDiffAC_NaiveR extends Propagator<IntVar> {
     public PropAllDiffAC_NaiveR(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
 
-        Measurer.maxAllDiffArity = Math.max(Measurer.maxAllDiffArity, vars.length);
 
 //        if (vars.length <= 32) {
 //            this.filter = new AlgoAllDiffAC_Naive32(variables, this);
@@ -65,8 +64,8 @@ public class PropAllDiffAC_NaiveR extends Propagator<IntVar> {
 //        } else {
 //            this.filter = new AlgoAllDiffAC_NaiveBitSet(variables, this);
 //        }
-        this.filter = new AlgoAllDiffAC_NaiveBitSetR(variables, this, model);
-        Measurer.numAllDiff++;
+        this.filter = new AlgoAllDiffAC_NaiveBitSetNew(variables, this, model);
+
     }
 
     //***********************************************************************************

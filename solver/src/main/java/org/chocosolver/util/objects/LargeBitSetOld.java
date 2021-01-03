@@ -1,7 +1,7 @@
 package org.chocosolver.util.objects;
 
 
-public class LargeBitSet extends NaiveBitSet {
+public class LargeBitSetOld extends NaiveBitSetOld {
     // 记录非0索引
     int indexIterator = -1;
     int bitIterator = -1;
@@ -15,7 +15,7 @@ public class LargeBitSet extends NaiveBitSet {
 
     public static int INDEX_OVERFLOW = 0x3f3f3f;
 
-    public LargeBitSet(int nbits) {
+    public LargeBitSetOld(int nbits) {
         super(nbits);
         dense = new int[longSize];
         sparse = new int[longSize];

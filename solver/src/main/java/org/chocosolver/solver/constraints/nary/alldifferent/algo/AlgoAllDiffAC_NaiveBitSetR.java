@@ -4,19 +4,15 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
-import org.chocosolver.memory.IStateLong;
+import org.chocosolver.memory.IEnvironment;
+import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.objects.IntTuple2;
-import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.objects.NaiveBitSet;
-import org.chocosolver.util.objects.SparseSet;
+import org.chocosolver.util.objects.*;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
-
-import java.util.Stack;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -62,8 +58,8 @@ public class AlgoAllDiffAC_NaiveBitSetR {
 
 
     // 已访问过的变量和值
-    private NaiveBitSet variable_visited_;
-    private NaiveBitSet value_visited_;
+    private NaiveBitSetOld variable_visited_;
+    private NaiveBitSetOld value_visited_;
 
     // matching
     private int[] val2Var;
@@ -75,27 +71,31 @@ public class AlgoAllDiffAC_NaiveBitSetR {
 
     // 变量到变量的连通性
     // 对于惰性算法，记录是否知道-变量到变量的连通性
-    private NaiveBitSet[] graphLinkedMatrix;
-    private NaiveBitSet[] graphLinkedFrontier;
+    private NaiveBitSetOld[] graphLinkedMatrix;
+    private NaiveBitSetOld[] graphLinkedFrontier;
 
     // !! 记录gamma的前沿
-    private NaiveBitSet gammaFrontier;
+    private NaiveBitSetOld gammaFrontier;
     // 记录gamma的bitset
-    private NaiveBitSet gammaMask;
+    private NaiveBitSetOld gammaMask;
 
-    //用于回溯
-    private IStateLong[][] RDbit;
-    private IStateLong[][] RBbit;
+    //    //用于回溯
+//    private IStateLong[][] RDbit;
+//    private IStateLong[][] RBbit;
+    private IStateBitSet[] RDbit, RBbit;
 
-    // 与值相连的变量
-    private NaiveBitSet[] Bbit;
-    // bit论域
-    private NaiveBitSet[] Dbit;
+    //    // 与值相连的变量
+    private NaiveBitSetOld[] Bbit;
+    //    // bit论域
+    private NaiveBitSetOld[] Dbit;
 
     // for delta update
     protected IIntDeltaMonitor[] monitors;
     private UnaryIntProcedure<Integer> onValRem;
     private boolean initialProp = true;
+
+    //
+    IEnvironment env;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -103,6 +103,7 @@ public class AlgoAllDiffAC_NaiveBitSetR {
     public AlgoAllDiffAC_NaiveBitSetR(IntVar[] variables, ICause cause, Model model) {
 //        super(variables, cause);
         id = num++;
+        env = model.getEnvironment();
 
         this.vars = variables;
         aCause = cause;
@@ -131,27 +132,62 @@ public class AlgoAllDiffAC_NaiveBitSetR {
 //        System.out.println(Arrays.toString(idx2Val));
 
         // bit向量化D和B 与RD和RB
-        Bbit = new NaiveBitSet[numValue];
-        RBbit = new IStateLong[numValue][];
+//        Bbit = new NaiveBitSet[numValue];
+//        RBbit = new IStateLong[numValue][];
+//        for (int i = 0; i < numValue; ++i) {
+//            Bbit[i] = new NaiveBitSet(arity);
+//            int BLongSize = Bbit[i].longSize();
+//            RBbit[i] = new IStateLong[BLongSize];
+//            for (int j = 0; j < BLongSize; j++) {
+//                RBbit[i][j] = model.getEnvironment().makeLong(0L);
+//            }
+//        }
+//
+//        Dbit = new NaiveBitSet[arity];
+//        RDbit = new IStateLong[arity][];
+//        int valSize = val2Idx.size();
+//        for (int i = 0; i < arity; i++) {
+//            Dbit[i] = new NaiveBitSet(valSize);
+//            int DLongSize = Dbit[i].longSize();
+//            RDbit[i] = new IStateLong[DLongSize];
+//            for (int j = 0; j < DLongSize; j++) {
+//                RDbit[i][j] = model.getEnvironment().makeLong(0L);
+//            }
+//        }
+//
+//        for (int i = 0; i < arity; ++i) {
+//            v = vars[i];
+//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+//                int valIdx = val2Idx.get(j);
+//                Bbit[valIdx].set(i);
+//                Dbit[i].get(valIdx);
+//            }
+//
+//            int DLongSize = Dbit[i].longSize();
+//            int BLongSize = Bbit[i].longSize();
+//
+//            for (int j = 0; j < DLongSize; j++) {
+//                RDbit[i][j].set(Dbit[i].words(j));
+//            }
+//
+//            for (int j = 0; j < BLongSize; j++) {
+//                RBbit[i][j].set(Bbit[i].words(j));
+//            }
+//        }
+
+        Bbit = new NaiveBitSetOld[numValue];
+        RBbit = new IStateBitSet[numValue];
         for (int i = 0; i < numValue; ++i) {
-            Bbit[i] = new NaiveBitSet(arity);
-            int BLongSize = Bbit[i].longSize();
-            RBbit[i] = new IStateLong[BLongSize];
-            for (int j = 0; j < BLongSize; j++) {
-                RBbit[i][j] = model.getEnvironment().makeLong(0L);
-            }
+            Bbit[i] = new NaiveBitSetOld(arity);
+            RBbit[i] = env.makeBitSet(arity);
         }
 
-        Dbit = new NaiveBitSet[arity];
-        RDbit = new IStateLong[arity][];
+        Dbit = new NaiveBitSetOld[arity];
+        RDbit = new IStateBitSet[arity];
         int valSize = val2Idx.size();
         for (int i = 0; i < arity; i++) {
-            Dbit[i] = new NaiveBitSet(valSize);
-            int DLongSize = Dbit[i].longSize();
-            RDbit[i] = new IStateLong[DLongSize];
-            for (int j = 0; j < DLongSize; j++) {
-                RDbit[i][j] = model.getEnvironment().makeLong(0L);
-            }
+            Dbit[i] = new NaiveBitSetOld(valSize);
+            RDbit[i] = env.makeBitSet(valSize);
         }
 
         for (int i = 0; i < arity; ++i) {
@@ -159,27 +195,29 @@ public class AlgoAllDiffAC_NaiveBitSetR {
             for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
                 int valIdx = val2Idx.get(j);
                 Bbit[valIdx].set(i);
+                RBbit[valIdx].set(i);
                 Dbit[i].get(valIdx);
+                RDbit[i].get(valIdx);
             }
 
-            int DLongSize = Dbit[i].longSize();
-            int BLongSize = Bbit[i].longSize();
+//            int DLongSize = Dbit[i].longSize();
+//            int BLongSize = Bbit[i].longSize();
 
-            for (int j = 0; j < DLongSize; j++) {
-                RDbit[i][j].set(Dbit[i].words(j));
-            }
-
-            for (int j = 0; j < BLongSize; j++) {
-                RBbit[i][j].set(Bbit[i].words(j));
-            }
+//            for (int j = 0; j < DLongSize; j++) {
+//                RDbit[i].set(0,Dbit[i]);
+//            }
+//
+//            for (int j = 0; j < BLongSize; j++) {
+//                RBbit[i].set(Bbit[i]);
+//            }
         }
 
         // 记录访问过的变量
         visiting_ = new int[arity];
-        variable_visited_ = new NaiveBitSet(arity);
+        variable_visited_ = new NaiveBitSetOld(arity);
         // 变量的前驱变量，若前驱变量是-1，则表示无前驱变量，就是第一个变量
         variable_visited_from_ = new int[arity];
-        value_visited_ = new NaiveBitSet(numValue);
+        value_visited_ = new NaiveBitSetOld(numValue);
 
         var2Val = new int[arity];
         val2Var = new int[numValue];
@@ -191,16 +229,16 @@ public class AlgoAllDiffAC_NaiveBitSetR {
         }
 
         freeNode = new SparseSet(numValue);
-        gammaFrontier = new NaiveBitSet(arity);
-        gammaMask = new NaiveBitSet(arity);
+        gammaFrontier = new NaiveBitSetOld(arity);
+        gammaMask = new NaiveBitSetOld(arity);
         notGamma = new SparseSet(arity);
         notA = new SparseSet(numValue);
 
-        graphLinkedMatrix = new NaiveBitSet[arity];
-        graphLinkedFrontier = new NaiveBitSet[arity];
+        graphLinkedMatrix = new NaiveBitSetOld[arity];
+        graphLinkedFrontier = new NaiveBitSetOld[arity];
         for (int i = 0; i < arity; ++i) {
-            graphLinkedMatrix[i] = new NaiveBitSet(arity);
-            graphLinkedFrontier[i] = new NaiveBitSet(arity);
+            graphLinkedMatrix[i] = new NaiveBitSetOld(arity);
+            graphLinkedFrontier[i] = new NaiveBitSetOld(arity);
         }
     }
 
@@ -211,11 +249,34 @@ public class AlgoAllDiffAC_NaiveBitSetR {
     public boolean propagate() throws ContradictionException {
         Measurer.enterProp();
         long startTime = System.nanoTime();
+
+        for (int i = 0; i < arity; ++i) {
+            monitors[i].freeze();
+            monitors[i].forEachRemVal(onValRem.set(i));
+        }
+
+        for (int i = 0; i < vars.length; i++) {
+            IntVar v = vars[i];
+            for (int value = v.getLB(), ub = v.getUB(); value <= ub; value = v.nextValue(value)) {
+                int valIdx = val2Idx.get(value);
+                if(!RDbit[i].get(valIdx)){
+                    //若RDBit没有但现论域中有，报错
+                    //反着也来一个
+                }
+
+            }
+        }
+
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
         startTime = System.nanoTime();
         boolean filter = filter();
+
+        for (int i = 0; i < vars.length; i++) {
+            monitors[i].unfreeze();
+        }
+
         Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
     }
@@ -232,10 +293,13 @@ public class AlgoAllDiffAC_NaiveBitSetR {
 
             @Override
             public void execute(int i) throws ContradictionException {
-//                Bbit = RBbit[var]
-//                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
-//                IntVar v = vars[var];
-//                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
+                // delta更新两个集合
+                int valIdx = val2Idx.get(i);
+                RBbit[valIdx].clear(var);
+                RDbit[var].clear(valIdx);
+//                if (vars[var].contains(i)) {
+//                    System.out.println("----error: de---");
+//                }
             }
         };
     }

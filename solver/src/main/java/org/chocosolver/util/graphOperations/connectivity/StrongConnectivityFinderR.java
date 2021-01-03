@@ -411,7 +411,7 @@ public class StrongConnectivityFinderR {
                 curLevel--;
 
                 if (!unconnected && DE.empty()) {
-//                  System.out.println("xixi");
+                  System.out.println("xixi");
                     return true;
                 }
             }

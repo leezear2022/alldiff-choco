@@ -111,7 +111,7 @@ public class NaiveSparseBitSet {
         }
     }
 
-    public void and(NaiveBitSet s) {
+    public void and(NaiveBitSetOld s) {
         for (int i = 0; i < longSize; ++i) {
             int offset = this.index[i];
             this.words[i] &= s.words[offset];

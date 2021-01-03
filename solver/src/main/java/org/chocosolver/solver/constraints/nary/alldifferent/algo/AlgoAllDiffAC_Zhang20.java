@@ -179,8 +179,8 @@ public class AlgoAllDiffAC_Zhang20 {
             @Override
             public void execute(int i) throws ContradictionException {
                 DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
-//                IntVar v = vars[var];
-//                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
+                IntVar v = vars[var];
+                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
             }
         };
     }
@@ -351,6 +351,11 @@ public class AlgoAllDiffAC_Zhang20 {
             }
             if (var2Val[varIdx] == -1) {
                 // No augmenting path exists.
+
+                for (int i = 0; i < vars.length; i++) {
+                    monitors[i].unfreeze();
+                }
+
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
         }

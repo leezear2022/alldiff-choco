@@ -36,6 +36,7 @@ public class AlgoAllDiffAC_Fair {
     static public int num = 0;
     // 约束的编号
     private int id;
+    private long xixi = 0;
 
     private int arity;
     private IntVar[] vars;
@@ -106,11 +107,6 @@ public class AlgoAllDiffAC_Fair {
             idx2Val[it.value()] = it.key();
         }
 
-        valUnmatchedVar = new SparseSet[numValues];
-        for (int i = 0; i < numValues; ++i) {
-            valUnmatchedVar[i] = new SparseSet(addArity);
-        }
-
         // 记录访问过的变量
         visiting_ = new int[arity];
         variable_visited_ = new BitSet(arity);
@@ -127,6 +123,10 @@ public class AlgoAllDiffAC_Fair {
             val2Var[i] = -1;
         }
 
+        valUnmatchedVar = new SparseSet[numValues];
+        for (int i = 0; i < numValues; ++i) {
+            valUnmatchedVar[i] = new SparseSet(addArity);
+        }
         // freeNode区分匹配点和非匹配点(正好是新增变量的取值范围）
         freeNode = new SparseSet(numValues);
 
@@ -155,6 +155,12 @@ public class AlgoAllDiffAC_Fair {
         long startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
+
+//        System.out.println("-----final matching-----");
+//        for (int i = 0; i < arity; i++) {
+//            System.out.println(vars[i].getName() + " match " + idx2Val[var2Val[i]]);
+//        }
+//        System.out.println("------------------");
 
         startTime = System.nanoTime();
         boolean filter = filter();
@@ -191,9 +197,12 @@ public class AlgoAllDiffAC_Fair {
             IntVar v = vars[node];
 
             for (int value = v.getLB(), ub = v.getUB(); value <= ub; value = v.nextValue(value)) {
+
                 int valIdx = val2Idx.get(value);
                 if (value_visited_.get(valIdx)) continue;
+//                xixi++;
                 value_visited_.set(valIdx);
+//                System.out.println(xixi + ", " + node + ", " + valIdx);
                 if (val2Var[valIdx] == -1) {
                     // value_to_variable_[valIdx] ， value这个值未分配到变量，即是一个free
                     // !! 这里可以改用bitSet 求原数据bitDom (successor_)

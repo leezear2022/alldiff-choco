@@ -1,13 +1,14 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
+
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.objects.NaiveBitSet;
+import org.chocosolver.util.objects.NaiveBitSetOld;
 import org.chocosolver.util.objects.SparseSet;
 
 /**
@@ -53,11 +54,11 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
     private SparseSet notA;
 
     // 与值相连的变量
-    private NaiveBitSet[] valMask;
+    private NaiveBitSetOld[] valMask;
 
     // 已访问过的变量和值
-    private NaiveBitSet variable_visited_;
-    private NaiveBitSet value_visited_;
+    private NaiveBitSetOld variable_visited_;
+    private NaiveBitSetOld value_visited_;
 
     // matching
     private int[] val2Var;
@@ -69,13 +70,15 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
 
     // 变量到变量的连通性
     // 对于惰性算法，记录是否知道-变量到变量的连通性
-    private NaiveBitSet[] graphLinkedMatrix;
-    private NaiveBitSet[] graphLinkedFrontier;
+    private NaiveBitSetOld[] graphLinkedMatrix;
+    private NaiveBitSetOld[] graphLinkedFrontier;
 
     // !! 记录gamma的前沿
-    private NaiveBitSet gammaFrontier;
+    private NaiveBitSetOld gammaFrontier;
     // 记录gamma的bitset
-    private NaiveBitSet gammaMask;
+    private NaiveBitSetOld gammaMask;
+
+    long startTime;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -110,17 +113,17 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
 //        System.out.println("-----------idx2Val-----------");
 //        System.out.println(Arrays.toString(idx2Val));
 
-        valMask = new NaiveBitSet[numValue];
+        valMask = new NaiveBitSetOld[numValue];
         for (int i = 0; i < numValue; ++i) {
-            valMask[i] = new NaiveBitSet(arity);
+            valMask[i] = new NaiveBitSetOld(arity);
         }
 
         // 记录访问过的变量
         visiting_ = new int[arity];
-        variable_visited_ = new NaiveBitSet(arity);
+        variable_visited_ = new NaiveBitSetOld(arity);
         // 变量的前驱变量，若前驱变量是-1，则表示无前驱变量，就是第一个变量
         variable_visited_from_ = new int[arity];
-        value_visited_ = new NaiveBitSet(numValue);
+        value_visited_ = new NaiveBitSetOld(numValue);
 
         var2Val = new int[arity];
         val2Var = new int[numValue];
@@ -132,16 +135,16 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
         }
 
         freeNode = new SparseSet(numValue);
-        gammaFrontier = new NaiveBitSet(arity);
-        gammaMask = new NaiveBitSet(arity);
+        gammaFrontier = new NaiveBitSetOld(arity);
+        gammaMask = new NaiveBitSetOld(arity);
         notGamma = new SparseSet(arity);
         notA = new SparseSet(numValue);
 
-        graphLinkedMatrix = new NaiveBitSet[arity];
-        graphLinkedFrontier = new NaiveBitSet[arity];
+        graphLinkedMatrix = new NaiveBitSetOld[arity];
+        graphLinkedFrontier = new NaiveBitSetOld[arity];
         for (int i = 0; i < arity; ++i) {
-            graphLinkedMatrix[i] = new NaiveBitSet(arity);
-            graphLinkedFrontier[i] = new NaiveBitSet(arity);
+            graphLinkedMatrix[i] = new NaiveBitSetOld(arity);
+            graphLinkedFrontier[i] = new NaiveBitSetOld(arity);
         }
     }
 
@@ -151,7 +154,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
 
     public boolean propagate() throws ContradictionException {
         Measurer.enterProp();
-        long startTime = System.nanoTime();
+        startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
@@ -311,6 +314,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
             if (var2Val[varIdx] == -1) {
                 // No augmenting path exists.
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
+                Measurer.matchingTime += System.nanoTime() - startTime;
             }
         }
 //        if (id == 2) {

@@ -7,7 +7,7 @@ import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.objects.NaiveBitSet;
+import org.chocosolver.util.objects.NaiveBitSetOld;
 import org.chocosolver.util.objects.SparseSet;
 
 /**
@@ -54,7 +54,7 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
 
     // 已访问过的变量和值
     private long variable_visited_;
-    private NaiveBitSet value_visited_;
+    private NaiveBitSetOld value_visited_;
 
     // matching
     private int[] val2Var;
@@ -128,7 +128,7 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
         variable_visited_ = 0L;
         // 变量的前驱变量，若前驱变量是-1，则表示无前驱变量，就是第一个变量
         variable_visited_from_ = new int[arity];
-        value_visited_ = new NaiveBitSet(numValue);
+        value_visited_ = new NaiveBitSetOld(numValue);
 
         var2Val = new int[arity];
         val2Var = new int[numValue];

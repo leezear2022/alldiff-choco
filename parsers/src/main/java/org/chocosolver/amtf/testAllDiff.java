@@ -41,7 +41,7 @@ public class testAllDiff {
 //                "F:\\chenj\\data\\XCSP3\\AllDiff/ColouredQueens-m1-s1/ColouredQueens-06.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff/ColouredQueens-m1-s1/ColouredQueens-07.xml",
 //                "G:/X3Benchmarks/alldiff/ColouredQueens/ColouredQueens-m1-s1/ColouredQueens-09.xml",
-//                "G:/X3Benchmarks/alldiff/DistinctVectors/DistinctVectors-m1-s1/DistinctVectors-30-010-02.xml",
+//                "D:\\AllDiffBench\\DistinctVectors/DistinctVectors-30-010-02.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff\\SchurrLemma-mod-s1\\SchurrLemma-012-9-mod.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff\\SchurrLemma-mod-s1\\SchurrLemma-015-9-mod.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff\\SchurrLemma-mod-s1\\SchurrLemma-020-9-mod.xml",
@@ -51,18 +51,27 @@ public class testAllDiff {
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
 //                "/Users/lizhe/allDiff_Series/Queens/Queens-m1-s1/Queens-0008-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
-                "D:/AllDiffBench/ColouredQueens/ColouredQueens-05.xml",
+//                "D:/AllDiffBench/ColouredQueens/ColouredQueens-05.xml",
+//                "D:/AllDiffBench/Queens-m1-s1/Queens-0080-m1.xml",
+                "D:\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "G:/AllDiffBench/LatinSquare/qwh-o30-h374-04.xml",
+//                "D:/Random-RB-3-20-20f/rand-3-20-20-60-632f-01.xml"
         };
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
-                "AC_REGIN",
+//                "AC_REGIN",
                 "ACFair",
-                "ACZhang18",
-                "ACZhang18M",
-                "ACZhang20",
+
+//                "ACZhang18",
+//                "ACZhang18M",
+//                "ACZhang20",
+//                "ACZhang18",
                 "ACNaive",
-                "BC",
+                "ACNaiveR",
+                "ACNaive",
+//                "ACFair",
+//                "BC",
+//                "WordRam",
         };
         int runNum = 1;
 
@@ -72,6 +81,7 @@ public class testAllDiff {
                 out.println(algo + "====>");
                 for (int i = 0; i < runNum; i++) {
                     Measurer.initial();
+                    Measurer.maxAllDiffArity = 0l;
                     Model model = new Model();
                     try {
                         parser.model(model, ins, algo);
@@ -84,13 +94,13 @@ public class testAllDiff {
                     }
                     Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                     Solver solver = model.getSolver();
-//                    solver.setSearch(Search.defaultSearch(model));
+                    solver.setSearch(Search.defaultSearch(model));
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
 //                    solver.setSearch(Search.minDomLBSearch(decVars));
 //                    solver.setSearch(new ImpactBased(decVars, true));
 //                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
 //                  solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
 //                  solver.setSearch(intVarSearch();
@@ -110,6 +120,8 @@ public class testAllDiff {
                         out.println("find matching time: " + Measurer.matchingTime / IN_SEC + "s");
                         out.println("filter time: " + Measurer.filterTime / IN_SEC + "s");
 //                        out.println("scc time: " + Measurer.checkSCCTime / IN_SEC + "s");
+                        out.println("numAllDiff: " + Measurer.numAllDiff);
+                        out.println("maxAllDiffArity: " + Measurer.maxAllDiffArity);
                         out.println("numProp: " + Measurer.numProp);
                         out.println("numNone: " + Measurer.numNone);
                         out.println("numSkip: " + Measurer.numSkip);

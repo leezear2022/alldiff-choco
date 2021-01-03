@@ -1,13 +1,17 @@
 package org.chocosolver.util.objects;
 
+import org.chocosolver.memory.IStateBitSet;
 
-public class NaiveBitSet {
+public class NaiveBitSet implements INaiveBitSet {
 
     protected long[] words;
     protected int longSize;
     protected int bitSize;
     protected int limit;
     protected long lastMask;
+    protected int lowerIndex = longSize;
+    protected int upperIndex = INDEX_OVERFLOW;
+    protected int numBits = 0;
 
     protected final static int ADDRESS_BITS_PER_WORD = 6;
     protected final static int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
@@ -16,258 +20,276 @@ public class NaiveBitSet {
     protected static final long WORD_MASK = 0xffffffffffffffffL;
     protected static final long MOD_MASK = 0x3fL;
     protected static final int MOD_MASK_INT = 0x3f;
-
-    public NaiveBitSet(int nbits) {
-        this.bitSize = nbits;
-        longSize = wordIndex(nbits - 1) + 1;
-        this.limit = nbits % BITS_PER_WORD;
-        this.lastMask = WORD_MASK >>> (BITS_PER_WORD - limit);
-        this.words = new long[longSize];
-    }
+    protected static final int INDEX_OVERFLOW = -1;
 
     protected static int wordIndex(int bitIndex) {
         return bitIndex >> ADDRESS_BITS_PER_WORD;
     }
 
+
     protected static int wordOffset(int bitIndex) {
         return bitIndex & MOD_MASK_INT;
     }
 
-    public int longSize() {
-        return longSize;
-    }
-
-    public int bitSize() {
-        return bitSize;
-    }
-
-    public long[] words(){return words;}
-
-    public long words(int bitIndex){return words[bitIndex];}
-
-    public void flip() {
-        for (int i = 0; i < longSize; ++i) {
-            words[i] = ~words[i];
-        }
-        words[longSize - 1] &= lastMask;
-    }
-
-    public void set(int bitIndex) {
-        this.words[wordIndex(bitIndex)] |= 1L << bitIndex;
-    }
-
-    public void set(NaiveBitSet s) {
-        for (int i = 0; i < longSize; ++i) {
-            this.words[i] = s.words[i];
+    public NaiveBitSet(int nbits, boolean initValue) {
+        this.bitSize = nbits;
+        longSize = wordIndex(nbits - 1) + 1;
+        limit = nbits % BITS_PER_WORD;
+        lastMask = WORD_MASK >>> (BITS_PER_WORD - limit);
+        words = new long[longSize];
+        lowerIndex = longSize;
+        upperIndex = INDEX_OVERFLOW;
+        if (initValue) {
+            set();
+            numBits = nbits;
         }
     }
 
-    public void set(int startIndex, NaiveBitSet b) {
-//        for(int i = wordIndex(startIndex);)
-    }
-
-    public void naiveSet(int s, NaiveBitSet nbs) {
-        int a = wordIndex(s);
-        int b = wordOffset(s);
-        // 先确定怎么偏移
-        if (nbs.longSize == 1) {
-            // 即 nbs.longSize =1
-            if ((b + nbs.bitSize) < BITS_PER_WORD) {
-                // 如果偏移量和整个bitset长度相加之后仍小于64，直接做
-                // 取反码
-                // long rmask = (WORD_MASK << (nbs.bitSize - b)) | (WORD_MASK >>> (BITS_PER_WORD - b));
-                // 取掩码, 先左移取反再左移，移之后是：111...10..01...11这样的形式
-//                long rMask = (~(~(WORD_MASK << nbs.bitSize) << b));
-                this.words[a] = this.words[a] & (~(~(WORD_MASK << nbs.bitSize) << b)) | (nbs.words[0] << b);
-            } else {
-                int offset = (BITS_PER_WORD << 1) - nbs.bitSize - b;
-                // 如果偏移量和整个bitset长度相加之后仍大于等于64，则需要用到this.words的下一个
-                this.words[a] = ((~(WORD_MASK << b)) & this.words[a]) | (nbs.words[0] << b);
-                this.words[a + 1] = (this.words[a + 1] & (~(WORD_MASK >> offset))) | (nbs.words[0] >> offset);
-            }
-        } else {
-            int endIndex = s + nbs.bitSize;
-            int c = wordIndex(endIndex);
-            int d = wordOffset(endIndex);
-//            int offset1 = nbs.bitSize + s - BITS_PER_WORD;
-            int offset = (BITS_PER_WORD << 1) - nbs.bitSize - b;
-            // 先不计算最后一个影响位
-            for (int i = 0, len = c - 1; i < len; ++i) {
-                int j = a + i;
-                this.words[j] = ((~(WORD_MASK << s)) & this.words[j]) | (nbs.words[i] << s);
-                this.words[j + 1] = (this.words[j + 1] & (~(WORD_MASK >> offset))) | (nbs.words[i] >> offset);
-            }
-        }
-//        for (int i = 0, len = s.longSize; i < len; ++i) {
-//            int j = b + i;
-//            // 清空this中待设定的的部分，
-//            // 一般要操作两个相邻的 this.words
-//            // 先
-//            this.words[j] = ((~(WORD_MASK << a) & this.words[a]) | (s.words[0] << a));
-//            this.words[j + 1] = ((WORD_MASK << a) & this.words[j + 1]) | (s.words[0] >> BITS_PER_WORD - a);
-//
-////            this.words[j] = ~((s.words[i] << startBitIndex) ^ (WORD_MASK << startBitIndex));
-////            this.words[j + 1] &=
-////                    pre = s.words[i] << startBitIndex;
-////            next = s.words[i] & (WORD_MASK >> startBitIndex);
-//
-//        }
-    }
-
-    public void naiveAnd(int s, NaiveBitSet nbs) {
-        int a = wordIndex(s);
-        int b = wordOffset(s);
-        // 先确定怎么偏移
-        if (nbs.longSize == 1) {
-            // 即 nbs.longSize =1
-            if ((b + nbs.bitSize) < BITS_PER_WORD) {
-                // 如果偏移量和整个bitset长度相加之后仍小于64，直接做
-                // 掩码，先让开nbs的长度，装入nbs，再移动b的长度，装入填充
-                this.words[a] &= ((WORD_MASK << nbs.bitSize) | nbs.words[0]) << b | (~(WORD_MASK << b));
-            } else {
-//                int offset1 = nbs.bitSize + b - BITS_PER_WORD;
-//                int offset2 = BITS_PER_WORD - offset1;
-                int offset = (BITS_PER_WORD << 1) - nbs.bitSize - b;
-                // 如果偏移量和整个bitset长度相加之后仍大于等于64，则需要用到this.words的下一个
-                this.words[a] &= (~(WORD_MASK << b)) | (nbs.words[0] << b);
-//                this.words[a + 1] &= (WORD_MASK << offset1) | (nbs.words[0] >> offset2);
-                this.words[a + 1] &= (~(WORD_MASK >> offset)) | (nbs.words[0] >> offset);
-            }
-        } else {
-            int endIndex = s + nbs.bitSize;
-            int c = wordIndex(endIndex);
-            int d = wordOffset(endIndex);
-//            int offset1 = nbs.bitSize + s - BITS_PER_WORD;
-            int offset = (BITS_PER_WORD << 1) - nbs.bitSize - b;
-            // 先不计算最后一个影响位
-            for (int i = 0, len = c - 1; i < len; ++i) {
-                int j = a + i;
-                this.words[j] &= (~(WORD_MASK << s)) | (nbs.words[i] << s);
-                this.words[j + 1] &= (~(WORD_MASK >> offset)) | (nbs.words[i] >> offset);
-            }
-        }
-    }
-
-
-    public void clear() {
-        for (int i = 0; i < longSize; ++i) {
-            this.words[i] = 0L;
-        }
-    }
-
+    @Override
     public void set() {
         int len = longSize - 1;
         for (int i = 0; i < len; ++i) {
-            this.words[i] = WORD_MASK;
+            words[i] = WORD_MASK;
         }
-        this.words[len] = lastMask;
+        words[len] = lastMask;
+        lowerIndex = 0;
+        upperIndex = len;
+        numBits = bitSize;
     }
 
-    public void clear(int bitIndex) {
-        this.words[wordIndex(bitIndex)] &= ~(1L << bitIndex);
-    }
+    @Override
+    public void set(int bitIdx) {
+        int idx = wordIndex(bitIdx);
+        // 原来是0 现在设置成1 unChanged = get(bitIdx) = false
+        boolean unChanged = idx < longSize && (words[idx] & 1L << bitIdx) != 0L;
 
-    // 从本集合中移除s中的元素
-    public void clear(NaiveBitSet s) {
-        for (int i = 0; i < longSize; ++i) {
-            this.words[i] &= ~s.words[i];
+        if (!unChanged) {
+            words[idx] |= 1L << bitIdx;
+
+            if (idx < lowerIndex) {
+                lowerIndex = idx;
+            }
+
+            if (idx > upperIndex) {
+                upperIndex = idx;
+            }
+
+            numBits++;
         }
     }
 
-    // 从本集合中移除s中的元素
-    public void clear(NaiveSparseBitSet s) {
-        for (int i = 0, len = s.longSize; i < len; ++i) {
-            this.words[s.index[i]] &= ~s.words[i];
+    @Override
+    public void set(INaiveBitSet s) {
+        for (int i = 0; i < longSize; i++) {
+            words[i] = s.getWord(i);
         }
+        lowerIndex = s.firstSetIndex();
+        upperIndex = s.lastSetIndex();
+        numBits = s.size();
     }
 
-    public void clearAfterAnd(NaiveSparseBitSet a, NaiveBitSet b) {
-        for (int i = 0, len = a.longSize; i < len; ++i) {
-            int offset = a.index[i];
-            this.words[offset] &= ~(a.words[i] & b.words[offset]);
-        }
-    }
+    @Override
+    public void set(IStateBitSet s) {
+        lowerIndex = longSize;
+        upperIndex = INDEX_OVERFLOW;
+        boolean lbNeedChange = true;
+        for (int i = 0; i < longSize; i++) {
+            words[i] = s.getWord(i);
+            if (lbNeedChange && words[i] != 0l && lowerIndex > i) {
+                lowerIndex = i;
+                lbNeedChange = false;
+            }
 
-    public boolean isEmpty() {
-        for (int i = 0; i < longSize; ++i) {
-            if (this.words[i] != 0L) {
-                return false;
+            if (words[i] != 0l && upperIndex < i) {
+                upperIndex = i;
             }
         }
-        return true;
+        numBits = s.size();
     }
 
-    public boolean get(int bitIndex) {
-        int wordIndex = wordIndex(bitIndex);
-        return wordIndex < longSize && (this.words[wordIndex] & 1L << bitIndex) != 0L;
-
+    @Override
+    public void flip() {
+        int len = longSize - 1;
+        numBits = 0;
+        for (int i = 0; i < len; ++i) {
+            words[i] = ~words[i];
+            numBits += words[i];
+        }
+        words[len] &= lastMask;
+        numBits += words[len];
     }
 
-    public void and(NaiveBitSet s) {
+    @Override
+    public boolean get(int bitIdx) {
+        int wordIndex = wordIndex(bitIdx);
+        return wordIndex < longSize && (this.words[wordIndex] & 1L << bitIdx) != 0L;
+    }
+
+    @Override
+    public long getWord(int wordIdx) {
+        return words[wordIdx];
+    }
+
+    @Override
+    public void setWord(int wordIdx, long word) {
+        long oldWord = words[wordIdx];
+        words[wordIdx] = word;
+        numBits = numBits - Long.bitCount(oldWord) + Long.bitCount(word);
+    }
+
+    @Override
+    public void clear() {
         for (int i = 0; i < longSize; ++i) {
-            this.words[i] &= s.words[i];
+            words[i] = 0L;
+        }
+        lowerIndex = longSize;
+        upperIndex = INDEX_OVERFLOW;
+        numBits = 0;
+    }
+
+    @Override
+    public void clear(int bitIdx) {
+        int idx = wordIndex(bitIdx);
+        // 原来是1 现在设置成0 changed = get(bitIdx) = true
+        boolean changed = idx < longSize && (words[idx] & 1L << bitIdx) != 0L;
+        if (changed) {
+            words[idx] &= ~(1L << bitIdx);
+
+            if (idx < lowerIndex) {
+                lowerIndex = idx;
+            }
+
+            if (idx > upperIndex) {
+                upperIndex = idx;
+            }
+            numBits--;
         }
     }
 
-    public void or(NaiveBitSet s) {
+    @Override
+    public int size() {
+        return numBits;
+    }
+
+    @Override
+    public int int64Size() {
+        return longSize;
+    }
+
+    public int bitCount() {
+        int sum = 0;
+        for (int i = lowerIndex; i <= upperIndex; ++i)
+            sum += Long.bitCount(words[i]);
+        return sum;
+    }
+
+    @Override
+    public void and(INaiveBitSet s) {
+//        int i = INaiveBitSet.min(lowerIndex, s.firstSetIndex()),
+//                ub = INaiveBitSet.max(upperIndex, s.lastSetIndex());
+//        for (int i = lowerIndex; i <= upperIndex; ++i) {
+//            words[i] &= s.getWord(i);
+//        }
+        for (int i = 0; i <= longSize; ++i) {
+            words[i] &= s.getWord(i);
+        }
+    }
+
+    @Override
+    public void and(INaiveBitSet a, INaiveBitSet b) {
+//        int i = INaiveBitSet.min(lowerIndex, a.firstSetIndex(), b.firstSetIndex()),
+//                ub = INaiveBitSet.max(upperIndex, a.lastSetIndex(), b.lastSetIndex());
+//        boolean lbChanged = false;
+//        boolean upChanged = false;
+//        for (int i = lowerIndex; i <= upperIndex; ++i) {
+//            words[i] &= (a.getWord(i) & b.getWord(i));
+//            if (!lbChanged&&words[i] != 0L) {
+//                if ()
+//            }
+//        }
+
+        numBits = 0;
         for (int i = 0; i < longSize; ++i) {
-            this.words[i] |= s.words[i];
+            words[i] &= (a.getWord(i) & b.getWord(i));
+            numBits += Long.bitCount(words[i]);
         }
     }
 
-
-    public void setThenAnd(NaiveSparseBitSet a, NaiveBitSet b) {
-        for (int i = 0, len = a.longSize; i < len; ++i) {
-            int offset = a.index[i];
-            this.words[offset] |= a.words[i] & b.words[offset];
-        }
-    }
-
-    public void setThenAnd(LargeBitSet a, NaiveBitSet b) {
-        for (int i = 0, len = a.limit; i < len; ++i) {
-            int offset = a.dense[i];
-            this.words[offset] |= a.words[i] & b.words[offset];
-        }
-    }
-
-    // 判断两个集合是否有交集
-    // 如果有，返回第一个相交的值
-    // 如果没有，返回-1
-    public int isIntersect(NaiveBitSet s) {
-        long word;
+    @Override
+    public void and(INaiveBitSet a, INaiveBitSet b, INaiveBitSet c) {
+//        int i = INaiveBitSet.min(lowerIndex, a.firstSetIndex(), b.firstSetIndex(), c.firstSetIndex()),
+//                ub = INaiveBitSet.max(upperIndex, a.lastSetIndex(), b.lastSetIndex(), c.lastSetIndex());
+        numBits = 0;
         for (int i = 0; i < longSize; ++i) {
-            word = this.words[i] & s.words[i];
-            if (word != 0L) {
-                return i * 64 + Long.numberOfTrailingZeros(word);
-            }
+            words[i] &= (a.getWord(i) & b.getWord(i) & c.getWord(i));
+            numBits += Long.bitCount(words[i]);
         }
-        return -1;
     }
 
-    // 判断两个集合是否有交集
-    // 如果有，返回第一个相交的值
-    // 如果没有，返回-1
-    public boolean isIntersect(LargeBitSet s) {
-        long word;
-        for (int i = 0; i < s.limit; ++i) {
-            int offset = s.dense[i];
-            if ((this.words[offset] & s.words[i]) != 0L) {
-                return true;
-            }
+    @Override
+    public void or(INaiveBitSet s) {
+        numBits = 0;
+        for (int i = 0; i < longSize; ++i) {
+            words[i] |= s.getWord(i);
+            numBits += Long.bitCount(words[i]);
         }
-        return false;
     }
 
-    // 判断两个集合是否有交集
-    public boolean isIntersect(NaiveSparseBitSet s) {
-        for (int i = 0, len = s.longSize; i < len; ++i) {
-            if ((this.words[s.index[i]] & s.words[i]) != 0L) {
-                return true;
-            }
+    @Override
+    public void or(INaiveBitSet a, INaiveBitSet b) {
+        numBits = 0;
+        for (int i = 0; i < longSize; ++i) {
+            words[i] |= a.getWord(i) | b.getWord(i);
+            numBits += Long.bitCount(words[i]);
         }
-        return false;
     }
 
+    @Override
+    public void or(INaiveBitSet a, INaiveBitSet b, INaiveBitSet c) {
+        numBits = 0;
+        for (int i = 0; i < longSize; ++i) {
+            words[i] |= a.getWord(i) | b.getWord(i) | c.getWord(i);
+            numBits += Long.bitCount(words[i]);
+        }
+    }
+
+    @Override
+    public void andAfterMinus(INaiveBitSet a, INaiveBitSet b) {
+        numBits = 0;
+        for (int i = 0; i < longSize; ++i) {
+            words[i] &= a.getWord(i) & ~b.getWord(i);
+            numBits += Long.bitCount(words[i]);
+        }
+    }
+
+    @Override
+    public void orAfterMinus(INaiveBitSet a, INaiveBitSet b) {
+        numBits = 0;
+        for (int i = 0; i < longSize; ++i) {
+            this.words[i] |= a.getWord(i) & ~b.getWord(i);
+            numBits += Long.bitCount(words[i]);
+        }
+    }
+
+    @Override
+    public void setAfterMinus(INaiveBitSet a, INaiveBitSet b) {
+        numBits = 0;
+        for (int i = 0; i < longSize; ++i) {
+            words[i] = a.getWord(i) & ~b.getWord(i);
+            numBits += Long.bitCount(words[i]);
+        }
+    }
+
+    @Override
+    public void setAfterAnd(INaiveBitSet a, INaiveBitSet b) {
+        numBits = 0;
+        for (int i = 0; i < longSize; ++i) {
+            words[i] = a.getWord(i) & b.getWord(i);
+            numBits += Long.bitCount(words[i]);
+        }
+    }
+
+    @Override
     public int nextSetBit(int fromIndex) {
         if (fromIndex < 0) {
             throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
@@ -289,6 +311,7 @@ public class NaiveBitSet {
         }
     }
 
+    @Override
     public int nextClearBit(int fromIndex) {
         // Neither spec nor implementation handle bitsets of maximal length.
         // See 4816253.
@@ -311,194 +334,52 @@ public class NaiveBitSet {
         }
     }
 
-    public int capacity() {
-        int sum = 0;
-        for (int i = 0; i < longSize; ++i)
-            sum += Long.bitCount(words[i]);
-        return sum;
+    @Override
+    public int firstSetBit() {
+        return (numBits == 0) ? INDEX_OVERFLOW : (64 * lowerIndex + Long.numberOfTrailingZeros(words[lowerIndex]));
     }
 
-    public int size() {
-        int sum = 0;
-        for (int i = 0; i < longSize; ++i)
-            sum += Long.bitCount(words[i]);
-        return sum;
+//    @Override
+//    public int prevSetBit(int fromIndex) {
+//        return 0;
+//    }
+//
+//    @Override
+//    public int prevClearBit(int fromIndex) {
+//        return 0;
+//    }
+
+    @Override
+    public boolean isEmpty() {
+        return numBits == 0l;
+    }
+
+    @Override
+    public int firstSetIndex() {
+        return (numBits == 0l) ? INDEX_OVERFLOW : lowerIndex;
+    }
+
+    @Override
+    public int lastSetIndex() {
+        return (numBits == 0l) ? INDEX_OVERFLOW : upperIndex;
+    }
+
+    @Override
+    public boolean isSingleton() {
+        return numBits == 1;
+    }
+
+    @Override
+    public int singleValue() {
+        return (numBits == 1) ? firstSetBit() : INDEX_OVERFLOW;
     }
 
     @Override
     public String toString() {
-
-        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
-        int numBits = longSize * BITS_PER_WORD;
-        // Avoid overflow in the case of a humongous numBits
-        int initialCapacity = (numBits <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
-                6 * numBits + 2 : MAX_INITIAL_CAPACITY;
-        StringBuilder b = new StringBuilder(initialCapacity);
-        b.append('{');
-
-        int i = nextSetBit(0);
-        if (i != -1) {
-            b.append(i);
-            while (true) {
-                if (++i < 0) break;
-                if ((i = nextSetBit(i)) < 0) break;
-                int endOfRun = nextClearBit(i);
-                do {
-                    b.append(", ").append(i);
-                }
-                while (++i != endOfRun);
-            }
+        StringBuilder ss = new StringBuilder();
+        for (long w : words) {
+            ss.append(Long.toBinaryString(w)).append(",");
         }
-
-        b.append('}');
-        return b.toString();
+        return ss.substring(0, ss.length() - 1);
     }
-
-    public void and(NaiveBitSet a, NaiveBitSet b) {
-        for (int i = 0; i < this.longSize; ++i) {
-            this.words[i] &= (a.words[i] & b.words[i]);
-        }
-    }
-
-    public void and(NaiveBitSet a, NaiveBitSet b, NaiveBitSet c, NaiveBitSet d) {
-        for (int i = 0, len = longSize; i < len; ++i) {
-            this.words[i] = a.words[i] & b.words[i] & c.words[i] & d.words[i];
-        }
-    }
-
-    public final static void and(NaiveBitSet res, NaiveBitSet a, NaiveBitSet b) {
-        for (int i = 0, len = res.longSize; i < len; ++i) {
-            res.words[i] = a.words[i] & b.words[i];
-        }
-    }
-
-    public final static void and(NaiveBitSet res, NaiveBitSet a, NaiveBitSet b, NaiveBitSet c, NaiveBitSet d) {
-        for (int i = 0, len = res.longSize; i < len; ++i) {
-            res.words[i] = a.words[i] & b.words[i] & c.words[i] & d.words[i];
-        }
-    }
-
-    public final static boolean EmptyAnd(NaiveBitSet a, NaiveBitSet b) {
-        for (int i = 0; i < a.longSize; ++i) {
-            if ((a.words[i] & b.words[i]) != 0L) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public void or(NaiveSparseBitSet s) {
-        //以较小的s为区间
-        for (int i = 0, len = s.longSize; i < len; ++i) {
-            int offset = s.index[i];
-            this.words[offset] |= s.words[i];
-        }
-    }
-
-    // 先或再检查为空
-    public boolean orCheckEmpty(NaiveSparseBitSet s) {
-        //以较小的s为区间
-        for (int i = 0, len = s.longSize; i < len; ++i) {
-            int offset = s.index[i];
-            this.words[offset] |= s.words[i];
-            if (this.words[offset] != 0L) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // 只尝试检查或的结果不改值
-    public boolean orTestEmpty(NaiveSparseBitSet s) {
-        //以较小的s为区间
-//        boolean res = false;
-        for (int i = 0, len = s.longSize; i < len; ++i) {
-            int offset = s.index[i];
-            if ((this.words[offset] | s.words[i]) != 0L) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // 只尝试检查或的结果不改值
-    public boolean tryAndEmpty(NaiveSparseBitSet s) {
-        //以较小的s为区间
-        for (int i = 0, len = s.longSize; i < len; ++i) {
-            int offset = s.index[i];
-            if ((this.words[offset] & s.words[i]) != 0L) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
-    public final static boolean EmptyAnd(NaiveBitSet a, NaiveBitSet b, NaiveBitSet c, NaiveBitSet d) {
-        for (int i = 0; i < a.longSize; ++i) {
-            if ((a.words[i] & b.words[i] & c.words[i] & d.words[i]) != 0L) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public final static int NextSetBitAfterMinus(NaiveBitSet a, NaiveBitSet b, int fromIndex) {
-        if (fromIndex < 0) {
-            throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
-        } else {
-            int u = a.wordIndex(fromIndex);
-            if (u >= a.longSize) {
-                return -1;
-            } else {
-                long word;
-                for (word = a.words[u] & (~b.words[u]) & -1L << fromIndex; word == 0L; word = (a.words[u] & (~b.words[u]))) {
-                    ++u;
-                    if (u == a.longSize) {
-                        return -1;
-                    }
-                }
-
-                return u * 64 + Long.numberOfTrailingZeros(word);
-            }
-        }
-    }
-
-
-    // 从a中除去b，再加入现在的值
-    public void orAfterMinus(NaiveBitSet a, NaiveBitSet b) {
-        for (int i = 0; i < longSize; ++i) {
-            this.words[i] |= a.words[i] & ~b.words[i];
-        }
-    }
-
-    // 从a中除去b
-    public void setAfterMinus(NaiveBitSet a, NaiveBitSet b) {
-        for (int i = 0; i < longSize; ++i) {
-            this.words[i] = a.words[i] & ~b.words[i];
-        }
-    }
-
-    // a和b共同部分
-    public void setAfterAnd(NaiveBitSet a, NaiveBitSet b) {
-        for (int i = 0; i < longSize; ++i) {
-            this.words[i] = a.words[i] & b.words[i];
-        }
-    }
-
-    // 与a取反
-    public void andAfterNot(NaiveBitSet a) {
-        for (int i = 0; i < longSize; ++i) {
-            this.words[i] = ~a.words[i];
-        }
-    }
-
-//    public void orAfterAnd(NaiveSparseBitSet a, NaiveSparseBitSet b) {
-//        int min;
-//        //以短
-//        if (a.longSize > b.longSize) {
-//
-//        }
-//
-//    }
 }

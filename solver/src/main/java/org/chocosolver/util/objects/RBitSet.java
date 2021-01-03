@@ -1,79 +1,108 @@
-//package org.chocosolver.util.objects;
-//
-//
-//import org.chocosolver.memory.IEnvironment;
-//import org.chocosolver.memory.IStateLong;
-//
-//public class RBitSet {
-//
-//    protected IStateLong[] words;
-//    protected int longSize;
-//    protected int bitSize;
-//    protected int limit;
-//    protected long lastMask;
-//
-//    protected final static int ADDRESS_BITS_PER_WORD = 6;
-//    protected final static int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
-//    protected final static int BIT_INDEX_MASK = BITS_PER_WORD - 1;
-//    /* Used to shift left or right for a partial word mask */
-//    protected static final long WORD_MASK = 0xffffffffffffffffL;
-//    protected static final long MOD_MASK = 0x3fL;
-//    protected static final int MOD_MASK_INT = 0x3f;
-//
-//    public RBitSet(int nbits, IEnvironment env) {
-//        this.bitSize = nbits;
-//        longSize = wordIndex(nbits - 1) + 1;
-//        this.limit = nbits % BITS_PER_WORD;
-//        this.lastMask = WORD_MASK >>> (BITS_PER_WORD - limit);
-////        this.words = new long[longSize];
-//        this.words = new IStateLong[longSize];
+package org.chocosolver.util.objects;
+
+
+import org.chocosolver.memory.IEnvironment;
+import org.chocosolver.memory.IStateInt;
+import org.chocosolver.memory.IStateLong;
+
+public class RBitSet {
+
+    protected IStateLong[] words;
+    protected IStateInt lowerBitIdx;
+    protected IStateInt upperBitIdx;
+    protected int longSize;
+    protected int bitSize;
+    protected int limit;
+    protected long lastMask;
+
+    protected final static int ADDRESS_BITS_PER_WORD = 6;
+    protected final static int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
+    protected final static int BIT_INDEX_MASK = BITS_PER_WORD - 1;
+    /* Used to shift left or right for a partial word mask */
+    protected static final long WORD_MASK = 0xffffffffffffffffL;
+    protected static final long MOD_MASK = 0x3fL;
+    protected static final int MOD_MASK_INT = 0x3f;
+
+    public RBitSet(int nbits, IEnvironment env) {
+        this.bitSize = nbits;
+        longSize = wordIndex(nbits - 1) + 1;
+        this.limit = nbits % BITS_PER_WORD;
+        this.lastMask = WORD_MASK >>> (BITS_PER_WORD - limit);
+//        this.words = new long[longSize];
+        this.words = new IStateLong[longSize];
+        lowerBitIdx = env.makeInt(longSize);
+        upperBitIdx = env.makeInt(0);
+    }
+
+    protected static int wordIndex(int bitIndex) {
+        return bitIndex >> ADDRESS_BITS_PER_WORD;
+    }
+
+    protected static int wordOffset(int bitIndex) {
+        return bitIndex & MOD_MASK_INT;
+    }
+
+    public int longSize() {
+        return longSize;
+    }
+
+    public int bitSize() {
+        return bitSize;
+    }
+
+//    public long[] words() {
+//        return words;
 //    }
-//
-//    protected static int wordIndex(int bitIndex) {
-//        return bitIndex >> ADDRESS_BITS_PER_WORD;
-//    }
-//
-//    protected static int wordOffset(int bitIndex) {
-//        return bitIndex & MOD_MASK_INT;
-//    }
-//
-//    public int longSize() {
-//        return longSize;
-//    }
-//
-//    public int bitSize() {
-//        return bitSize;
-//    }
-//
-////    public long[] words() {
-////        return words;
-////    }
-//
-//    public long words(int bitIndex) {
-//        return words[bitIndex].get();
-//    }
-//
+
+    public long words(int bitIndex) {
+        return words[bitIndex].get();
+    }
+
 //    public void flip() {
 //        for (int i = 0; i < longSize; ++i) {
-//            words[i] = ~words[i];
+//            words[i].set(~words[i].get());
 //        }
-//        words[longSize - 1] &= lastMask;
+////        words[longSize - 1] &= lastMask;
+//        int idx = longSize - 1;
+//        words[idx].set(words[idx].get() & lastMask);
 //    }
-//
-//    public void set(int bitIndex) {
-//        this.words[wordIndex(bitIndex)] |= 1L << bitIndex;
-//    }
-//
-//    public void set(NaiveBitSet s) {
-//        for (int i = 0; i < longSize; ++i) {
+
+    public void set(int bitIndex) {
+//        words[wordIndex(bitIndex)] |= 1L << bitIndex;
+        int idx = wordIndex(bitIndex);
+        if (idx < lowerBitIdx.get()) lowerBitIdx.set(idx);
+        if (idx > upperBitIdx.get()) upperBitIdx.set(idx);
+        words[idx].set(words[idx].get() | (1L << bitIndex));
+    }
+
+    public void set(NaiveBitSetOld s) {
+        int lbi = lowerBitIdx.get(), ubi = upperBitIdx.get();
+        boolean lbiChanged = false, ubiChanged = false;
+        for (int i = 0; i < longSize; ++i) {
 //            this.words[i] = s.words[i];
-//        }
-//    }
-//
+            long w = s.words[i];
+            if (!lbiChanged && i < lbi && w != 0) {
+                lbi = i;
+                lbiChanged = true;
+                lowerBitIdx.set(lbi);
+            }
+            if (w != 0 && i > ubi) {
+                ubi = i;
+                ubiChanged = true;
+            }
+
+            if (ubiChanged) {
+                upperBitIdx.set(ubi);
+            }
+
+            this.words[i].set(w);
+        }
+    }
+
 //    public void set(int startIndex, NaiveBitSet b) {
 ////        for(int i = wordIndex(startIndex);)
 //    }
-//
+
 //    public void naiveSet(int s, NaiveBitSet nbs) {
 //        int a = wordIndex(s);
 //        int b = wordOffset(s);
@@ -106,20 +135,20 @@
 //                this.words[j + 1] = (this.words[j + 1] & (~(WORD_MASK >> offset))) | (nbs.words[i] >> offset);
 //            }
 //        }
-////        for (int i = 0, len = s.longSize; i < len; ++i) {
-////            int j = b + i;
-////            // 清空this中待设定的的部分，
-////            // 一般要操作两个相邻的 this.words
-////            // 先
-////            this.words[j] = ((~(WORD_MASK << a) & this.words[a]) | (s.words[0] << a));
-////            this.words[j + 1] = ((WORD_MASK << a) & this.words[j + 1]) | (s.words[0] >> BITS_PER_WORD - a);
-////
-//////            this.words[j] = ~((s.words[i] << startBitIndex) ^ (WORD_MASK << startBitIndex));
-//////            this.words[j + 1] &=
-//////                    pre = s.words[i] << startBitIndex;
-//////            next = s.words[i] & (WORD_MASK >> startBitIndex);
-////
-////        }
+//        for (int i = 0, len = s.longSize; i < len; ++i) {
+//            int j = b + i;
+//            // 清空this中待设定的的部分，
+//            // 一般要操作两个相邻的 this.words
+//            // 先
+//            this.words[j] = ((~(WORD_MASK << a) & this.words[a]) | (s.words[0] << a));
+//            this.words[j + 1] = ((WORD_MASK << a) & this.words[j + 1]) | (s.words[0] >> BITS_PER_WORD - a);
+//
+////            this.words[j] = ~((s.words[i] << startBitIndex) ^ (WORD_MASK << startBitIndex));
+////            this.words[j + 1] &=
+////                    pre = s.words[i] << startBitIndex;
+////            next = s.words[i] & (WORD_MASK >> startBitIndex);
+//
+//        }
 //    }
 //
 //    public void naiveAnd(int s, NaiveBitSet nbs) {
@@ -155,75 +184,97 @@
 //            }
 //        }
 //    }
-//
-//
-//    public void clear() {
-//        for (int i = 0; i < longSize; ++i) {
+
+
+    public void clear() {
+        for (int i = 0; i < longSize; ++i) {
 //            this.words[i] = 0L;
-//        }
-//    }
-//
-//    public void set() {
-//        int len = longSize - 1;
-//        for (int i = 0; i < len; ++i) {
+            this.words[i].set(0L);
+        }
+
+        upperBitIdx.set(0);
+        lowerBitIdx.set(longSize);
+    }
+
+    public void set() {
+        int len = longSize - 1;
+        for (int i = 0; i < len; ++i) {
 //            this.words[i] = WORD_MASK;
-//        }
+            this.words[i].set(WORD_MASK);
+        }
 //        this.words[len] = lastMask;
-//    }
-//
-//    public void clear(int bitIndex) {
-//        this.words[wordIndex(bitIndex)] &= ~(1L << bitIndex);
-//    }
-//
-//    // 从本集合中移除s中的元素
-//    public void clear(NaiveBitSet s) {
-//        for (int i = 0; i < longSize; ++i) {
+        this.words[len].set(lastMask);
+        upperBitIdx.set(longSize);
+        lowerBitIdx.set(0);
+    }
+
+    public void clear(int bitIndex) {
+        int idx = wordIndex(bitIndex);
+        long w = words[idx].get() & (~(1L << bitIndex));
+        this.words[idx].set(w);
+        if (w == 0L) {
+            if (idx < lowerBitIdx.get()) lowerBitIdx.set(idx);
+            if (idx > upperBitIdx.get()) upperBitIdx.set(idx);
+        }
+    }
+
+    // 从本集合中移除s中的元素
+    public void clear(NaiveBitSetOld s) {
+        for (int i = 0; i < longSize; ++i) {
 //            this.words[i] &= ~s.words[i];
-//        }
-//    }
-//
-//    // 从本集合中移除s中的元素
-//    public void clear(NaiveSparseBitSet s) {
-//        for (int i = 0, len = s.longSize; i < len; ++i) {
+            this.words[i].set(words[i].get() & ~s.words[i]);
+        }
+    }
+
+    // 从本集合中移除s中的元素
+    public void clear(NaiveSparseBitSet s) {
+        for (int i = 0, len = s.longSize; i < len; ++i) {
 //            this.words[s.index[i]] &= ~s.words[i];
-//        }
-//    }
-//
-//    public void clearAfterAnd(NaiveSparseBitSet a, NaiveBitSet b) {
-//        for (int i = 0, len = a.longSize; i < len; ++i) {
-//            int offset = a.index[i];
+            int idx = s.index[i];
+            this.words[idx].set(this.words[idx].get() & (~s.words[i]));
+        }
+    }
+
+    public void clearAfterAnd(NaiveSparseBitSet a, NaiveBitSetOld b) {
+        for (int i = 0, len = a.longSize; i < len; ++i) {
+            int offset = a.index[i];
 //            this.words[offset] &= ~(a.words[i] & b.words[offset]);
-//        }
-//    }
-//
-//    public boolean isEmpty() {
-//        for (int i = 0; i < longSize; ++i) {
+            this.words[offset].set(this.words[offset].get() & (~(a.words[i] & b.words[offset])));
+        }
+    }
+
+    public boolean isEmpty() {
+        for (int i = 0; i < longSize; ++i) {
 //            if (this.words[i] != 0L) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-//
-//    public boolean get(int bitIndex) {
-//        int wordIndex = wordIndex(bitIndex);
+            if (this.words[i].get() != 0L) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean get(int bitIndex) {
+        int wordIndex = wordIndex(bitIndex);
 //        return wordIndex < longSize && (this.words[wordIndex] & 1L << bitIndex) != 0L;
-//
-//    }
-//
-//    public void and(NaiveBitSet s) {
-//        for (int i = 0; i < longSize; ++i) {
+        return wordIndex < longSize && (this.words[wordIndex].get() & 1L << bitIndex) != 0L;
+
+    }
+
+    public void and(NaiveBitSetOld s) {
+        for (int i = 0; i < longSize; ++i) {
 //            this.words[i] &= s.words[i];
-//        }
-//    }
-//
-//    public void or(NaiveBitSet s) {
-//        for (int i = 0; i < longSize; ++i) {
+            words[i].set(words[i].get() & s.words[i]);
+        }
+    }
+
+    public void or(NaiveBitSetOld s) {
+        for (int i = 0; i < longSize; ++i) {
 //            this.words[i] |= s.words[i];
-//        }
-//    }
-//
-//
+            words[i].set(words[i].get() | s.words[i]);
+        }
+    }
+
+
 //    public void setThenAnd(NaiveSparseBitSet a, NaiveBitSet b) {
 //        for (int i = 0, len = a.longSize; i < len; ++i) {
 //            int offset = a.index[i];
@@ -237,7 +288,7 @@
 //            this.words[offset] |= a.words[i] & b.words[offset];
 //        }
 //    }
-//
+
 //    // 判断两个集合是否有交集
 //    // 如果有，返回第一个相交的值
 //    // 如果没有，返回-1
@@ -275,105 +326,107 @@
 //        }
 //        return false;
 //    }
-//
-//    public int nextSetBit(int fromIndex) {
-//        if (fromIndex < 0) {
-//            throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
-//        } else {
-//            int u = wordIndex(fromIndex);
-//            if (u >= this.longSize) {
-//                return -1;
-//            } else {
-//                long word;
-//                for (word = this.words[u] & -1L << fromIndex; word == 0L; word = this.words[u]) {
-//                    ++u;
-//                    if (u == this.longSize) {
-//                        return -1;
-//                    }
-//                }
-//
-//                return u * 64 + Long.numberOfTrailingZeros(word);
-//            }
-//        }
-//    }
-//
-//    public int nextClearBit(int fromIndex) {
-//        // Neither spec nor implementation handle bitsets of maximal length.
-//        // See 4816253.
-//        if (fromIndex < 0)
-//            throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
-//
-//
-//        int u = wordIndex(fromIndex);
-//        if (u >= longSize)
-//            return fromIndex;
-//
-//        long word = ~words[u] & (WORD_MASK << fromIndex);
-//
-//        while (true) {
-//            if (word != 0)
-//                return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
-//            if (++u == longSize)
-//                return longSize * BITS_PER_WORD;
-//            word = ~words[u];
-//        }
-//    }
-//
-//    public int capacity() {
-//        int sum = 0;
-//        for (int i = 0; i < longSize; ++i)
-//            sum += Long.bitCount(words[i]);
-//        return sum;
-//    }
-//
-//    public int size() {
-//        int sum = 0;
-//        for (int i = 0; i < longSize; ++i)
-//            sum += Long.bitCount(words[i]);
-//        return sum;
-//    }
-//
-//    @Override
-//    public String toString() {
-//
-//        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
-//        int numBits = longSize * BITS_PER_WORD;
-//        // Avoid overflow in the case of a humongous numBits
-//        int initialCapacity = (numBits <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
-//                6 * numBits + 2 : MAX_INITIAL_CAPACITY;
-//        StringBuilder b = new StringBuilder(initialCapacity);
-//        b.append('{');
-//
-//        int i = nextSetBit(0);
-//        if (i != -1) {
-//            b.append(i);
-//            while (true) {
-//                if (++i < 0) break;
-//                if ((i = nextSetBit(i)) < 0) break;
-//                int endOfRun = nextClearBit(i);
-//                do {
-//                    b.append(", ").append(i);
-//                }
-//                while (++i != endOfRun);
-//            }
-//        }
-//
-//        b.append('}');
-//        return b.toString();
-//    }
-//
-//    public void and(NaiveBitSet a, NaiveBitSet b) {
-//        for (int i = 0; i < this.longSize; ++i) {
+
+    public int nextSetBit(int fromIndex) {
+        if (fromIndex < 0) {
+            throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
+        } else {
+            int u = wordIndex(fromIndex);
+            if (u >= this.longSize) {
+                return -1;
+            } else {
+                long word;
+                for (word = this.words[u].get() & -1L << fromIndex; word == 0L; word = this.words[u].get()) {
+                    ++u;
+                    if (u == this.longSize) {
+                        return -1;
+                    }
+                }
+
+                return u * 64 + Long.numberOfTrailingZeros(word);
+            }
+        }
+    }
+
+    public int nextClearBit(int fromIndex) {
+        // Neither spec nor implementation handle bitsets of maximal length.
+        // See 4816253.
+        if (fromIndex < 0)
+            throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
+
+
+        int u = wordIndex(fromIndex);
+        if (u >= longSize)
+            return fromIndex;
+
+        long word = ~words[u].get() & (WORD_MASK << fromIndex);
+
+        while (true) {
+            if (word != 0)
+                return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+            if (++u == longSize)
+                return longSize * BITS_PER_WORD;
+            word = ~words[u].get();
+        }
+    }
+
+    public int capacity() {
+        int sum = 0;
+        for (int i = 0; i < longSize; ++i)
+            sum += Long.bitCount(words[i].get());
+        return sum;
+    }
+
+    public int size() {
+        int sum = 0;
+        for (int i = 0; i < longSize; ++i)
+            sum += Long.bitCount(words[i].get());
+        return sum;
+    }
+
+    @Override
+    public String toString() {
+
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        int numBits = longSize * BITS_PER_WORD;
+        // Avoid overflow in the case of a humongous numBits
+        int initialCapacity = (numBits <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
+                6 * numBits + 2 : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
+        b.append('{');
+
+        int i = nextSetBit(0);
+        if (i != -1) {
+            b.append(i);
+            while (true) {
+                if (++i < 0) break;
+                if ((i = nextSetBit(i)) < 0) break;
+                int endOfRun = nextClearBit(i);
+                do {
+                    b.append(", ").append(i);
+                }
+                while (++i != endOfRun);
+            }
+        }
+
+        b.append('}');
+        return b.toString();
+    }
+
+    public void and(NaiveBitSetOld a, NaiveBitSetOld b) {
+        for (int i = 0; i < this.longSize; ++i) {
 //            this.words[i] &= (a.words[i] & b.words[i]);
-//        }
-//    }
-//
-//    public void and(NaiveBitSet a, NaiveBitSet b, NaiveBitSet c, NaiveBitSet d) {
-//        for (int i = 0, len = longSize; i < len; ++i) {
+            this.words[i].set(this.words[i].get() & a.words[i] & b.words[i]);
+        }
+    }
+
+    public void and(NaiveBitSetOld a, NaiveBitSetOld b, NaiveBitSetOld c, NaiveBitSetOld d) {
+        for (int i = 0, len = longSize; i < len; ++i) {
 //            this.words[i] = a.words[i] & b.words[i] & c.words[i] & d.words[i];
-//        }
-//    }
-//
+            this.words[i].set(a.words[i] & b.words[i] & c.words[i] & d.words[i]);
+        }
+    }
+
 //    public final static void and(NaiveBitSet res, NaiveBitSet a, NaiveBitSet b) {
 //        for (int i = 0, len = res.longSize; i < len; ++i) {
 //            res.words[i] = a.words[i] & b.words[i];
@@ -394,7 +447,7 @@
 //        }
 //        return true;
 //    }
-//
+
 //    public void or(NaiveSparseBitSet s) {
 //        //以较小的s为区间
 //        for (int i = 0, len = s.longSize; i < len; ++i) {
@@ -402,7 +455,7 @@
 //            this.words[offset] |= s.words[i];
 //        }
 //    }
-//
+
 //    // 先或再检查为空
 //    public boolean orCheckEmpty(NaiveSparseBitSet s) {
 //        //以较小的s为区间
@@ -415,7 +468,7 @@
 //        }
 //        return true;
 //    }
-//
+
 //    // 只尝试检查或的结果不改值
 //    public boolean orTestEmpty(NaiveSparseBitSet s) {
 //        //以较小的s为区间
@@ -440,8 +493,8 @@
 //        }
 //        return true;
 //    }
-//
-//
+
+
 //    public final static boolean EmptyAnd(NaiveBitSet a, NaiveBitSet b, NaiveBitSet c, NaiveBitSet d) {
 //        for (int i = 0; i < a.longSize; ++i) {
 //            if ((a.words[i] & b.words[i] & c.words[i] & d.words[i]) != 0L) {
@@ -500,13 +553,13 @@
 //            this.words[i] = ~a.words[i];
 //        }
 //    }
+
+//    public void orAfterAnd(NaiveSparseBitSet a, NaiveSparseBitSet b) {
+//        int min;
+//        //以短
+//        if (a.longSize > b.longSize) {
 //
-////    public void orAfterAnd(NaiveSparseBitSet a, NaiveSparseBitSet b) {
-////        int min;
-////        //以短
-////        if (a.longSize > b.longSize) {
-////
-////        }
-////
-////    }
-//}
+//        }
+//
+//    }
+}

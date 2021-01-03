@@ -14,6 +14,7 @@ import org.chocosolver.solver.constraints.ConstraintsName;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.binary.PropNotEqualX_Y;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.util.objects.Measurer;
 
 /**
  * Ensures that all variables from VARS take a different value.
@@ -21,23 +22,28 @@ import org.chocosolver.solver.variables.IntVar;
  */
 public class AllDifferent extends Constraint {
 
-    public static final String AC= "AC";
-    public static final String AC_REGIN= "AC_REGIN";
+    public static final String AC = "AC";
+    public static final String AC_REGIN = "AC_REGIN";
     public static final String AC_ZHANG = "AC_ZHANG";
-    public static final String BC= "BC";
-    public static final String FC= "FC";
-    public static final String NEQS= "NEQS";
-    public static final String DEFAULT= "DEFAULT";
+    public static final String BC = "BC";
+    public static final String FC = "FC";
+    public static final String NEQS = "NEQS";
+    public static final String DEFAULT = "DEFAULT";
 
     // 实验待测算法
-    public static final String ACFair= "ACFair";
-    public static final String ACZhang18= "ACZhang18";
-    public static final String ACZhang20= "ACZhang20";
+    public static final String ACFair = "ACFair";
+    public static final String ACZhang18 = "ACZhang18";
+    public static final String ACZhang20 = "ACZhang20";
     public static final String ACZhang18M = "ACZhang18M";
-    public static final String ACNaive= "ACNaive";
+    public static final String ACNaive = "ACNaive";
+    public static final String ACNaiveR = "ACNaiveR";
+    public static final String WordRam = "WordRam";
+    public static final String ACNaiveNew = "ACNaiveNew";
 
     public AllDifferent(IntVar[] vars, String type) {
         super(ConstraintsName.ALLDIFFERENT, createPropagators(vars, type));
+        Measurer.maxAllDiffArity = Math.max(Measurer.maxAllDiffArity, vars.length);
+        Measurer.numAllDiff++;
     }
 
     private static Propagator[] createPropagators(IntVar[] VARS, String consistency) {
@@ -72,6 +78,12 @@ public class AllDifferent extends Constraint {
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang18M(VARS)};
             case ACNaive:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
+            case ACNaiveR:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveR(VARS)};
+            case WordRam:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRam(VARS)};
+//                case ACNaiveNew:
+//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
 
             case DEFAULT:
             default: {
