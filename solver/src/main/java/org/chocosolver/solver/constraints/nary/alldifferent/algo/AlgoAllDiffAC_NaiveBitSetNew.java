@@ -61,7 +61,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     private INaiveBitSet[] D;
 
     // 已访问过的变量和值
-    private INaiveBitSet variable_visited_;
+//    private INaiveBitSet visitedVariables;
+    private INaiveBitSet unVisitedVariables;
     //    private INaiveBitSet value_visited_;
     private INaiveBitSet unVisitedValues;
     private INaiveBitSet needVisitValues;
@@ -146,7 +147,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
         // 记录访问过的变量
         visiting_ = new int[arity];
-        variable_visited_ = INaiveBitSet.makeBitSet(arity, false);
+//        visitedVariables = INaiveBitSet.makeBitSet(arity, false);
+        unVisitedVariables = INaiveBitSet.makeBitSet(arity, true);
         // 变量的前驱变量，若前驱变量是-1，则表示无前驱变量，就是第一个变量
         variable_visited_from_ = new int[arity];
 //        value_visited_ = INaiveBitSet.makeBitSet(numValues, false);
@@ -234,7 +236,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         // visit 里存的是变量
         visiting_[num_to_visit++] = start;
 //        variable_visited_[start] = true;
-        variable_visited_.set(start);
+//        variable_visited_.set(start);
+        unVisitedVariables.clear(start);
         variable_visited_from_[start] = -1;
 
         while (num_visited < num_to_visit) {
@@ -287,7 +290,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
                     // 先拿到这个值的匹配变量
                     int next_node = val2Var[valIdx];
-                    variable_visited_.set(next_node);
+//                    visitedVariables.set(next_node);
+                    unVisitedVariables.clear(next_node);
 //                    System.out.println(num_to_visit + "," + next_node);
                     // 把这个变量加入队列中
                     visiting_[num_to_visit++] = next_node;
@@ -421,7 +425,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             if (var2Val[varIdx] == -1) {
 //                value_visited_.clear();
                 unVisitedValues.set();
-                variable_visited_.clear();
+//                visitedVariables.clear();
+                unVisitedVariables.set();
                 MakeAugmentingPath(varIdx);
             }
             if (var2Val[varIdx] == -1) {
