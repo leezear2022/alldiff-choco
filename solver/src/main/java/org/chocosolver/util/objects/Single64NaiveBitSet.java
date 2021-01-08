@@ -139,8 +139,10 @@ public class Single64NaiveBitSet implements INaiveBitSet {
 
     @Override
     public int nextSetBit(int fromIndex) {
-        int a = Long.numberOfTrailingZeros(words & -1L << fromIndex);
-        return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;
+//        int a = Long.numberOfTrailingZeros(words & -1L << fromIndex);
+//        return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;
+//
+        return Long.numberOfTrailingZeros(words & -1L << fromIndex);
     }
 
     @Override
@@ -151,8 +153,9 @@ public class Single64NaiveBitSet implements INaiveBitSet {
 
     @Override
     public int firstSetBit() {
-        int a = Long.numberOfTrailingZeros(words);
-        return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;
+//        int a = Long.numberOfTrailingZeros(words);
+//        return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;
+        return Long.numberOfTrailingZeros(words);
     }
 
     @Override
@@ -178,6 +181,11 @@ public class Single64NaiveBitSet implements INaiveBitSet {
     @Override
     public int singleValue() {
         return isSingleton() ? firstSetBit() : INDEX_OVERFLOW;
+    }
+
+    @Override
+    public int end() {
+        return BITS_PER_WORD;
     }
 
     @Override

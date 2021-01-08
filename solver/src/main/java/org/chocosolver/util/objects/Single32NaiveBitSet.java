@@ -133,8 +133,9 @@ public class Single32NaiveBitSet implements INaiveBitSet {
 
     @Override
     public int nextSetBit(int fromIndex) {
-        int a = Integer.numberOfTrailingZeros(words & -1 << fromIndex);
-        return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;
+//        int a = Integer.numberOfTrailingZeros(words & -1 << fromIndex);
+//        return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;
+        return Integer.numberOfTrailingZeros(words & -1 << fromIndex);
     }
 
     @Override
@@ -145,8 +146,9 @@ public class Single32NaiveBitSet implements INaiveBitSet {
 
     @Override
     public int firstSetBit() {
-        int a = Integer.numberOfTrailingZeros(words);
-        return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;
+//        int a = Integer.numberOfTrailingZeros(words);
+//        return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;
+        return Integer.numberOfTrailingZeros(words);
     }
 
     @Override
@@ -172,6 +174,11 @@ public class Single32NaiveBitSet implements INaiveBitSet {
     @Override
     public int singleValue() {
         return (size() == 1) ? firstSetBit() : INDEX_OVERFLOW;
+    }
+
+    @Override
+    public int end() {
+        return BITS_PER_WORD;
     }
 
     @Override

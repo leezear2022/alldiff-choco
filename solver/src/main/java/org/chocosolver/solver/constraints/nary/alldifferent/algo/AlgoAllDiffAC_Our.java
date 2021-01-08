@@ -241,7 +241,7 @@ public class AlgoAllDiffAC_Our {
 //                if (!unVisitedValues.get(valIdx)) continue;
 
             needVisitValues.setAfterAnd(D[node], unVisitedValues);
-            for (int valIdx = needVisitValues.firstSetBit(); valIdx != INaiveBitSet.INDEX_OVERFLOW; valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
+            for (int valIdx = needVisitValues.firstSetBit(); valIdx != needVisitValues.end(); valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
 //                xixi++;
                 unVisitedValues.clear(valIdx);
 //                System.out.println(xixi + ", " + node + ", " + valIdx);
@@ -401,7 +401,7 @@ public class AlgoAllDiffAC_Our {
         gammaFrontier.set(gammaMask);
 
         for (int varIdx = gammaFrontier.nextSetBit(0);
-             varIdx != -1; varIdx = gammaFrontier.nextSetBit(0)) {
+             varIdx != gammaFrontier.end(); varIdx = gammaFrontier.nextSetBit(0)) {
             // !! 这里可以将Extended改成Frontier，只记录前沿，记录方法是三个BitSet比较，
             // frontier 扩展，从valMask中去掉gammaMask已记录的变量
             int valIdx = var2Val[varIdx];
@@ -445,7 +445,7 @@ public class AlgoAllDiffAC_Our {
 //                int ub = v.getUB();
 //                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
 //                    int valIdx = val2Idx.get(k);
-                for (int valIdx = D[varIdx].firstSetBit(); valIdx != INaiveBitSet.INDEX_OVERFLOW; valIdx = D[varIdx].nextSetBit(valIdx + 1)) {
+                for (int valIdx = D[varIdx].firstSetBit(); valIdx != D[varIdx].end(); valIdx = D[varIdx].nextSetBit(valIdx + 1)) {
                     int k = idx2Val[valIdx];
 //                    System.out.println(valIdx);
                     if (!notGamma.contain(varIdx) && notA.contain(valIdx)) {
@@ -483,7 +483,7 @@ public class AlgoAllDiffAC_Our {
         // 若没有 就需要BFS一下Frontier没有，就表示不用扩展了
         // 注意一下return退出时frontier正确
         for (int i = graphLinkedFrontier[varIdx].nextSetBit(0);
-             i != -1; i = graphLinkedFrontier[varIdx].nextSetBit(0)) {
+             i != graphLinkedFrontier[varIdx].end(); i = graphLinkedFrontier[varIdx].nextSetBit(0)) {
             // frontier扩张，除掉变量i 因为变量i已被扩展。
             graphLinkedFrontier[varIdx].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[varIdx]);
             graphLinkedFrontier[varIdx].clear(i);

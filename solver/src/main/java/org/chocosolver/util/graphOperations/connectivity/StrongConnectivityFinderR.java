@@ -103,14 +103,17 @@ public class StrongConnectivityFinderR {
         for (int i = 0; i < n; i++) {
             lowLink[i] = n + 2;
             nodeSCC[i] = -1;
-            DFSNum[i] = -1;
+            DFSNum[i] = n + 2;
         }
 
         findSingletons(restriction);
+        System.out.println("----------");
+        System.out.println(restriction);
         int v = restriction.nextSetBit(0);
         while (v >= 0) {
-//            strongConnectR(v);
-            strongConnect(v);
+            System.out.println(v);
+            strongConnectR(v);
+//            strongConnect(v);
             v = restriction.nextSetBit(v);
         }
     }
@@ -121,11 +124,12 @@ public class StrongConnectivityFinderR {
         lowLink[curNode] = maxDFS;
         maxDFS++;
         unvisited.clear(curNode);
+//        System.out.println("unvisited clear:" + curNode);
 
         Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
         while (iterator.hasNext()) {
             int newNode = iterator.next();
-//            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
+            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
             if (!unvisited.get(newNode)) {
                 if (inStack.get(newNode)) {
                     lowLink[curNode] = Math.min(lowLink[curNode], DFSNum[newNode]);
@@ -142,11 +146,12 @@ public class StrongConnectivityFinderR {
                 hasSCCSplit = true;
             }
             if (hasSCCSplit) {
+                System.out.println("scc: " + DFSNum[curNode]);
                 int stackNode = -1;
                 sccSize = 0;
                 while (stackNode != curNode) {
                     stackNode = popStack();
-//                    System.out.println("pop: " + stackNode + ", " + nbSCC);
+                    System.out.println("pop: " + stackNode + ", " + nbSCC + "," + DFSNum[stackNode]);
                     nodeSCC[stackNode] = nbSCC;
                     sccSize++;
                 }
@@ -283,7 +288,7 @@ public class StrongConnectivityFinderR {
             if (iters[curLevel].hasNext()) {
                 curNode = iters[curLevel].next();
                 levelNodes[++curLevel] = curNode;
-//                System.out.println(levelNodes[curLevel - 1] + ", " + curNode + ", " + unvisited.get(curNode));
+                System.out.println(levelNodes[curLevel - 1] + ", " + curNode + ", " + unvisited.get(curNode));
                 if (unvisited.get(curNode)) {
                     pushStack(curNode);
                     DFSNum[curNode] = maxDFS;
@@ -310,11 +315,12 @@ public class StrongConnectivityFinderR {
                     }
                     if (hasSCCSplit) {
 //                        System.out.println(curLevel + ", f");
+                        System.out.println("scc: " + DFSNum[curNode]);
                         int stackNode = -1;
                         sccSize = 0;
                         while (stackNode != curNode) {
                             stackNode = popStack();
-//                            System.out.println("pop: " + stackNode + ", " + nbSCC);
+                            System.out.println("pop: " + stackNode + ", " + nbSCC);
                             nodeSCC[stackNode] = nbSCC;
                             sccSize++;
                         }
@@ -411,7 +417,7 @@ public class StrongConnectivityFinderR {
                 curLevel--;
 
                 if (!unconnected && DE.empty()) {
-                  System.out.println("xixi");
+//                    System.out.println("xixi");
                     return true;
                 }
             }

@@ -13,6 +13,7 @@ import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -341,28 +342,50 @@ public class AlgoAllDiffAC_Fair {
             graph.getPredOf(i).clear();
         }
 
-        // 添加匹配边 var->val
+//        // 添加匹配边 var->val
+//        for (int i = 0; i < arity; ++i) {
+//            int matchedVal = var2Val[i];
+//            graph.addArc(i, matchedVal + addArity);
+//
+//        }
+//
+//        // 添加非匹配边 val->var; val->t
+//        for (int j = 0, k = 0; j < numValues; ++j) {
+//            if (freeNode.contain(j)) {
+//                graph.addArc(arity, j + addArity);
+//            }
+//            valUnmatchedVar[j].iterateValid();
+//            while (valUnmatchedVar[j].hasNextValid()) {
+//                k = valUnmatchedVar[j].next();
+//                graph.addArc(j + addArity, k);
+//            }
+//        }
+
+        // 反向边
+        // 添加匹配边 var<--val
         for (int i = 0; i < arity; ++i) {
             int matchedVal = var2Val[i];
-            graph.addArc(i, matchedVal + addArity);
+            graph.addArc(matchedVal + addArity, i);
 
         }
 
-        // 添加非匹配边 val->var; val->t
+        // 添加非匹配边 val<--var; val<--t
         for (int j = 0, k = 0; j < numValues; ++j) {
             if (freeNode.contain(j)) {
-                graph.addArc(arity, j + addArity);
+                graph.addArc(j + addArity, arity);
             }
             valUnmatchedVar[j].iterateValid();
             while (valUnmatchedVar[j].hasNextValid()) {
                 k = valUnmatchedVar[j].next();
-                graph.addArc(j + addArity, k);
+                graph.addArc(k, j + addArity);
             }
         }
 
+
         SCCfinder.findAllSCC();
         nodeSCC = SCCfinder.getNodesSCC();
-//        System.out.println(Arrays.toString(nodeSCC));
+
+        System.out.println(Arrays.toString(nodeSCC));
 //        graph.removeNode(numNodes);
     }
 
@@ -380,11 +403,11 @@ public class AlgoAllDiffAC_Fair {
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
-//                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
-//                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.removeValue(k, aCause);
                         }
                     }

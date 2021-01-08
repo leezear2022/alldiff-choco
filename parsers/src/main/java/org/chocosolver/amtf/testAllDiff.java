@@ -52,7 +52,7 @@ public class testAllDiff {
 //                "/Users/lizhe/allDiff_Series/Queens/Queens-m1-s1/Queens-0008-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-05.xml",
-//                "D:/AllDiffBench/Queens-m1-s1/Queens-0080-m1.xml",
+//                "D:/AllDiffBench/Queens-m1-s1/Queens-0008-m1.xml",
                 "D:\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "G:/AllDiffBench/LatinSquare/qwh-o30-h374-04.xml",
 //                "D:/Random-RB-3-20-20f/rand-3-20-20-60-632f-01.xml"
@@ -60,15 +60,15 @@ public class testAllDiff {
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
 //                "AC_REGIN",
-                "ACFair",
+//                "ACFair",
 
 //                "ACZhang18",
 //                "ACZhang18M",
 //                "ACZhang20",
 //                "ACZhang18",
-                "ACNaive",
+//                "ACNaive",
                 "ACNaiveR",
-                "ACNaive",
+//                "ACNaive",
 //                "ACFair",
 //                "BC",
 //                "WordRam",

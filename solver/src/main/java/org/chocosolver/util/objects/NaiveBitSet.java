@@ -109,14 +109,26 @@ public class NaiveBitSet implements INaiveBitSet {
 
     @Override
     public void flip() {
+//        boolean lbUnchanged = true;
+        lowerIndex = longSize;
+        upperIndex = INDEX_OVERFLOW;
         int len = longSize - 1;
         numBits = 0;
         for (int i = 0; i < len; ++i) {
             words[i] = ~words[i];
-            numBits += words[i];
+            numBits += Long.bitCount(words[i]);
+            if (words[i] != 0) {
+                lowerIndex = lowerIndex > i ? i : lowerIndex;
+                upperIndex = upperIndex < i ? i : upperIndex;
+            }
         }
+        words[len] = ~words[len];
         words[len] &= lastMask;
-        numBits += words[len];
+        if (words[len] != 0) {
+            lowerIndex = lowerIndex > len ? len : lowerIndex;
+            upperIndex = upperIndex < len ? len : upperIndex;
+        }
+        numBits += Long.bitCount(words[len]);
     }
 
     @Override
@@ -372,6 +384,11 @@ public class NaiveBitSet implements INaiveBitSet {
     @Override
     public int singleValue() {
         return (numBits == 1) ? firstSetBit() : INDEX_OVERFLOW;
+    }
+
+    @Override
+    public int end() {
+        return INDEX_OVERFLOW;
     }
 
     @Override

@@ -71,6 +71,8 @@ public interface INaiveBitSet {
 
     int singleValue();
 
+    int end();
+
     static final int INDEX_OVERFLOW = -1;
 
     static int min(int a, int b) {
