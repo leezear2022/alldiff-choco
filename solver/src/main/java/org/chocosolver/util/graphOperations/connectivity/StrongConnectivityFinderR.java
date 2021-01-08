@@ -41,6 +41,7 @@ public class StrongConnectivityFinderR {
     private int curLevel = 0;
     private SparseSet singleton;
     private int sccSize = 0;
+    private int arity = 0;
 //    private int index = 0;
 //    private BitSet visited;
 
@@ -63,6 +64,8 @@ public class StrongConnectivityFinderR {
         iters = new Iterator[n + 1];
         levelNodes = new int[n + 1];
         singleton = new SparseSet(n);
+        arity = n;
+//        arity = arity;
 //        p = new int[n];
 //        inf = new int[n];
 //        nodeOfDfsNum = new int[n];
@@ -74,6 +77,10 @@ public class StrongConnectivityFinderR {
 //        nbSCC = 0;
 //        //noinspection unchecked
 //        iterator = new Iterator[n];
+    }
+
+    public void setArity(int arity){
+        this.arity = arity;
     }
 
     public void findAllSCC() {
@@ -107,13 +114,13 @@ public class StrongConnectivityFinderR {
         }
 
         findSingletons(restriction);
-        System.out.println("----------");
-        System.out.println(restriction);
+//        System.out.println("----------");
+//        System.out.println(restriction);
         int v = restriction.nextSetBit(0);
-        while (v >= 0) {
-            System.out.println(v);
-            strongConnectR(v);
-//            strongConnect(v);
+        while (v >= 0 && v < arity) {
+//            System.out.println(v);
+//            strongConnectR(v);
+            strongConnect(v);
             v = restriction.nextSetBit(v);
         }
     }
@@ -129,7 +136,7 @@ public class StrongConnectivityFinderR {
         Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
         while (iterator.hasNext()) {
             int newNode = iterator.next();
-            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
+//            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
             if (!unvisited.get(newNode)) {
                 if (inStack.get(newNode)) {
                     lowLink[curNode] = Math.min(lowLink[curNode], DFSNum[newNode]);
@@ -146,12 +153,12 @@ public class StrongConnectivityFinderR {
                 hasSCCSplit = true;
             }
             if (hasSCCSplit) {
-                System.out.println("scc: " + DFSNum[curNode]);
+//                System.out.println("scc: " + DFSNum[curNode]);
                 int stackNode = -1;
                 sccSize = 0;
                 while (stackNode != curNode) {
                     stackNode = popStack();
-                    System.out.println("pop: " + stackNode + ", " + nbSCC + "," + DFSNum[stackNode]);
+//                    System.out.println("pop: " + stackNode + ", " + nbSCC + "," + DFSNum[stackNode]);
                     nodeSCC[stackNode] = nbSCC;
                     sccSize++;
                 }
@@ -288,7 +295,7 @@ public class StrongConnectivityFinderR {
             if (iters[curLevel].hasNext()) {
                 curNode = iters[curLevel].next();
                 levelNodes[++curLevel] = curNode;
-                System.out.println(levelNodes[curLevel - 1] + ", " + curNode + ", " + unvisited.get(curNode));
+//                System.out.println(levelNodes[curLevel - 1] + ", " + curNode + ", " + unvisited.get(curNode));
                 if (unvisited.get(curNode)) {
                     pushStack(curNode);
                     DFSNum[curNode] = maxDFS;
@@ -315,12 +322,12 @@ public class StrongConnectivityFinderR {
                     }
                     if (hasSCCSplit) {
 //                        System.out.println(curLevel + ", f");
-                        System.out.println("scc: " + DFSNum[curNode]);
+//                        System.out.println("scc: " + DFSNum[curNode]);
                         int stackNode = -1;
                         sccSize = 0;
                         while (stackNode != curNode) {
                             stackNode = popStack();
-                            System.out.println("pop: " + stackNode + ", " + nbSCC);
+//                            System.out.println("pop: " + stackNode + ", " + nbSCC);
                             nodeSCC[stackNode] = nbSCC;
                             sccSize++;
                         }

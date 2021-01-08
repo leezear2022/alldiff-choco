@@ -126,7 +126,7 @@ public class AlgoAllDiffAC_Fair {
 
         valUnmatchedVar = new SparseSet[numValues];
         for (int i = 0; i < numValues; ++i) {
-            valUnmatchedVar[i] = new SparseSet(addArity);
+            valUnmatchedVar[i] = new SparseSet(arity);
         }
         // freeNode区分匹配点和非匹配点(正好是新增变量的取值范围）
         freeNode = new SparseSet(numValues);
@@ -137,6 +137,7 @@ public class AlgoAllDiffAC_Fair {
 
         graph = new DirectedGraph(numNodes, SetType.BITSET, false);
         SCCfinder = new StrongConnectivityFinderR(graph);
+        SCCfinder.setArity(arity);
     }
 
     //***********************************************************************************
@@ -254,7 +255,7 @@ public class AlgoAllDiffAC_Fair {
     private void findMaximumMatching() throws ContradictionException {
         for (int i = 0; i < numValues; ++i) {
             valUnmatchedVar[i].clear();
-            valUnmatchedVar[i].add(arity);
+//            valUnmatchedVar[i].add(arity);
         }
         freeNode.fill();
         // 增量检查
@@ -372,7 +373,11 @@ public class AlgoAllDiffAC_Fair {
         // 添加非匹配边 val<--var; val<--t
         for (int j = 0, k = 0; j < numValues; ++j) {
             if (freeNode.contain(j)) {
+                // free node: val->t
                 graph.addArc(j + addArity, arity);
+            } else {
+                // free node: t->val;
+                graph.addArc(arity, j + addArity);
             }
             valUnmatchedVar[j].iterateValid();
             while (valUnmatchedVar[j].hasNextValid()) {
@@ -385,7 +390,7 @@ public class AlgoAllDiffAC_Fair {
         SCCfinder.findAllSCC();
         nodeSCC = SCCfinder.getNodesSCC();
 
-        System.out.println(Arrays.toString(nodeSCC));
+//        System.out.println(Arrays.toString(nodeSCC));
 //        graph.removeNode(numNodes);
     }
 
@@ -403,11 +408,11 @@ public class AlgoAllDiffAC_Fair {
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
-                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
-                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.removeValue(k, aCause);
                         }
                     }

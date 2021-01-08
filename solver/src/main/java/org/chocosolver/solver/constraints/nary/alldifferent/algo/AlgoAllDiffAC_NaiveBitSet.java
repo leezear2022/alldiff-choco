@@ -11,6 +11,8 @@ import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.NaiveBitSetOld;
 import org.chocosolver.util.objects.SparseSet;
 
+import java.util.Arrays;
+
 /**
  * Algorithm of Alldifferent with AC
  * <p>
@@ -264,7 +266,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                 // 取出变量的唯一值
                 int valIdx = val2Idx.get(v.getValue());
                 valMask[valIdx].set(varIdx);
-//                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
+                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
 
                 int oldValIdx = var2Val[varIdx];
                 int oldVarIdx = val2Var[valIdx];
@@ -279,7 +281,6 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                 val2Var[valIdx] = varIdx;
                 var2Val[varIdx] = valIdx;
                 freeNode.remove(valIdx);
-
             } else {
                 // 检查原匹配是否失效
                 int oldMatchingIndex = var2Val[varIdx];

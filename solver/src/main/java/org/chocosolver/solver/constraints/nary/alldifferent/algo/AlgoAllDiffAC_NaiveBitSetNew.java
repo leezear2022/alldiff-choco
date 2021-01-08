@@ -46,6 +46,9 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     private IntVar[] vars;
     private ICause aCause;
 
+    // 新增一点（视为变量）
+    private int addArity;
+
     // 自由值集合
     private SparseSet freeNode;
 
@@ -72,7 +75,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     //    private INaiveBitSet value_visited_;
     private INaiveBitSet unVisitedValues;
     private INaiveBitSet needVisitValues;
-    private INaiveBitSet unMatchedValues;
+//    private INaiveBitSet unMatchedValues;
     private INaiveBitSet matchedValues;
     private INaiveBitSet matchedMasks;
 
@@ -141,6 +144,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         this.vars = variables;
         aCause = cause;
         arity = vars.length;
+        addArity = arity + 1;
         val2Idx = new TIntIntHashMap();
         IntVar v;
         // 统计所有变量论域中不同值的个数
@@ -193,7 +197,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 //        value_visited_ = INaiveBitSet.makeBitSet(numValues, false);
         unVisitedValues = INaiveBitSet.makeBitSet(numValues, true);
         needVisitValues = INaiveBitSet.makeBitSet(numValues, true);
-        unMatchedValues = INaiveBitSet.makeBitSet(numValues, true);
+//        unMatchedValues = INaiveBitSet.makeBitSet(numValues, true);
         matchedValues = INaiveBitSet.makeBitSet(numValues, false);
         matchedMasks = INaiveBitSet.makeBitSet(numValues, true);
         varSingletonMask = INaiveBitSet.makeBitSet(arity, false);
@@ -306,52 +310,106 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
 //            for (int value = v.getLB(), ub = v.getUB(); value <= ub; value = v.nextValue(value)) {
 //                int valIdx = val2Idx.get(value);
-////            for (int valIdx = D[node].firstSetBit(); valIdx != INaiveBitSet.INDEX_OVERFLOW; valIdx = D[node].nextSetBit(valIdx + 1)) {
-//////                int valIdx = val2Idx.get(value);
-////                if (value_visited_.get(valIdx)) continue;
+//            for (int valIdx = D[node].firstSetBit(); valIdx != INaiveBitSet.INDEX_OVERFLOW; valIdx = D[node].nextSetBit(valIdx + 1)) {
+////                int valIdx = val2Idx.get(value);
+//                if (value_visited_.get(valIdx)) continue;
 ////                value_visited_.set(valIdx);
 //
 //                if (!unVisitedValues.get(valIdx)) continue;
 
+//---------------------------------
+//            needVisitValues.setAfterAnd(D[node], unVisitedValues);
+////            matchedMasks.setAfterAnd(needVisitValues, unMatchedValues);
+//            matchedMasks.setAfterMinus(needVisitValues, matchedValues);
+//            if (!matchedMasks.isEmpty()) {
+//                int valIdx = matchedMasks.firstSetBit();
+//                unVisitedValues.clear(valIdx);
+//                int path_node = node;
+//                int path_value = valIdx;
+//                while (path_node != -1) {
+//                    // 旧变量拿到旧匹配值
+//                    int old_value = var2Val[path_node];
+//                    // 旧变量拿到新匹配值
+//                    var2Val[path_node] = path_value;
+//                    val2Var[path_value] = path_node;
+////                    unMatchedValues.clear(path_value);
+//                    // 回溯到上一个变量
+//                    path_node = variable_visited_from_[path_node];
+//                    // 由于这个变量传递下去是连贯的，可以检查连通生，做为下一个阶段的记录
+//                    path_value = old_value;
+//                }
+//
+////                    freeNode.clear(valIdx);
+//                freeNode.remove(valIdx);
+//                matchedValues.set(valIdx);
+////                    System.out.println(valIdx + " is not free");
+//                return;
+//            } else {
+//                for (int valIdx = needVisitValues.firstSetBit(); valIdx != needVisitValues.end(); valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
+////                xixi++;
+//                    unVisitedValues.clear(valIdx);
+//                    // Enqueue node matched to valIdx.
+//                    // 若没有该值已经有匹配，但变量没有匹配
+//                    // 先拿到这个值的匹配变量
+//                    int next_node = val2Var[valIdx];
+////                    visitedVariables.set(next_node);
+//                    unVisitedVariables.clear(next_node);
+////                    System.out.println(num_to_visit + "," + next_node);
+//                    // 把这个变量加入队列中
+//                    visiting_[num_to_visit++] = next_node;
+//                    variable_visited_from_[next_node] = node;
+////                    freeNode.clear(valIdx);
+//                    freeNode.remove(valIdx);
+//                    matchedValues.set(valIdx);
+//
+//                }
+//            }
+//---------------------------------
+            ////--------------------------------------
+
             needVisitValues.setAfterAnd(D[node], unVisitedValues);
-//            matchedMasks.setAfterAnd(needVisitValues, unMatchedValues);
-            matchedMasks.setAfterMinus(needVisitValues, matchedValues);
-            if (!matchedMasks.isEmpty()) {
-                int valIdx = matchedMasks.firstSetBit();
+            for (int valIdx = needVisitValues.firstSetBit(); valIdx != INaiveBitSet.INDEX_OVERFLOW; valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
                 unVisitedValues.clear(valIdx);
-                int path_node = node;
-                int path_value = valIdx;
-                while (path_node != -1) {
-                    // 旧变量拿到旧匹配值
-                    int old_value = var2Val[path_node];
-                    // 旧变量拿到新匹配值
-                    var2Val[path_node] = path_value;
-                    val2Var[path_value] = path_node;
-//                    unMatchedValues.clear(path_value);
-                    matchedValues.set(path_value);
-                    // 回溯到上一个变量
-                    path_node = variable_visited_from_[path_node];
-                    // 由于这个变量传递下去是连贯的，可以检查连通生，做为下一个阶段的记录
-                    path_value = old_value;
-                }
+//                if (val2Var[valIdx] == -1) {
+                if (!matchedValues.get(valIdx)) {
+                    // value_to_variable_[valIdx] ， value这个值未分配到变量，即是一个free
+                    // !! 这里可以改用bitSet 求原数据bitDom (successor_)
+                    // 与matching的余集(matching_bitVector[a]，表示a是否已matching出去了) 再按1取未匹配值，
+                    // 可以惰性取值，即先算两个集合的在特定位置的交：以matching_bv为长度foreach
+                    // （一般不会特别长两个数据结构可以用NaiveBitSet，如400皇后，|D|=400，只需要7个，
+                    // 做&后会得到一个或NaiveBitSet, LargeBitSet）
+                    // valIdx is not matched: change path from node to start, and return.
+                    // 未匹配值
+
+                    // !! 路线回溯怎么用bit表示。
+                    // !! 这里可以提前记一些scc或是路径
+                    int path_node = node;
+                    int path_value = valIdx;
+                    while (path_node != -1) {
+                        // 旧变量拿到旧匹配值
+                        int old_value = var2Val[path_node];
+                        // 旧变量拿到新匹配值
+                        var2Val[path_node] = path_value;
+                        val2Var[path_value] = path_node;
+
+                        // 回溯到上一个变量
+                        path_node = variable_visited_from_[path_node];
+                        // 由于这个变量传递下去是连贯的，可以检查连通生，做为下一个阶段的记录
+                        path_value = old_value;
+                    }
 
 //                    freeNode.clear(valIdx);
-                freeNode.remove(valIdx);
+                    freeNode.remove(valIdx);
+                    matchedValues.set(valIdx);
 //                    System.out.println(valIdx + " is not free");
-                return;
-            } else {
-                for (int valIdx = needVisitValues.firstSetBit(); valIdx != needVisitValues.end(); valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
-//                xixi++;
-                    unVisitedValues.clear(valIdx);
-
-//                System.out.println(xixi + ", " + node + ", " + valIdx);
-
+                    return;
+                } else {
                     // Enqueue node matched to valIdx.
                     // 若没有该值已经有匹配，但变量没有匹配
 
                     // 先拿到这个值的匹配变量
                     int next_node = val2Var[valIdx];
-//                    visitedVariables.set(next_node);
+//                    variable_visited_.set(next_node);
                     unVisitedVariables.clear(next_node);
 //                    System.out.println(num_to_visit + "," + next_node);
                     // 把这个变量加入队列中
@@ -359,61 +417,11 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                     variable_visited_from_[next_node] = node;
 //                    freeNode.clear(valIdx);
                     freeNode.remove(valIdx);
-
+                    matchedValues.set(valIdx);
                 }
             }
+////--------------------------------------
 
-            ///--------------------------------------
-
-//            needVisitValues.setAfterAnd(D[node], unVisitedValues);
-//            for (int valIdx = needVisitValues.firstSetBit(); valIdx != INaiveBitSet.INDEX_OVERFLOW; valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
-//                unVisitedValues.clear(valIdx);
-//                if (val2Var[valIdx] == -1) {
-//                    // value_to_variable_[valIdx] ， value这个值未分配到变量，即是一个free
-//                    // !! 这里可以改用bitSet 求原数据bitDom (successor_)
-//                    // 与matching的余集(matching_bitVector[a]，表示a是否已matching出去了) 再按1取未匹配值，
-//                    // 可以惰性取值，即先算两个集合的在特定位置的交：以matching_bv为长度foreach
-//                    // （一般不会特别长两个数据结构可以用NaiveBitSet，如400皇后，|D|=400，只需要7个，
-//                    // 做&后会得到一个或NaiveBitSet, LargeBitSet）
-//                    // valIdx is not matched: change path from node to start, and return.
-//                    // 未匹配值
-//
-//                    // !! 路线回溯怎么用bit表示。
-//                    // !! 这里可以提前记一些scc或是路径
-//                    int path_node = node;
-//                    int path_value = valIdx;
-//                    while (path_node != -1) {
-//                        // 旧变量拿到旧匹配值
-//                        int old_value = var2Val[path_node];
-//                        // 旧变量拿到新匹配值
-//                        var2Val[path_node] = path_value;
-//                        val2Var[path_value] = path_node;
-//                        unMatchedValues.clear(path_value);
-//                        // 回溯到上一个变量
-//                        path_node = variable_visited_from_[path_node];
-//                        // 由于这个变量传递下去是连贯的，可以检查连通生，做为下一个阶段的记录
-//                        path_value = old_value;
-//                    }
-//
-////                    freeNode.clear(valIdx);
-//                    freeNode.remove(valIdx);
-////                    System.out.println(valIdx + " is not free");
-//                    return;
-//                } else {
-//                    // Enqueue node matched to valIdx.
-//                    // 若没有该值已经有匹配，但变量没有匹配
-//
-//                    // 先拿到这个值的匹配变量
-//                    int next_node = val2Var[valIdx];
-//                    variable_visited_.set(next_node);
-////                    System.out.println(num_to_visit + "," + next_node);
-//                    // 把这个变量加入队列中
-//                    visiting_[num_to_visit++] = next_node;
-//                    variable_visited_from_[next_node] = node;
-////                    freeNode.clear(valIdx);
-//                    freeNode.remove(valIdx);
-//                }
-//            }
         }
     }
 
@@ -425,11 +433,12 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
 //        freeNode.set();
         freeNode.fill();
+        matchedValues.clear();
 
         // 增量检查
         // matching 有效性检查
         for (int varIdx = 0; varIdx < arity; varIdx++) {
-//            IntVar v = vars[varIdx];
+            IntVar v = vars[varIdx];
             // !! 这里可以修改一下 已赋值 就不参与修改了
 //            if (v.getDomainSize() == 1) {
 //                // 取出变量的唯一值
@@ -439,13 +448,15 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             if (D[varIdx].isSingleton()) {
                 // 取出变量的唯一值
                 int valIdx = D[varIdx].firstSetBit();
+//                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
+
                 int oldValIdx = var2Val[varIdx];
                 int oldVarIdx = val2Var[valIdx];
 
                 if (oldValIdx != -1 && oldValIdx != valIdx) {
                     val2Var[oldValIdx] = -1;
 //                    unMatchedValues.set(oldValIdx);
-                    matchedValues.clear(oldValIdx);
+//                    matchedValues.clear(oldValIdx);
                 }
                 if (oldVarIdx != -1 && oldVarIdx != varIdx) {
                     var2Val[oldVarIdx] = -1;
@@ -453,10 +464,9 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
                 val2Var[valIdx] = varIdx;
 //                unMatchedValues.clear(valIdx);
-                matchedValues.set(valIdx);
                 var2Val[varIdx] = valIdx;
                 freeNode.remove(valIdx);
-
+                matchedValues.set(valIdx);
             } else {
                 // 检查原匹配是否失效
                 int oldMatchingIndex = var2Val[varIdx];
@@ -466,11 +476,12 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                     if (!D[varIdx].get(oldMatchingIndex)) {
                         val2Var[oldMatchingIndex] = -1;
 //                        unMatchedValues.set(oldMatchingIndex);
-                        matchedValues.clear(oldMatchingIndex);
+//                        matchedValues.clear(oldMatchingIndex);
                         var2Val[varIdx] = -1;
                     } else {
 //                        freeNode.clear(oldMatchingIndex);
                         freeNode.remove(oldMatchingIndex);
+                        matchedValues.set(oldMatchingIndex);
 //                    System.out.println(oldMatchingIndex + " is free");
                     }
                 }
@@ -499,12 +510,15 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
         }
+
+//        System.out.println(Arrays.toString(var2Val));
+//        System.out.println(Arrays.toString(val2Var));
     }
 
     //***********************************************************************************
     // PRUNING
     //***********************************************************************************
-
+//
 //    private void distinguish() {
 //        notGamma.fill();
 //        notA.fill();
@@ -535,7 +549,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 //        }
 //
 //    }
-
+//
 //    private void initiateMatrix() {
 //        // 重置两个矩阵
 //        // 只重置notGamma的变量
@@ -629,11 +643,11 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
-                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
-                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.removeValue(k, aCause);
                         }
                     }
@@ -673,17 +687,17 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
         findSingletons();
         singleton.flip();
-        System.out.println("----------");
-        System.out.println("singleton:" + singleton);
+//        System.out.println("----------");
+//        System.out.println("singleton:" + singleton);
         for (int varIdx = singleton.firstSetBit(); varIdx != singleton.end(); varIdx = singleton.nextSetBit(varIdx + 1)) {
             if (unVisitedVariables.get(varIdx)) {
-                System.out.println(varIdx);
+//                System.out.println(varIdx);
                 strongConnectVar(varIdx);
             }
         }
 
-        System.out.println(Arrays.toString(varSCC));
-        System.out.println(Arrays.toString(valSCC));
+//        System.out.println(Arrays.toString(varSCC));
+//        System.out.println(Arrays.toString(valSCC));
     }
 
     private void findSingletons() {
@@ -743,7 +757,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         int matchedVal = var2Val[curNode];
         for (int newNode = D[curNode].firstSetBit(); newNode != D[curNode].end(); newNode = D[curNode].nextSetBit(newNode + 1)) {
             if (newNode == matchedVal) continue;
-            System.out.println(curNode + ", " + newNode + ", " + unVisitedValues.get(newNode));
+//            System.out.println("scVartoVal: " + curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+//            System.out.println(curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
             if (!unVisitedValues.get(newNode)) {
                 if (valIsInStack.get(newNode)) {
                     varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
@@ -791,7 +806,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         int matchedVar = val2Var[curNode];
         if (matchedVar != -1) {
             //have matched variable
-            System.out.println(curNode + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
+//            System.out.println("scValtoVar: " + (addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
+//            System.out.println((addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
             if (!unVisitedVariables.get(matchedVar)) {
                 if (varIsInStack.get(matchedVar)) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
@@ -802,7 +818,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             }
         } else {
             //free node successor node is sink node
-            System.out.println(curNode + ", sink" + ", " + sinkIsUnvisited);
+//            System.out.println("scValtoSink: " + (addArity + curNode) + ", " + arity + ", " + sinkIsUnvisited);
+//            System.out.println((addArity + curNode) + ", " + arity + ", " + sinkIsUnvisited);
             if (!sinkIsUnvisited) {
                 if (sinkIsInStack) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
@@ -874,7 +891,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 //            }
 //        }
         for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
-            System.out.println("sink node, " + newNode + ", " + unVisitedValues.get(newNode));
+//            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+//            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
             if (!unVisitedValues.get(newNode)) {
                 if (valIsInStack.get(newNode)) {
                     sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
@@ -913,14 +931,14 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 //        for (int valIdx = valIsInStack.firstSetBit(); valIdx !=INaiveBitSet.INDEX_OVERFLOW; valIdx=valIsInStack.++) {
 //
 //        }
-        System.out.println("scc: " + rootNum);
+//        System.out.println("scc: " + rootNum);
         int stackNode = -1;
         sccSize = 0;
 //        if (valStackIdx != 0) {
 //            stackNode = valStack[valStackIdx - 1];
         while (valStackIdx > 0 && valDFSNum[valStack[valStackIdx - 1]] >= rootNum) {
             stackNode = popValStack();
-            System.out.println("pop var: " + stackNode + ", " + nbSCC + "," + valDFSNum[stackNode]);
+//            System.out.println("pop var: " + stackNode + ", " + nbSCC + "," + valDFSNum[stackNode]);
             valSCC[stackNode] = nbSCC;
             sccSize++;
         }
@@ -930,7 +948,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 //            stackNode = varStack[varStackIdx - 1];
         while (varStackIdx > 0 && varDFSNum[varStack[varStackIdx - 1]] >= rootNum) {
             stackNode = popVarStack();
-            System.out.println("pop val: " + stackNode + ", " + nbSCC + "," + varDFSNum[stackNode]);
+//            System.out.println("pop val: " + stackNode + ", " + addArity + stackNode + ", " + nbSCC + "," + varDFSNum[stackNode]);
             varSCC[stackNode] = nbSCC;
             sccSize++;
         }
