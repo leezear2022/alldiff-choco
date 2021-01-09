@@ -324,6 +324,11 @@ public class NaiveBitSet implements INaiveBitSet {
     }
 
     @Override
+    public int nextSetBit(int wordIndex, int bitIndex) {
+        return Long.numberOfTrailingZeros(words[wordIndex] & -1L << bitIndex);
+    }
+
+    @Override
     public int nextClearBit(int fromIndex) {
         // Neither spec nor implementation handle bitsets of maximal length.
         // See 4816253.

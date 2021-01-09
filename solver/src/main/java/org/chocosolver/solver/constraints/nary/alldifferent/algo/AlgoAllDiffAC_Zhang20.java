@@ -163,7 +163,7 @@ public class AlgoAllDiffAC_Zhang20 {
 
         //for early detection
         // 存的是变量索引及原值
-        DE = new Stack<IntTuple2>();
+//        DE = new Stack<IntTuple2>();
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {

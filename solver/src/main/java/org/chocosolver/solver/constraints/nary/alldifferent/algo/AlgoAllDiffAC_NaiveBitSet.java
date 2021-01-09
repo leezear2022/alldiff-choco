@@ -266,7 +266,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                 // 取出变量的唯一值
                 int valIdx = val2Idx.get(v.getValue());
                 valMask[valIdx].set(varIdx);
-                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
+//                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
 
                 int oldValIdx = var2Val[varIdx];
                 int oldVarIdx = val2Var[valIdx];

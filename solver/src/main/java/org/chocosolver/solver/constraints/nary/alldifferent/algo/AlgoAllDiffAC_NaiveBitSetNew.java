@@ -9,14 +9,11 @@ import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
-import org.chocosolver.util.objects.setDataStructures.ISet;
-
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Iterator;
+import org.chocosolver.util.procedure.UnaryIntProcedure;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -75,7 +72,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     //    private INaiveBitSet value_visited_;
     private INaiveBitSet unVisitedValues;
     private INaiveBitSet needVisitValues;
-//    private INaiveBitSet unMatchedValues;
+    //    private INaiveBitSet unMatchedValues;
     private INaiveBitSet matchedValues;
     private INaiveBitSet matchedMasks;
 
@@ -101,8 +98,6 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     private INaiveBitSet gammaMask;
 
     long startTime;
-    //
-    IEnvironment env;
 
     // for bit DFS Tarjan
 
@@ -133,6 +128,16 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
     private INaiveBitSet singleton;
     private boolean sinkIsUnvisited;
+
+    private int endBitIndex = 64;
+
+    // for delta update
+    protected IIntDeltaMonitor[] monitors;
+    private UnaryIntProcedure<Integer> onValRem;
+    private boolean initialProp = true;
+
+    //
+    IEnvironment env;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -241,6 +246,13 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             graphLinkedMatrix[i] = INaiveBitSet.makeBitSet(arity, false);
             graphLinkedFrontier[i] = INaiveBitSet.makeBitSet(arity, false);
         }
+
+        // for delta
+        monitors = new IIntDeltaMonitor[vars.length];
+        for (int i = 0; i < vars.length; i++) {
+            monitors[i] = vars[i].monitorDelta(cause);
+        }
+        onValRem = makeProcedure();
     }
 
     //***********************************************************************************
@@ -250,7 +262,13 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     public boolean propagate() throws ContradictionException {
         Measurer.enterProp();
         startTime = System.nanoTime();
-        fillBandD();
+        System.out.println("------------");
+        printDomains();
+        deltaUpdate();
+//        fillBandD();
+        BandDCheck();
+        System.out.println("----- ----");
+        printDomains();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
@@ -263,6 +281,44 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
     // Initialization
     //***********************************************************************************
+
+
+    protected UnaryIntProcedure<Integer> makeProcedure() {
+        return new UnaryIntProcedure<Integer>() {
+            int var;
+            int valIdx;
+
+            @Override
+            public UnaryIntProcedure set(Integer o) {
+                var = o;
+                return this;
+            }
+
+            @Override
+            public void execute(int i) throws ContradictionException {
+//                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
+//                IntVar v = vars[var];
+                valIdx = val2Idx.get(i);
+                D[var].clear(valIdx);
+                B[valIdx].clear();
+//                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
+            }
+        };
+    }
+
+    private void printDomains() {
+        for (int i = 0; i < numValues; ++i) {
+            System.out.println("val " + "i: " + B[i]);
+        }
+
+        IntVar v;
+        // 填充B和D
+        for (int i = 0; i < arity; ++i) {
+            v = vars[i];
+            System.out.println("val " + "i: "+D[i]);
+            System.out.println(v);
+        }
+    }
 
     private void fillBandD() {
         for (int i = 0; i < numValues; ++i) {
@@ -280,6 +336,58 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                 B[valIdx].set(i);
             }
         }
+    }
+
+    private void fillBandD(int varIdx) {
+//        for (int i = 0; i < numValues; ++i) {
+//            B[varIdx].clear();
+
+        IntVar v;
+        // 填充B和D
+//        for (int i = 0; i < arity; ++i) {
+        D[varIdx].clear();
+        v = vars[varIdx];
+        for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+            int valIdx = val2Idx.get(j);
+            D[varIdx].set(valIdx);
+            B[valIdx].set(varIdx);
+        }
+//        }
+    }
+
+    private void deltaUpdate() throws ContradictionException {
+        for (int varIdx = 0; varIdx < arity; varIdx++) {
+            monitors[varIdx].freeze();
+            if (vars[varIdx].getDomainSize() > monitors[varIdx].sizeApproximation()) {
+                monitors[varIdx].forEachRemVal(onValRem.set(varIdx));
+            } else {
+                fillBandD(varIdx);
+            }
+            monitors[varIdx].unfreeze();
+        }
+    }
+
+    private boolean BandDCheck() {
+        IntVar v;
+        for (int i = 0; i < arity; ++i) {
+            v = vars[i];
+            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+                int valIdx = val2Idx.get(j);
+                if (!D[i].get(valIdx)) {
+                    System.out.println("D[" + i + "] no contain but var: " + v.getName() + " contain:" + valIdx);
+                    return false;
+                }
+            }
+
+            for (int j = D[i].firstSetBit(); j != D[i].end(); j = D[i].nextSetBit(j + 1)) {
+                if (!v.contains(idx2Val[j])) {
+                    System.out.println("D[" + i + "] contain but var: " + v.getName() + "don't contain:" + j);
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private void MakeAugmentingPath(int start) {
@@ -368,7 +476,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             ////--------------------------------------
 
             needVisitValues.setAfterAnd(D[node], unVisitedValues);
-            for (int valIdx = needVisitValues.firstSetBit(); valIdx != INaiveBitSet.INDEX_OVERFLOW; valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
+            for (int valIdx = needVisitValues.firstSetBit(); valIdx != unVisitedValues.end(); valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
                 unVisitedValues.clear(valIdx);
 //                if (val2Var[valIdx] == -1) {
                 if (!matchedValues.get(valIdx)) {
@@ -518,137 +626,92 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
     // PRUNING
     //***********************************************************************************
-//
-//    private void distinguish() {
-//        notGamma.fill();
-//        notA.fill();
-//        gammaMask.clear();
-//
-//        freeNode.iterateValid();
-//        while (freeNode.hasNextValid()) {
-//            // 每个freeNode的值拿出来
-////            System.out.println(i);
-//            int valIdx = freeNode.next();
-//            notA.remove(valIdx);
-//            gammaMask.or(B[valIdx]);
-//        }
-//        gammaFrontier.set(gammaMask);
-//
-//        for (int varIdx = gammaFrontier.nextSetBit(0);
-//             varIdx != gammaFrontier.end(); varIdx = gammaFrontier.nextSetBit(0)) {
-//            // !! 这里可以将Extended改成Frontier，只记录前沿，记录方法是三个BitSet比较，
-//            // frontier 扩展，从valMask中去掉gammaMask已记录的变量
-//            int valIdx = var2Val[varIdx];
-//            gammaFrontier.orAfterMinus(B[valIdx], gammaMask);
-////            // 除去第i个变量
-//            gammaFrontier.clear(varIdx);
-//            // gamma 扩展
-//            gammaMask.or(B[valIdx]);
-//            notGamma.remove(varIdx);
-//            notA.remove(valIdx);
-//        }
-//
-//    }
-//
-//    private void initiateMatrix() {
-//        // 重置两个矩阵
-//        // 只重置notGamma的变量
-//        notGamma.iterateValid();
-//        while (notGamma.hasNextValid()) {
-//            int varIdx = notGamma.next();
-//            // 从变量id拿到匹配值再拿到该值所能到达的变量mask
-//            if (!vars[varIdx].isInstantiated()) {
-//                graphLinkedMatrix[varIdx].setAfterMinus(B[var2Val[varIdx]], gammaMask);
-//                graphLinkedMatrix[varIdx].clear(varIdx);
-//                graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
-//            }
-////                System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
-////                System.out.println(graphLinkedMatrix[varIdx]);
-////                System.out.println(graphLinkedFrontier[varIdx]);
-//        }
-//    }
-//
-//    private boolean filter() throws ContradictionException {
-//        distinguish();
-//        initiateMatrix();
-//        // 这里判断一下，如果notGamma为空则不用进行如下步骤
-//        boolean filter = false;
-//        for (int varIdx = 0; varIdx < arity; varIdx++) {
-//            IntVar v = vars[varIdx];
-//            if (!v.isInstantiated()) {
-////                int ub = v.getUB();
-////                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
-////                    int valIdx = val2Idx.get(k);
-//                for (int valIdx = D[varIdx].firstSetBit(); valIdx != D[varIdx].end(); valIdx = D[varIdx].nextSetBit(valIdx + 1)) {
-//                    int k = idx2Val[valIdx];
-////                    System.out.println(valIdx);
-//                    if (!notGamma.contain(varIdx) && notA.contain(valIdx)) {
-//                        ++Measurer.numDelValuesP1;
-//                        Measurer.enterP1();
-//                        D[varIdx].clear(valIdx);
-//                        filter |= v.removeValue(k, aCause);
-//                        //                System.out.println("first delete: " + v.getName() + ", " + k);
-//                    } else if (notGamma.contain(varIdx) && notA.contain(valIdx)) {
-//                        if (!graphLinkedMatrix[varIdx].get(val2Var[valIdx]) && !checkSCC(varIdx, valIdx)) {
-//                            Measurer.enterP2();
-//                            if (valIdx == var2Val[varIdx]) {
-//                                int valNum = v.getDomainSize();
-//                                Measurer.numDelValuesP2 += valNum - 1;
-//                                D[varIdx].clear();
-//                                D[varIdx].set(valIdx);
-//                                filter |= v.instantiateTo(k, aCause);
-////                            System.out.println("instantiate  : " + v.getName() + ", " + k);
-//                            } else {
-//                                ++Measurer.numDelValuesP2;
-//                                D[varIdx].clear(valIdx);
-//                                filter |= v.removeValue(k, aCause);
-////                            System.out.println("second delete: " + v.getName() + ", " + k);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        return filter;
-//    }
-//
-//    private boolean checkSCC(int varIdx, int valIdx) {
-////        System.out.println("check:" + varIdx + ", " + valIdx);
-//        // 若没有 就需要BFS一下Frontier没有，就表示不用扩展了
-//        // 注意一下return退出时frontier正确
-//        for (int i = graphLinkedFrontier[varIdx].nextSetBit(0);
-//             i != graphLinkedFrontier[varIdx].end(); i = graphLinkedFrontier[varIdx].nextSetBit(0)) {
-//            // frontier扩张，除掉变量i 因为变量i已被扩展。
-//            graphLinkedFrontier[varIdx].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[varIdx]);
-//            graphLinkedFrontier[varIdx].clear(i);
-//            graphLinkedMatrix[varIdx].or(graphLinkedMatrix[i]);
-//            if (graphLinkedMatrix[varIdx].get(val2Var[valIdx])) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
+
+    private void distinguish() {
+        notGamma.fill();
+        notA.fill();
+        gammaMask.clear();
+
+        freeNode.iterateValid();
+        while (freeNode.hasNextValid()) {
+            // 每个freeNode的值拿出来
+//            System.out.println(i);
+            int valIdx = freeNode.next();
+            notA.remove(valIdx);
+            gammaMask.or(B[valIdx]);
+        }
+        gammaFrontier.set(gammaMask);
+
+        for (int varIdx = gammaFrontier.nextSetBit(0);
+             varIdx != gammaFrontier.end(); varIdx = gammaFrontier.nextSetBit(0)) {
+            // !! 这里可以将Extended改成Frontier，只记录前沿，记录方法是三个BitSet比较，
+            // frontier 扩展，从valMask中去掉gammaMask已记录的变量
+            int valIdx = var2Val[varIdx];
+            gammaFrontier.orAfterMinus(B[valIdx], gammaMask);
+//            // 除去第i个变量
+            gammaFrontier.clear(varIdx);
+            // gamma 扩展
+            gammaMask.or(B[valIdx]);
+            notGamma.remove(varIdx);
+            notA.remove(valIdx);
+        }
+
+    }
+
+    private void initiateMatrix() {
+        // 重置两个矩阵
+        // 只重置notGamma的变量
+        notGamma.iterateValid();
+        while (notGamma.hasNextValid()) {
+            int varIdx = notGamma.next();
+            // 从变量id拿到匹配值再拿到该值所能到达的变量mask
+            if (!vars[varIdx].isInstantiated()) {
+                graphLinkedMatrix[varIdx].setAfterMinus(B[var2Val[varIdx]], gammaMask);
+                graphLinkedMatrix[varIdx].clear(varIdx);
+                graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
+            }
+//                System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
+//                System.out.println(graphLinkedMatrix[varIdx]);
+//                System.out.println(graphLinkedFrontier[varIdx]);
+        }
+    }
 
     private boolean filter() throws ContradictionException {
+        distinguish();
+        initiateMatrix();
+        // 这里判断一下，如果notGamma为空则不用进行如下步骤
         boolean filter = false;
-        findAllSCC();
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
-                int ub = v.getUB();
-                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
-                    int valIdx = val2Idx.get(k);
-                    if (varSCC[varIdx] != valSCC[valIdx]) {
-                        Measurer.enterP2();
-                        if (valIdx == var2Val[varIdx]) {
-                            int valNum = v.getDomainSize();
-                            Measurer.numDelValuesP2 += valNum - 1;
-//                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
-                            filter |= v.instantiateTo(k, aCause);
-                        } else {
-                            ++Measurer.numDelValuesP2;
-//                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
-                            filter |= v.removeValue(k, aCause);
+//                int ub = v.getUB();
+//                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
+//                    int valIdx = val2Idx.get(k);
+                for (int valIdx = D[varIdx].firstSetBit(); valIdx != D[varIdx].end(); valIdx = D[varIdx].nextSetBit(valIdx + 1)) {
+                    int k = idx2Val[valIdx];
+//                    System.out.println(valIdx);
+                    if (!notGamma.contain(varIdx) && notA.contain(valIdx)) {
+                        ++Measurer.numDelValuesP1;
+                        Measurer.enterP1();
+                        D[varIdx].clear(valIdx);
+                        filter |= v.removeValue(k, aCause);
+                        //                System.out.println("first delete: " + v.getName() + ", " + k);
+                    } else if (notGamma.contain(varIdx) && notA.contain(valIdx)) {
+                        if (!graphLinkedMatrix[varIdx].get(val2Var[valIdx]) && !checkSCC(varIdx, valIdx)) {
+                            Measurer.enterP2();
+                            if (valIdx == var2Val[varIdx]) {
+                                int valNum = v.getDomainSize();
+                                Measurer.numDelValuesP2 += valNum - 1;
+                                D[varIdx].clear();
+                                D[varIdx].set(valIdx);
+                                filter |= v.instantiateTo(k, aCause);
+//                            System.out.println("instantiate  : " + v.getName() + ", " + k);
+                            } else {
+                                ++Measurer.numDelValuesP2;
+                                D[varIdx].clear(valIdx);
+                                filter |= v.removeValue(k, aCause);
+//                            System.out.println("second delete: " + v.getName() + ", " + k);
+                            }
                         }
                     }
                 }
@@ -657,339 +720,427 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         return filter;
     }
 
-    private void findAllSCC() {
-        // initialization
-        clearVarStack();
-        clearValStack();
-
-        maxDFS = 0;
-        nbSCC = 0;
-
-        for (int i = 0; i < arity; i++) {
-            varLowLink[i] = Integer.MAX_VALUE;
-            varSCC[i] = -1;
-            varDFSNum[i] = Integer.MAX_VALUE;
-        }
-
-        for (int i = 0; i < numValues; i++) {
-            valLowLink[i] = Integer.MAX_VALUE;
-            valSCC[i] = -1;
-            valDFSNum[i] = Integer.MAX_VALUE;
-        }
-
-        sinkDFSNum = Integer.MAX_VALUE;
-        sinkLowLink = Integer.MAX_VALUE;
-        sinkIsInStack = false;
-        sinkIsUnvisited = true;
-
-        unVisitedVariables.set();
-        unVisitedValues.set();
-
-        findSingletons();
-        singleton.flip();
-//        System.out.println("----------");
-//        System.out.println("singleton:" + singleton);
-        for (int varIdx = singleton.firstSetBit(); varIdx != singleton.end(); varIdx = singleton.nextSetBit(varIdx + 1)) {
-            if (unVisitedVariables.get(varIdx)) {
-//                System.out.println(varIdx);
-                strongConnectVar(varIdx);
+    private boolean checkSCC(int varIdx, int valIdx) {
+//        System.out.println("check:" + varIdx + ", " + valIdx);
+        // 若没有 就需要BFS一下Frontier没有，就表示不用扩展了
+        // 注意一下return退出时frontier正确
+        for (int i = graphLinkedFrontier[varIdx].nextSetBit(0);
+             i != graphLinkedFrontier[varIdx].end(); i = graphLinkedFrontier[varIdx].nextSetBit(0)) {
+            // frontier扩张，除掉变量i 因为变量i已被扩展。
+            graphLinkedFrontier[varIdx].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[varIdx]);
+            graphLinkedFrontier[varIdx].clear(i);
+            graphLinkedMatrix[varIdx].or(graphLinkedMatrix[i]);
+            if (graphLinkedMatrix[varIdx].get(val2Var[valIdx])) {
+                return true;
             }
         }
-
-//        System.out.println(Arrays.toString(varSCC));
-//        System.out.println(Arrays.toString(valSCC));
+        return false;
     }
 
-    private void findSingletons() {
-        singleton.clear();
-        for (int i = 0; i < arity; i++) {
-            // 变量只有一个值，即只有匹配值
-            // 若匹配边由变量指向值，若D[x]=1则表示变量x只有一个出边即匹配边，没有入边，即满足singleton条件
-            if (D[i].size() == 1) {
-                varSCC[i] = nbSCC;
-                singleton.set(i);
-                nbSCC++;
-            }
-        }
-//        singleton.flip();
+    //---------------------------------
 
-//        for (int i = 0; i < numValues; i++) {
-//            int matchedVar = val2Var[i];
-//            if (matchedVar != -1) {
-//                // 是匹配值，去除匹配变量
-//                varTmpMask.set(matchedVar);
-//                varSingletonMask.orAfterMinus(B[i], varTmpMask);
-//                varTmpMask.clear(matchedVar);
-//            } else {
-//                // 非匹配值，什么都不做
-//                varSingletonMask.or(B[i]);
+//    private boolean filter() throws ContradictionException {
+//        boolean filter = false;
+//        findAllSCC();
+//        for (int varIdx = 0; varIdx < arity; varIdx++) {
+//            IntVar v = vars[varIdx];
+//            if (!v.isInstantiated()) {
+//                int ub = v.getUB();
+//                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
+//                    int valIdx = val2Idx.get(k);
+//                    if (varSCC[varIdx] != valSCC[valIdx]) {
+//                        Measurer.enterP2();
+//                        if (valIdx == var2Val[varIdx]) {
+//                            int valNum = v.getDomainSize();
+//                            Measurer.numDelValuesP2 += valNum - 1;
+////                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            filter |= v.instantiateTo(k, aCause);
+//                        } else {
+//                            ++Measurer.numDelValuesP2;
+////                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            filter |= v.removeValue(k, aCause);
+//                        }
+//                    }
+//                }
 //            }
 //        }
-////        System.out.println("fs: " + Arrays.toString(nodeSCC));
-//        varSingletonMask.flip();
-//        singleton.or(varSingletonMask);
-//        singleton.flip();
-    }
-
-    private void strongConnectVar(int curNode) {
-        pushVarStack(curNode);
-        varDFSNum[curNode] = maxDFS;
-        varLowLink[curNode] = maxDFS;
-        maxDFS++;
-        unVisitedVariables.clear(curNode);
-
-//        Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
-//        //D[]
+//        return filter;
+//    }
 //
-//        while (iterator.hasNext()) {
-//            int newNode = iterator.next();
-////            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
+//    private void findAllSCC() {
+//        // initialization
+//        clearVarStack();
+//        clearValStack();
+//
+//        maxDFS = 0;
+//        nbSCC = 0;
+//
+//        for (int i = 0; i < arity; i++) {
+//            varLowLink[i] = Integer.MAX_VALUE;
+//            varSCC[i] = -1;
+//            varDFSNum[i] = Integer.MAX_VALUE;
+//        }
+//
+//        for (int i = 0; i < numValues; i++) {
+//            valLowLink[i] = Integer.MAX_VALUE;
+//            valSCC[i] = -1;
+//            valDFSNum[i] = Integer.MAX_VALUE;
+//        }
+//
+//        sinkDFSNum = Integer.MAX_VALUE;
+//        sinkLowLink = Integer.MAX_VALUE;
+//        sinkIsInStack = false;
+//        sinkIsUnvisited = true;
+//
+//        unVisitedVariables.set();
+//        unVisitedValues.set();
+//
+//        findSingletons();
+//        singleton.flip();
+////        System.out.println("----------");
+////        System.out.println("singleton:" + singleton);
+//        for (int varIdx = singleton.firstSetBit(); varIdx != singleton.end(); varIdx = singleton.nextSetBit(varIdx + 1)) {
+////            if (unVisitedVariables.get(varIdx)) {
+////                System.out.println(varIdx);
+//            strongConnectVar(varIdx);
+////            }
+//        }
+//
+////        System.out.println(Arrays.toString(varSCC));
+////        System.out.println(Arrays.toString(valSCC));
+//    }
+//
+//    private void findSingletons() {
+//        singleton.clear();
+//        for (int i = 0; i < arity; i++) {
+//            // 变量只有一个值，即只有匹配值
+//            // 若匹配边由变量指向值，若D[x]=1则表示变量x只有一个出边即匹配边，没有入边，即满足singleton条件
+//            if (D[i].size() == 1) {
+//                varSCC[i] = nbSCC;
+//                singleton.set(i);
+//                nbSCC++;
+//            }
+//        }
+////        singleton.flip();
+//
+////        for (int i = 0; i < numValues; i++) {
+////            int matchedVar = val2Var[i];
+////            if (matchedVar != -1) {
+////                // 是匹配值，去除匹配变量
+////                varTmpMask.set(matchedVar);
+////                varSingletonMask.orAfterMinus(B[i], varTmpMask);
+////                varTmpMask.clear(matchedVar);
+////            } else {
+////                // 非匹配值，什么都不做
+////                varSingletonMask.or(B[i]);
+////            }
+////        }
+//////        System.out.println("fs: " + Arrays.toString(nodeSCC));
+////        varSingletonMask.flip();
+////        singleton.or(varSingletonMask);
+////        singleton.flip();
+//    }
+//
+//    private void strongConnectVar(int curNode) {
+//        pushVarStack(curNode);
+//        varDFSNum[curNode] = maxDFS;
+//        varLowLink[curNode] = maxDFS;
+//        maxDFS++;
+//        unVisitedVariables.clear(curNode);
+//
+////        int matchedVal = var2Val[curNode];
+////        for (int newNode = D[curNode].firstSetBit(); newNode != D[curNode].end(); newNode = D[curNode].nextSetBit(newNode + 1)) {
+////            if (newNode == matchedVal) continue;
+//////            System.out.println("scVartoVal: " + curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+//////            System.out.println(curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+////            if (!unVisitedValues.get(newNode)) {
+////                if (valIsInStack.get(newNode)) {
+////                    varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
+////                }
+////            } else {
+////                strongConnectVal(newNode);
+////                varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
+////            }
+////        }
+//
+////        // p1
+////        long values = 0;
+////        int newNode = 0, iBase = 0;
+////        int matchedVal = var2Val[curNode];
+////        for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
+////            values = D[curNode].getWord(iWord);
+////            iBase = iWord * 64;
+////            for (int i = nextSetBit(values, 0); i != 64; values &= ~(1L << i),i = nextSetBit(values, 0)) {
+////                newNode = iBase + i;
+//////                System.out.println(newNode);
+//////                int delta = Long.numberOfTrailingZeros(values);
+//////                newNode += delta;
+//////                values >>= delta + 1;
+////                if (newNode == matchedVal) continue;
+//////            System.out.println("scVartoVal: " + curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+//////            System.out.println(curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+////                if (!unVisitedValues.get(newNode)) {
+////                    if (valIsInStack.get(newNode)) {
+////                        varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
+////                    }
+////                } else {
+////                    strongConnectVal(newNode);
+////                    varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
+////                }
+////            }
+////        }
+//
+//
+////         p2
+//        long values = 0;
+//        int newNode = 0, iBase = 0;
+//        int matchedVal = var2Val[curNode];
+//        int i = 0;
+//        for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
+//            values = D[curNode].getWord(iWord) & valIsInStack.getWord(iWord);
+//            iBase = iWord * 64;
+//
+//            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+//                newNode = iBase + i;
+//                if (newNode == matchedVal) continue;
+//                varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
+//            }
+//
+//            values = D[curNode].getWord(iWord) & unVisitedValues.getWord(iWord);
+//            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+//                newNode = iBase + i;
+//                strongConnectVal(newNode);
+//                varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
+//                values &= unVisitedValues.getWord(iWord);
+//            }
+//        }
+//
+//
+////        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+//        if (varLowLink[curNode] == varDFSNum[curNode]) {
+//            if (varLowLink[curNode] > 0 || valIsInStack.size() + varIsInStack.size() > 0) {
+//                hasSCCSplit = true;
+//            }
+//            if (hasSCCSplit) {
+////                int stackNode = -1;
+////                sccSize = 0;
+////                while (stackNode != curNode) {
+////                    stackNode = popVarStack();
+//////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
+////                    varSCC[stackNode] = nbSCC;
+////                    sccSize++;
+//////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
+////                    valSCC[popValStack()] = nbSCC;
+////                    sccSize++;
+////                }
+//////                if (sccSize == 1) {
+//////                    singleton.add(nbSCC);
+//////                }
+////                nbSCC++;
+//                processSCC(varDFSNum[curNode]);
+//            }
+//        }
+////        System.out.println("back");
+//    }
+//
+//    private void strongConnectVal(int curNode) {
+//        pushValStack(curNode);
+//        valDFSNum[curNode] = maxDFS;
+//        valLowLink[curNode] = maxDFS;
+//        maxDFS++;
+//        unVisitedValues.clear(curNode);
+//        int matchedVar = val2Var[curNode];
+//        if (matchedVar != -1) {
+//            //have matched variable
+////            System.out.println("scValtoVar: " + (addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
+////            System.out.println((addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
+//            if (!unVisitedVariables.get(matchedVar)) {
+//                if (varIsInStack.get(matchedVar)) {
+//                    valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
+//                }
+//            } else {
+//                strongConnectVar(matchedVar);
+//                valLowLink[curNode] = Math.min(valLowLink[curNode], varLowLink[matchedVar]);
+//            }
+//        } else {
+//            //free node successor node is sink node
+////            System.out.println("scValtoSink: " + (addArity + curNode) + ", " + arity + ", " + sinkIsUnvisited);
+////            System.out.println((addArity + curNode) + ", " + arity + ", " + sinkIsUnvisited);
+//            if (!sinkIsUnvisited) {
+//                if (sinkIsInStack) {
+//                    valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
+//                }
+//            } else {
+//                strongConnectSink();
+//                valLowLink[curNode] = Math.min(valLowLink[curNode], sinkLowLink);
+//            }
+//        }
+////        Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
+////        //B[]
+////        while (iterator.hasNext()) {
+////            int newNode = iterator.next();
+//////            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
+////            if (!unVisitedVariables.get(newNode)) {
+////                if (valIsInStack.get(newNode)) {
+////                    valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[newNode]);
+////                }
+////            } else {
+////                // 判断一下sink节点
+////                strongConnectR(newNode);
+////                lowLink[curNode] = Math.min(lowLink[curNode], lowLink[newNode]);
+////            }
+////        }
+//
+////        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+//        if (valLowLink[curNode] == valDFSNum[curNode]) {
+//            if (valLowLink[curNode] > 0 || valIsInStack.size() + varIsInStack.size() > 0) {
+//                hasSCCSplit = true;
+//            }
+//            if (hasSCCSplit) {
+////                int stackNode = -1;
+////                sccSize = 0;
+////                while (stackNode != curNode) {
+////                    stackNode = popValStack();
+//////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
+////                    valSCC[stackNode] = nbSCC;
+////                    sccSize++;
+////                    varSCC[popVarStack()] = nbSCC;
+////                    sccSize++;
+////                }
+//////                if (sccSize == 1) {
+//////                    singleton.add(nbSCC);
+//////                }
+////                nbSCC++;
+//                processSCC(valDFSNum[curNode]);
+//            }
+//        }
+////        System.out.println("back");
+//    }
+//
+//    private void strongConnectSink() {
+//        sinkIsInStack = true;
+//        sinkDFSNum = maxDFS;
+//        sinkLowLink = maxDFS;
+//        maxDFS++;
+//        sinkIsUnvisited = false;
+////        Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
+////        while (iterator.hasNext()) {
+////            int newNode = iterator.next();
+//////            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
+////            if (!unvisited.get(newNode)) {
+////                if (inStack.get(newNode)) {
+////                    lowLink[curNode] = Math.min(lowLink[curNode], DFSNum[newNode]);
+////                }
+////            } else {
+////                strongConnectR(newNode);
+////                lowLink[curNode] = Math.min(lowLink[curNode], lowLink[newNode]);
+////            }
+////        }
+//        for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
+////            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+////            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
 //            if (!unVisitedValues.get(newNode)) {
 //                if (valIsInStack.get(newNode)) {
-//                    varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
+//                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
 //                }
 //            } else {
 //                strongConnectVal(newNode);
-//                varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
+//                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
 //            }
 //        }
-
-        int matchedVal = var2Val[curNode];
-        for (int newNode = D[curNode].firstSetBit(); newNode != D[curNode].end(); newNode = D[curNode].nextSetBit(newNode + 1)) {
-            if (newNode == matchedVal) continue;
-//            System.out.println("scVartoVal: " + curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-//            System.out.println(curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-            if (!unVisitedValues.get(newNode)) {
-                if (valIsInStack.get(newNode)) {
-                    varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
-                }
-            } else {
-                strongConnectVal(newNode);
-                varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
-            }
-        }
-
-
-//        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
-        if (varLowLink[curNode] == varDFSNum[curNode]) {
-            if (varLowLink[curNode] > 0 || valIsInStack.size() + varIsInStack.size() > 0) {
-                hasSCCSplit = true;
-            }
-            if (hasSCCSplit) {
-//                int stackNode = -1;
-//                sccSize = 0;
-//                while (stackNode != curNode) {
-//                    stackNode = popVarStack();
-////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
-//                    varSCC[stackNode] = nbSCC;
-//                    sccSize++;
-////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
-//                    valSCC[popValStack()] = nbSCC;
-//                    sccSize++;
-//                }
-////                if (sccSize == 1) {
-////                    singleton.add(nbSCC);
-////                }
-//                nbSCC++;
-                processSCC(varDFSNum[curNode]);
-            }
-        }
-//        System.out.println("back");
-    }
-
-    private void strongConnectVal(int curNode) {
-        pushValStack(curNode);
-        valDFSNum[curNode] = maxDFS;
-        valLowLink[curNode] = maxDFS;
-        maxDFS++;
-        unVisitedValues.clear(curNode);
-        int matchedVar = val2Var[curNode];
-        if (matchedVar != -1) {
-            //have matched variable
-//            System.out.println("scValtoVar: " + (addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
-//            System.out.println((addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
-            if (!unVisitedVariables.get(matchedVar)) {
-                if (varIsInStack.get(matchedVar)) {
-                    valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
-                }
-            } else {
-                strongConnectVar(matchedVar);
-                valLowLink[curNode] = Math.min(valLowLink[curNode], varLowLink[matchedVar]);
-            }
-        } else {
-            //free node successor node is sink node
-//            System.out.println("scValtoSink: " + (addArity + curNode) + ", " + arity + ", " + sinkIsUnvisited);
-//            System.out.println((addArity + curNode) + ", " + arity + ", " + sinkIsUnvisited);
-            if (!sinkIsUnvisited) {
-                if (sinkIsInStack) {
-                    valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
-                }
-            } else {
-                strongConnectSink();
-                valLowLink[curNode] = Math.min(valLowLink[curNode], sinkLowLink);
-            }
-        }
-//        Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
-//        //B[]
-//        while (iterator.hasNext()) {
-//            int newNode = iterator.next();
-////            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
-//            if (!unVisitedVariables.get(newNode)) {
-//                if (valIsInStack.get(newNode)) {
-//                    valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[newNode]);
-//                }
-//            } else {
-//                // 判断一下sink节点
-//                strongConnectR(newNode);
-//                lowLink[curNode] = Math.min(lowLink[curNode], lowLink[newNode]);
-//            }
-//        }
-
-//        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
-        if (valLowLink[curNode] == valDFSNum[curNode]) {
-            if (valLowLink[curNode] > 0 || valIsInStack.size() + varIsInStack.size() > 0) {
-                hasSCCSplit = true;
-            }
-            if (hasSCCSplit) {
-//                int stackNode = -1;
-//                sccSize = 0;
-//                while (stackNode != curNode) {
-//                    stackNode = popValStack();
-////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
-//                    valSCC[stackNode] = nbSCC;
-//                    sccSize++;
-//                    varSCC[popVarStack()] = nbSCC;
-//                    sccSize++;
-//                }
-////                if (sccSize == 1) {
-////                    singleton.add(nbSCC);
-////                }
-//                nbSCC++;
-                processSCC(valDFSNum[curNode]);
-            }
-        }
-//        System.out.println("back");
-    }
-
-    private void strongConnectSink() {
-        sinkIsInStack = true;
-        sinkDFSNum = maxDFS;
-        sinkLowLink = maxDFS;
-        maxDFS++;
-        sinkIsUnvisited = false;
-//        Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
-//        while (iterator.hasNext()) {
-//            int newNode = iterator.next();
-////            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
-//            if (!unvisited.get(newNode)) {
-//                if (inStack.get(newNode)) {
-//                    lowLink[curNode] = Math.min(lowLink[curNode], DFSNum[newNode]);
-//                }
-//            } else {
-//                strongConnectR(newNode);
-//                lowLink[curNode] = Math.min(lowLink[curNode], lowLink[newNode]);
-//            }
-//        }
-        for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
-//            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-//            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-            if (!unVisitedValues.get(newNode)) {
-                if (valIsInStack.get(newNode)) {
-                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-                }
-            } else {
-                strongConnectVal(newNode);
-                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
-            }
-        }
-
-//        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
-        if (sinkLowLink == sinkDFSNum) {
-            if (sinkLowLink > 0 || sinkIsInStack || valIsInStack.size() + varIsInStack.size() > 0) {
-                hasSCCSplit = true;
-            }
-            if (hasSCCSplit) {
-//                int stackNode = -1;
-//                sccSize = 0;
-//                while (stackNode != curNode) {
-//                    stackNode = popStack();
-////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
-//                    nodeSCC[stackNode] = nbSCC;
-//                    sccSize++;
-//                }
-////                if (sccSize == 1) {
-////                    singleton.add(nbSCC);
-////                }
-//                nbSCC++;
-                processSCC(sinkDFSNum);
-            }
-        }
-//        System.out.println("back");
-    }
-
-    private void processSCC(int rootNum) {
-//        for (int valIdx = valIsInStack.firstSetBit(); valIdx !=INaiveBitSet.INDEX_OVERFLOW; valIdx=valIsInStack.++) {
 //
+////        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+//        if (sinkLowLink == sinkDFSNum) {
+//            if (sinkLowLink > 0 || sinkIsInStack || valIsInStack.size() + varIsInStack.size() > 0) {
+//                hasSCCSplit = true;
+//            }
+//            if (hasSCCSplit) {
+////                int stackNode = -1;
+////                sccSize = 0;
+////                while (stackNode != curNode) {
+////                    stackNode = popStack();
+//////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
+////                    nodeSCC[stackNode] = nbSCC;
+////                    sccSize++;
+////                }
+//////                if (sccSize == 1) {
+//////                    singleton.add(nbSCC);
+//////                }
+////                nbSCC++;
+//                processSCC(sinkDFSNum);
+//            }
 //        }
-//        System.out.println("scc: " + rootNum);
-        int stackNode = -1;
-        sccSize = 0;
-//        if (valStackIdx != 0) {
-//            stackNode = valStack[valStackIdx - 1];
-        while (valStackIdx > 0 && valDFSNum[valStack[valStackIdx - 1]] >= rootNum) {
-            stackNode = popValStack();
-//            System.out.println("pop var: " + stackNode + ", " + nbSCC + "," + valDFSNum[stackNode]);
-            valSCC[stackNode] = nbSCC;
-            sccSize++;
-        }
+////        System.out.println("back");
+//    }
+//
+//    private void processSCC(int rootNum) {
+////        for (int valIdx = valIsInStack.firstSetBit(); valIdx !=INaiveBitSet.INDEX_OVERFLOW; valIdx=valIsInStack.++) {
+////
+////        }
+////        System.out.println("scc: " + rootNum);
+//        int stackNode = -1;
+//        sccSize = 0;
+////        if (valStackIdx != 0) {
+////            stackNode = valStack[valStackIdx - 1];
+//        while (valStackIdx > 0 && valDFSNum[valStack[valStackIdx - 1]] >= rootNum) {
+//            stackNode = popValStack();
+////            System.out.println("pop var: " + stackNode + ", " + nbSCC + "," + valDFSNum[stackNode]);
+//            valSCC[stackNode] = nbSCC;
+//            sccSize++;
 //        }
-
-//        if (varStackIdx != 0) {
-//            stackNode = varStack[varStackIdx - 1];
-        while (varStackIdx > 0 && varDFSNum[varStack[varStackIdx - 1]] >= rootNum) {
-            stackNode = popVarStack();
-//            System.out.println("pop val: " + stackNode + ", " + addArity + stackNode + ", " + nbSCC + "," + varDFSNum[stackNode]);
-            varSCC[stackNode] = nbSCC;
-            sccSize++;
-        }
+////        }
+//
+////        if (varStackIdx != 0) {
+////            stackNode = varStack[varStackIdx - 1];
+//        while (varStackIdx > 0 && varDFSNum[varStack[varStackIdx - 1]] >= rootNum) {
+//            stackNode = popVarStack();
+////            System.out.println("pop val: " + stackNode + ", " + addArity + stackNode + ", " + nbSCC + "," + varDFSNum[stackNode]);
+//            varSCC[stackNode] = nbSCC;
+//            singleton.clear(stackNode);
+//            sccSize++;
 //        }
-
-        if (sinkIsInStack && sinkDFSNum >= rootNum) {
-            sinkIsInStack = false;
-        }
-
-        nbSCC++;
-    }
-
-    private void pushVarStack(int v) {
-        varStack[varStackIdx++] = v;
-        varIsInStack.set(v);
-    }
-
-    private void clearVarStack() {
-        varIsInStack.clear();
-        varStackIdx = 0;
-    }
-
-    private int popVarStack() {
-        int x = varStack[--varStackIdx];
-        varIsInStack.clear(x);
-        return x;
-    }
-
-    private void pushValStack(int v) {
-        valStack[valStackIdx++] = v;
-        valIsInStack.set(v);
-    }
-
-    private void clearValStack() {
-        valIsInStack.clear();
-        valStackIdx = 0;
-    }
-
-    private int popValStack() {
-        int x = valStack[--valStackIdx];
-        valIsInStack.clear(x);
-        return x;
-    }
+////        }
+//
+//        if (sinkIsInStack && sinkDFSNum >= rootNum) {
+//            sinkIsInStack = false;
+//        }
+//
+//        nbSCC++;
+//    }
+//
+//    private void pushVarStack(int v) {
+//        varStack[varStackIdx++] = v;
+//        varIsInStack.set(v);
+//    }
+//
+//    private void clearVarStack() {
+//        varIsInStack.clear();
+//        varStackIdx = 0;
+//    }
+//
+//    private int popVarStack() {
+//        int x = varStack[--varStackIdx];
+//        varIsInStack.clear(x);
+//        return x;
+//    }
+//
+//    private void pushValStack(int v) {
+//        valStack[valStackIdx++] = v;
+//        valIsInStack.set(v);
+//    }
+//
+//    private void clearValStack() {
+//        valIsInStack.clear();
+//        valStackIdx = 0;
+//    }
+//
+//    private int popValStack() {
+//        int x = valStack[--valStackIdx];
+//        valIsInStack.clear(x);
+//        return x;
+//    }
+//
+//    public int nextSetBit(long words, int bitIndex) {
+//        return Long.numberOfTrailingZeros(words & -1L << bitIndex);
+//    }
 }

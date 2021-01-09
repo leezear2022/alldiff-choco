@@ -54,7 +54,7 @@ public class PropAllDiffAC_WordRam extends Propagator<IntVar> {
      */
     public PropAllDiffAC_WordRam(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-        filter = new AlgoAllDiffAC_WordRam(variables, this);
+        filter = new AlgoAllDiffAC_WordRam(variables, this, this.getModel());
     }
 
     //***********************************************************************************

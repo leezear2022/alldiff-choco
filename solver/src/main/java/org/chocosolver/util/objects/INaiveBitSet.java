@@ -51,6 +51,8 @@ public interface INaiveBitSet {
 
     int nextSetBit(int fromIndex);
 
+    int nextSetBit(int wordIndex, int bitIndex);
+
     int nextClearBit(int fromIndex);
 
     int firstSetBit();

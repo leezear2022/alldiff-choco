@@ -146,6 +146,11 @@ public class Single64NaiveBitSet implements INaiveBitSet {
     }
 
     @Override
+    public int nextSetBit(int wordIndex, int bitIndex) {
+        return Long.numberOfTrailingZeros(words & -1L << bitIndex);
+    }
+
+    @Override
     public int nextClearBit(int fromIndex) {
         int a = Long.numberOfTrailingZeros(~words);
         return a == BITS_PER_WORD ? INDEX_OVERFLOW : a;

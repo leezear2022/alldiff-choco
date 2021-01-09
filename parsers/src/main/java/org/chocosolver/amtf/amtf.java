@@ -64,23 +64,51 @@ public class amtf {
 
 //        System.out.println(INaiveBitSet.max(1, 2, 3, 4));
 //        System.out.println(INaiveBitSet.max(4, 3, 2, 1));
-        INaiveBitSet bs = INaiveBitSet.makeBitSet(60, false);
-//        bs.set(70);
-//        bs.set(72);
-//        bs.set(73);
-//        bs.set(74);
-//        bs.set(71);
-        System.out.println(bs);
-        bs.clear(0);
-        System.out.println(bs.size());
-        int fsi = bs.firstSetIndex();
-        System.out.println(fsi);
-        System.out.println(bs.firstSetBit());
-        System.out.println(bs.singleValue());
 
-        for (int i = bs.firstSetBit(); i != -1; i = bs.nextSetBit(i + 1)) {
-            System.out.println(i);
-        }
+        INaiveBitSet bs2 = INaiveBitSet.makeBitSet(20, true);
+//
+        System.out.println(bs2);
 
+//        for (int i = bs2.firstSetBit(); i != bs2.end(); i = bs2.nextSetBit(i + 1)) {
+//            System.out.println(i);
+//        }
+
+//
+//        INaiveBitSet bs = INaiveBitSet.makeBitSet(150, true);
+////        bs.set(70);
+////        bs.set(72);
+////        bs.set(73);
+////        bs.set(74);
+////        bs.set(71);
+//        System.out.println(bs);
+//        bs.clear(0);
+//        bs.clear(124);
+////        System.out.println(bs.size());
+////        int fsi = bs.firstSetIndex();
+////        System.out.println(fsi);
+////        System.out.println(bs.firstSetBit());
+////        System.out.println(bs.singleValue());
+//        System.out.println(nextSetBit(bs.getWord(0), 64));
+//        System.out.println(nextSetBit(-1, 64));
+//        System.out.println(Long.toBinaryString(-1L & -1L << 63));
+//        System.out.println(Long.toBinaryString(-1L & -1L << 64));
+////        for (int i = bs.firstSetBit(); i != -1; i = bs.nextSetBit(i + 1)) {
+////            System.out.println(i);
+////        }
+//        System.out.println("--------------------");
+//        int newNode = 0, iBase = 0;
+//        for (int iWord = bs.firstSetIndex(); iWord <= bs.lastSetIndex(); ++iWord) {
+//            long values = bs.getWord(iWord);
+//            iBase = iWord * 64;
+//
+//            for (int i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+//                newNode = iBase + i;
+//                System.out.println(newNode);
+//            }
+//        }
+    }
+
+    private static int nextSetBit(long word, int pos) {
+        return Long.numberOfTrailingZeros(word & -1L << pos);
     }
 }
