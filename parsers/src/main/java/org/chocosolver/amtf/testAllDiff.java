@@ -66,13 +66,13 @@ public class testAllDiff {
                 "ACZhang20",
 //                "ACZhang18",
 //                "ACNaive",
-                "ACNaiveR",
-                "ACFair",
+//                "ACNaiveR",
+//                "ACFair",
 //                "AC_REGIN",
 //                "ACNaive",
 //                "ACFair",
 //                "BC",
-                "WordRam",
+//                "WordRam",
         };
         int runNum = 1;
 
