@@ -5,6 +5,7 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.memory.IEnvironment;
+import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
@@ -132,12 +133,14 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     private int endBitIndex = 64;
 
     // for delta update
-    protected IIntDeltaMonitor[] monitors;
-    private UnaryIntProcedure<Integer> onValRem;
-    private boolean initialProp = true;
-
-    //
-    IEnvironment env;
+//    protected IIntDeltaMonitor[] monitors;
+//    private UnaryIntProcedure<Integer> onValRem;
+//    private boolean initialProp = true;
+//
+//    //    // for backtrack
+//    IEnvironment env;
+//    IStateBitSet[] RB;
+//    IStateBitSet[] RD;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -145,7 +148,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     public AlgoAllDiffAC_NaiveBitSetNew(IntVar[] variables, ICause cause, Model model) {
         super(variables, cause);
         id = num++;
-        env = model.getEnvironment();
+//        env = model.getEnvironment();
         this.vars = variables;
         aCause = cause;
         arity = vars.length;
@@ -172,15 +175,20 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
 //        System.out.println("-----------idx2Val-----------");
 //        System.out.println(Arrays.toString(idx2Val));
-
+//for backtracking
         B = new INaiveBitSet[numValues];
+//        RB = new IStateBitSet[numValues];
+
         for (int i = 0; i < numValues; ++i) {
             B[i] = INaiveBitSet.makeBitSet(arity, false);
+//            RB[i] = env.makeBitSet(arity);
         }
 
         D = new INaiveBitSet[arity];
+//        RD = new IStateBitSet[arity];
         for (int i = 0; i < arity; ++i) {
             D[i] = INaiveBitSet.makeBitSet(numValues, false);
+//            RD[i] = env.makeBitSet(numValues);
         }
 
         // 填充B和D
@@ -189,9 +197,12 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
                 int valIdx = val2Idx.get(j);
                 D[i].set(valIdx);
+//                RD[i].set(valIdx);
                 B[valIdx].set(i);
+//                RB[valIdx].set(i);
             }
         }
+
 
         // 记录访问过的变量
         visiting_ = new int[arity];
@@ -248,11 +259,11 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         }
 
         // for delta
-        monitors = new IIntDeltaMonitor[vars.length];
-        for (int i = 0; i < vars.length; i++) {
-            monitors[i] = vars[i].monitorDelta(cause);
-        }
-        onValRem = makeProcedure();
+//        monitors = new IIntDeltaMonitor[vars.length];
+//        for (int i = 0; i < vars.length; i++) {
+//            monitors[i] = vars[i].monitorDelta(cause);
+//        }
+//        onValRem = makeProcedure();
     }
 
     //***********************************************************************************
@@ -262,13 +273,14 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     public boolean propagate() throws ContradictionException {
         Measurer.enterProp();
         startTime = System.nanoTime();
-        System.out.println("------------");
-        printDomains();
-        deltaUpdate();
-//        fillBandD();
-        BandDCheck();
-        System.out.println("----- ----");
-        printDomains();
+//        System.out.println("------------");
+////        printDomains();
+////        deltaUpdate();
+//////        fillBandD();
+////        BandDCheck();
+//        System.out.println("----- ----");
+//        printDomains();
+        fillBandD();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
@@ -283,28 +295,28 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
 
 
-    protected UnaryIntProcedure<Integer> makeProcedure() {
-        return new UnaryIntProcedure<Integer>() {
-            int var;
-            int valIdx;
-
-            @Override
-            public UnaryIntProcedure set(Integer o) {
-                var = o;
-                return this;
-            }
-
-            @Override
-            public void execute(int i) throws ContradictionException {
-//                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
-//                IntVar v = vars[var];
-                valIdx = val2Idx.get(i);
-                D[var].clear(valIdx);
-                B[valIdx].clear();
-//                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
-            }
-        };
-    }
+//    protected UnaryIntProcedure<Integer> makeProcedure() {
+//        return new UnaryIntProcedure<Integer>() {
+//            int var;
+//            int valIdx;
+//
+//            @Override
+//            public UnaryIntProcedure set(Integer o) {
+//                var = o;
+//                return this;
+//            }
+//
+//            @Override
+//            public void execute(int i) throws ContradictionException {
+////                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
+////                IntVar v = vars[var];
+//                valIdx = val2Idx.get(i);
+//                RD[var].clear(valIdx);
+//                RB[valIdx].clear(var);
+////                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
+//            }
+//        };
+//    }
 
     private void printDomains() {
         for (int i = 0; i < numValues; ++i) {
@@ -315,7 +327,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         // 填充B和D
         for (int i = 0; i < arity; ++i) {
             v = vars[i];
-            System.out.println("val " + "i: "+D[i]);
+            System.out.println("val " + "i: " + D[i]);
             System.out.println(v);
         }
     }
@@ -338,34 +350,43 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         }
     }
 
-    private void fillBandD(int varIdx) {
+//    private void fillRBandRD(int varIdx) {
+////        for (int i = 0; i < numValues; ++i) {
+////            B[varIdx].clear();
+//
+//        IntVar v;
+//        // 填充RB和RD
+////        for (int i = 0; i < arity; ++i) {
+//        RD[varIdx].clear();
+//        v = vars[varIdx];
 //        for (int i = 0; i < numValues; ++i) {
-//            B[varIdx].clear();
-
-        IntVar v;
-        // 填充B和D
-//        for (int i = 0; i < arity; ++i) {
-        D[varIdx].clear();
-        v = vars[varIdx];
-        for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-            int valIdx = val2Idx.get(j);
-            D[varIdx].set(valIdx);
-            B[valIdx].set(varIdx);
-        }
+//            int val = idx2Val[i];
+//            if (v.contains(val)) {
+//                RD[varIdx].set(i);
+//                RB[i].set(varIdx);
+//            } else {
+//                RB[i].clear(varIdx);
+//            }
 //        }
-    }
+//    }
 
-    private void deltaUpdate() throws ContradictionException {
-        for (int varIdx = 0; varIdx < arity; varIdx++) {
-            monitors[varIdx].freeze();
-            if (vars[varIdx].getDomainSize() > monitors[varIdx].sizeApproximation()) {
-                monitors[varIdx].forEachRemVal(onValRem.set(varIdx));
-            } else {
-                fillBandD(varIdx);
-            }
-            monitors[varIdx].unfreeze();
-        }
-    }
+//    private void deltaUpdate() throws ContradictionException {
+//        for (int varIdx = 0; varIdx < arity; varIdx++) {
+//            monitors[varIdx].freeze();
+//            if (vars[varIdx].getDomainSize() > monitors[varIdx].sizeApproximation()) {
+//                monitors[varIdx].forEachRemVal(onValRem.set(varIdx));
+//            } else {
+//                fillRBandRD(varIdx);
+//            }
+//            D[varIdx].set(RD[varIdx]);
+//            monitors[varIdx].unfreeze();
+//        }
+//
+//        for (int i = 0; i < numValues; ++i) {
+//            B[i].set(RB[i]);
+//        }
+//
+//    }
 
     private boolean BandDCheck() {
         IntVar v;
@@ -477,6 +498,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 
             needVisitValues.setAfterAnd(D[node], unVisitedValues);
             for (int valIdx = needVisitValues.firstSetBit(); valIdx != unVisitedValues.end(); valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
+                if (!unVisitedValues.get(valIdx)) continue;
                 unVisitedValues.clear(valIdx);
 //                if (val2Var[valIdx] == -1) {
                 if (!matchedValues.get(valIdx)) {
@@ -702,13 +724,10 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                             if (valIdx == var2Val[varIdx]) {
                                 int valNum = v.getDomainSize();
                                 Measurer.numDelValuesP2 += valNum - 1;
-                                D[varIdx].clear();
-                                D[varIdx].set(valIdx);
                                 filter |= v.instantiateTo(k, aCause);
 //                            System.out.println("instantiate  : " + v.getName() + ", " + k);
                             } else {
                                 ++Measurer.numDelValuesP2;
-                                D[varIdx].clear(valIdx);
                                 filter |= v.removeValue(k, aCause);
 //                            System.out.println("second delete: " + v.getName() + ", " + k);
                             }

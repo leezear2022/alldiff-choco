@@ -371,6 +371,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 
             needVisitValues.setAfterAnd(D[node], unVisitedValues);
             for (int valIdx = needVisitValues.firstSetBit(); valIdx != unVisitedValues.end(); valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
+                if (!unVisitedValues.get(valIdx)) continue;
                 unVisitedValues.clear(valIdx);
 //                if (val2Var[valIdx] == -1) {
                 if (!matchedValues.get(valIdx)) {
@@ -928,16 +929,37 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //                lowLink[curNode] = Math.min(lowLink[curNode], lowLink[newNode]);
 //            }
 //        }
-        for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
-//            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-//            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-            if (!unVisitedValues.get(newNode)) {
-                if (valIsInStack.get(newNode)) {
-                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-                }
-            } else {
+
+//        for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
+////            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+////            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+//            if (!unVisitedValues.get(newNode)) {
+//                if (valIsInStack.get(newNode)) {
+//                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
+//                }
+//            } else {
+//                strongConnectVal(newNode);
+//                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+//            }
+//        }
+
+        long values = 0;
+        int newNode = 0, iBase = 0;
+        int i = 0;
+        for (int iWord = matchedValues.firstSetBit(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
+            values = matchedValues.getWord(iWord) & valIsInStack.getWord(iWord);
+            iBase = iWord * 64;
+            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+                newNode = iBase + i;
+                sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
+            }
+
+            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
+            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+                newNode = iBase + i;
                 strongConnectVal(newNode);
                 sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+                values &= unVisitedValues.getWord(iWord);
             }
         }
 
@@ -1035,6 +1057,4 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     public int nextSetBit(long words, int bitIndex) {
         return Long.numberOfTrailingZeros(words & -1L << bitIndex);
     }
-
-
 }

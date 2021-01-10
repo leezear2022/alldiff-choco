@@ -31,7 +31,7 @@ public class PropAllDiffAC_Zhang18M extends Propagator<IntVar> {
     public PropAllDiffAC_Zhang18M(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
         this.filter = new AlgoAllDiffAC_Zhang18M(variables, this);
-        Measurer.numAllDiff++;
+//        Measurer.numAllDiff++;
     }
 
     //***********************************************************************************

@@ -50,7 +50,6 @@ public class PropAllDiffAC_Fair extends Propagator<IntVar> {
     public PropAllDiffAC_Fair(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
         this.filter = new AlgoAllDiffAC_Fair(variables, this);
-        Measurer.numAllDiff++;
     }
 
     //***********************************************************************************
