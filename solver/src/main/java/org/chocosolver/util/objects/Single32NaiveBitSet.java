@@ -193,7 +193,7 @@ public class Single32NaiveBitSet implements INaiveBitSet {
             return "{}";
         }
         StringBuilder sb = new StringBuilder("{");
-        for (int i = firstSetBit(); i != end(); i = nextSetBit(i + 1)) {
+        for (int i = firstSetBit(); i < end(); i = nextSetBit(i + 1)) {
             sb.append(i).append(",");
         }
         sb.replace(sb.length() - 1, sb.length(), "}");

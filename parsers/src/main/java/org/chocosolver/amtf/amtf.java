@@ -65,7 +65,7 @@ public class amtf {
 //        System.out.println(INaiveBitSet.max(1, 2, 3, 4));
 //        System.out.println(INaiveBitSet.max(4, 3, 2, 1));
 
-        INaiveBitSet bs2 = INaiveBitSet.makeBitSet(20, true);
+        INaiveBitSet bs2 = INaiveBitSet.makeBitSet(32, true);
 //
         System.out.println(bs2);
 

@@ -253,6 +253,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         Measurer.enterProp();
         startTime = System.nanoTime();
         fillBandD();
+//        printDomains();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
@@ -265,6 +266,21 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
     // Initialization
     //***********************************************************************************
+
+    private void printDomains() {
+        System.out.println("-----print domain-------");
+        for (int i = 0; i < numValues; ++i) {
+            System.out.println("val " + "i: " + B[i]);
+        }
+
+        IntVar v;
+        // 填充B和D
+        for (int i = 0; i < arity; ++i) {
+            v = vars[i];
+            System.out.println("val " + "i: " + D[i]);
+            System.out.println(v);
+        }
+    }
 
     private void fillBandD() {
         for (int i = 0; i < numValues; ++i) {
@@ -792,18 +808,17 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
             values = D[curNode].getWord(iWord) & valIsInStack.getWord(iWord);
             iBase = iWord * 64;
-
+//            System.out.println(D[curNode]);
 //            System.out.println(curNode + ": " + Long.toBinaryString(D[curNode].getWord(iWord)) + ": " + Long.toBinaryString(valIsInStack.getWord(iWord)) + ": " + Long.toBinaryString(values));
-            for (i = nextSetBit(values, 0); i < numValues || i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+
+            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
-
-
                 if (newNode == matchedVal) continue;
                 varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
             }
 
             values = D[curNode].getWord(iWord) & unVisitedValues.getWord(iWord);
-            for (i = nextSetBit(values, 0); i < numValues || i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
                 strongConnectVal(newNode);
                 varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);

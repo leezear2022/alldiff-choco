@@ -103,14 +103,10 @@ public interface INaiveBitSet {
     }
 
     static INaiveBitSet makeBitSet(int size, boolean initValue) {
-        if (size <= 32) {
-            return new Single32NaiveBitSet(size, initValue);
-        } else if (size <= 64) {
+        if (size <= 64) {
             return new Single64NaiveBitSet(size, initValue);
         } else {
             return new NaiveBitSet(size, initValue);
         }
     }
-
-
 }
