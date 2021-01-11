@@ -51,11 +51,11 @@ public class testAllDiff {
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
 //                "/Users/lizhe/allDiff_Series/Queens/Queens-m1-s1/Queens-0008-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
-                "G:/AllDiffBench/ColouredQueens/ColouredQueens-05.xml",
+//                "G:/AllDiffBench/ColouredQueens/ColouredQueens-05.xml",
 //                "D:/AllDiffBench/Queens-m1-s1/Queens-0004-m1.xml",
 //                "D:\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "G:/AllDiffBench/LatinSquare/qwh-o30-h374-04.xml",
-//                "D:/Random-RB-3-20-20f/rand-3-20-20-60-632f-01.xml"
+                "D:\\AllDiffBench\\NumberPartitioning\\NumberPartitioning-032.xml"
         };
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
@@ -65,8 +65,8 @@ public class testAllDiff {
 //                "ACZhang18M",
 //                "ACZhang20",
 //                "ACZhang18",
-                "ACNaive",
-                "ACNaive",
+//                "ACNaive",
+//                "ACNaive",
 //                "ACNaiveR",
 //                "ACFair",
 //                "AC_REGIN",
