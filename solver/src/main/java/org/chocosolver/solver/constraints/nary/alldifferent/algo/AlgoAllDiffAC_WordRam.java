@@ -808,28 +808,11 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
             }
         }
 
-
-//        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
         if (varLowLink[curNode] == varDFSNum[curNode]) {
             if (varLowLink[curNode] > 0 || valIsInStack.size() + varIsInStack.size() > 0) {
                 hasSCCSplit = true;
             }
             if (hasSCCSplit) {
-//                int stackNode = -1;
-//                sccSize = 0;
-//                while (stackNode != curNode) {
-//                    stackNode = popVarStack();
-////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
-//                    varSCC[stackNode] = nbSCC;
-//                    sccSize++;
-////                    System.out.println("pop: " + stackNode + ", " + nbSCC);
-//                    valSCC[popValStack()] = nbSCC;
-//                    sccSize++;
-//                }
-////                if (sccSize == 1) {
-////                    singleton.add(nbSCC);
-////                }
-//                nbSCC++;
                 processSCC(varDFSNum[curNode]);
             }
         }
@@ -930,38 +913,46 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //            }
 //        }
 
-//        for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
-////            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-////            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-//            if (!unVisitedValues.get(newNode)) {
-//                if (valIsInStack.get(newNode)) {
-//                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-//                }
-//            } else {
-//                strongConnectVal(newNode);
-//                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
-//            }
-//        }
-
-        long values = 0;
-        int newNode = 0, iBase = 0;
-        int i = 0;
-        for (int iWord = matchedValues.firstSetBit(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
-            values = matchedValues.getWord(iWord) & valIsInStack.getWord(iWord);
-            iBase = iWord * 64;
-            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
-                newNode = iBase + i;
-                sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-            }
-
-            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
-            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
-                newNode = iBase + i;
+        for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
+//            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+//            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+            if (!unVisitedValues.get(newNode)) {
+                if (valIsInStack.get(newNode)) {
+                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
+                }
+            } else {
                 strongConnectVal(newNode);
                 sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
-                values &= unVisitedValues.getWord(iWord);
             }
         }
+
+//        long values = 0;
+//        int newNode = 0, iBase = 0;
+//        int i = 0;
+//        for (int iWord = matchedValues.firstSetBit(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
+//            values = matchedValues.getWord(iWord) & ~unVisitedValues.getWord(iWord) & valIsInStack.getWord(iWord);
+//            iBase = iWord * 64;
+//            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+//                newNode = iBase + i;
+//                sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
+//            }
+//
+////            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
+////            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+////                newNode = iBase + i;
+////                strongConnectVal(newNode);
+////                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+////                values &= unVisitedValues.getWord(iWord);
+////            }
+//
+//            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
+//            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+//                newNode = iBase + i;
+//                strongConnectVal(newNode);
+//                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+//                values &= unVisitedValues.getWord(iWord);
+//            }
+//        }
 
 //        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
         if (sinkLowLink == sinkDFSNum) {
