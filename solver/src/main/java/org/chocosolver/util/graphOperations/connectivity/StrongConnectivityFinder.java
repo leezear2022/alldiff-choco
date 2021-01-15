@@ -13,10 +13,7 @@ import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.Stack;
+import java.util.*;
 
 public class StrongConnectivityFinder {
 
@@ -99,6 +96,7 @@ public class StrongConnectivityFinder {
             nextNode[i] = -1;
             sccFirstNode[i] = -1;
             nodeSCC[i] = -1;
+            nodeOfDfsNum[i] = -1;
         }
         nbSCC = 0;
         findSingletons(restriction);
@@ -209,6 +207,7 @@ public class StrongConnectivityFinder {
             nextNode[i] = -1;
             sccFirstNode[i] = -1;
             nodeSCC[i] = -1;
+            nodeOfDfsNum[i] = -1;
         }
         nbSCC = 0;
         findSingletons(restriction);
@@ -248,6 +247,7 @@ public class StrongConnectivityFinder {
             if (iterator[i].hasNext()) {
                 j = iterator[i].next();
                 if (restriction.get(j)) {
+//                    System.out.println(i + ", " + j + ", " + (dfsNumOfNode[j] == 0) + "," + start);
                     if (dfsNumOfNode[j] == 0 && j != start) {
                         k++;
                         nodeOfDfsNum[k] = j;
@@ -258,9 +258,14 @@ public class StrongConnectivityFinder {
                         stack[stackIdx++] = i;
                         inStack.set(i);
                         inf[i] = i;
+//                        System.out.println(i + ", " + j + ", " + (dfsNumOfNode[j] == 0) + "," + start);
                     } else if (inStack.get(dfsNumOfNode[j])) {
 //                        System.out.println("inf["+i+"]="=inf[i[]);
+//                        System.out.println("addc:" + i + "," + j + ", " + inf[j] + ", " + k);
                         inf[i] = Math.min(inf[i], dfsNumOfNode[j]);
+
+
+//                        System.out.println(Arrays.toString(inf));
 
                         if (!unconnected) {
                             addCycles(inf[j], k);
@@ -285,6 +290,7 @@ public class StrongConnectivityFinder {
                         sccAdd(y);
                     } while (z != i);
                     nbSCC++;
+                    unconnected = true;
                 }
                 inf[p[i]] = Math.min(inf[p[i]], inf[i]);
                 i = p[i];
@@ -335,14 +341,13 @@ public class StrongConnectivityFinder {
     }
 
     private void addCycles(int a, int b) {
-//        System.out.println("addc:" + a + "," + b);
-        iter= cycles.iterator();
-        IntTuple2 t;
+
+        iter = cycles.iterator();
         while (iter.hasNext()) {
-            t = iter.next();
-            if (t.overlap(a, b)) {
-                t.a = Math.min(t.a, a);
-                t.b = Math.max(t.b, b);
+            tt = iter.next();
+            if (tt.overlap(a, b)) {
+                tt.a = Math.min(tt.a, a);
+                tt.b = Math.max(tt.b, b);
                 return;
             }
         }
@@ -353,6 +358,11 @@ public class StrongConnectivityFinder {
     private boolean inCycles(IntTuple2 t) {
 //        IntTuple2 tt;
 //        System.out.println("inc:" + t.a + "," + t.b + "=" + dfsNumOfNode[t.a] + "," + dfsNumOfNode[t.b]);
+
+        // t.a or t.b is unvisited quit straightly
+        if (dfsNumOfNode[t.a] == 0 || dfsNumOfNode[t.b] == 0) {
+            return false;
+        }
         for (int i = 0, len = cycles.size(); i < len; ++i) {
             tt = cycles.get(i);
             if (tt.cover(dfsNumOfNode[t.a]) && tt.cover(dfsNumOfNode[t.b])) {

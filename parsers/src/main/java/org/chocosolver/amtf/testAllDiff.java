@@ -51,20 +51,24 @@ public class testAllDiff {
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
 //                "/Users/lizhe/allDiff_Series/Queens/Queens-m1-s1/Queens-0008-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
-//                "G:/AllDiffBench/ColouredQueens/ColouredQueens-05.xml",
-//                "D:/AllDiffBench/Queens-m1-s1/Queens-0004-m1.xml",
-//                "D:\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
+//                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
+//                "D:/AllDiffBench/Queens-m1-s1/Queens-0008-m1.xml",
+                "D:\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "G:/AllDiffBench/LatinSquare/qwh-o30-h374-04.xml",
-                "D:\\AllDiffBench\\NumberPartitioning\\NumberPartitioning-032.xml"
+//                "D:\\AllDiffBench\\NumberPartitioning\\NumberPartitioning-032.xml"
         };
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
-//                "AC_REGIN",
+                "AC_REGIN",
+//                "AC_ZHANG",
+//                "AC20",
 //                "ACFair",
 //                "ACZhang18",
 //                "ACZhang18M",
-//                "ACZhang20",
-//                "ACZhang18",
+                "ACZhang18",
+                "ACZhang20",
+                "AC20",
+//                "ACZhang20Choco",
 //                "ACNaive",
 //                "ACNaive",
 //                "ACNaiveR",
@@ -73,7 +77,9 @@ public class testAllDiff {
 //                "ACNaive",
 //                "ACFair",
 //                "BC",
-                "WordRam",
+//                "WordRam",
+//                "Zhang18",
+//                "AC_ZHANG",
         };
         int runNum = 1;
 
@@ -96,7 +102,8 @@ public class testAllDiff {
                     }
                     Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                     Solver solver = model.getSolver();
-                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.defaultSearch(model));
+//                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
 //                    solver.setSearch(Search.minDomLBSearch(decVars));
 //                    solver.setSearch(new ImpactBased(decVars, true));

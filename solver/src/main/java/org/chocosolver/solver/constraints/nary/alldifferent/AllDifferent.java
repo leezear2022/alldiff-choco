@@ -23,10 +23,12 @@ import org.chocosolver.util.objects.Measurer;
 public class AllDifferent extends Constraint {
 
     public static final String AC = "AC";
+    public static final String AC20 = "AC20";
     public static final String AC_REGIN = "AC_REGIN";
     public static final String AC_ZHANG = "AC_ZHANG";
     public static final String BC = "BC";
     public static final String FC = "FC";
+    public static final String Gent = "Gent";
     public static final String NEQS = "NEQS";
     public static final String DEFAULT = "DEFAULT";
 
@@ -34,6 +36,7 @@ public class AllDifferent extends Constraint {
     public static final String ACFair = "ACFair";
     public static final String ACZhang18 = "ACZhang18";
     public static final String ACZhang20 = "ACZhang20";
+    public static final String ACZhang20Choco = "ACZhang20Choco";
     public static final String ACZhang18M = "ACZhang18M";
     public static final String ACNaive = "ACNaive";
     public static final String ACNaiveR = "ACNaiveR";
@@ -68,12 +71,18 @@ public class AllDifferent extends Constraint {
             case AC:
             case AC_ZHANG:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC(VARS, true)};
+            case Gent:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent(VARS)};
             case ACFair:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Fair(VARS)};
             case ACZhang18:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang18(VARS)};
             case ACZhang20:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang20(VARS)};
+            case ACZhang20Choco:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang20Choco(VARS)};
+            case AC20:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC20(VARS)};
             case ACZhang18M:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang18M(VARS)};
             case ACNaive:

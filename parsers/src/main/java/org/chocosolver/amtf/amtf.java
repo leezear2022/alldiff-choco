@@ -64,10 +64,10 @@ public class amtf {
 
 //        System.out.println(INaiveBitSet.max(1, 2, 3, 4));
 //        System.out.println(INaiveBitSet.max(4, 3, 2, 1));
-
-        INaiveBitSet bs2 = INaiveBitSet.makeBitSet(32, true);
 //
-        System.out.println(bs2);
+//        INaiveBitSet bs2 = INaiveBitSet.makeBitSet(32, true);
+////
+//        System.out.println(bs2);
 
 //        for (int i = bs2.firstSetBit(); i != bs2.end(); i = bs2.nextSetBit(i + 1)) {
 //            System.out.println(i);
@@ -106,6 +106,20 @@ public class amtf {
 //                System.out.println(newNode);
 //            }
 //        }
+
+        INaiveBitSet a = INaiveBitSet.makeBitSet(5, false);
+        a.set(1);
+        a.set(2);
+        a.set(4);
+        INaiveBitSet b = INaiveBitSet.makeBitSet(5, false);
+        b.set(2);
+        b.set(3);
+        b.set(4);
+
+        INaiveBitSet c = INaiveBitSet.makeBitSet(5, false);
+
+        b.setAfterMinus(a, b);
+        System.out.println(b);
     }
 
     private static int nextSetBit(long word, int pos) {

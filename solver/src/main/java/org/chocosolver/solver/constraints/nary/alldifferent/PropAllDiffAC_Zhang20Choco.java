@@ -1,7 +1,7 @@
 /*
  * This file is part of choco-solver, http://choco-solver.org/
  *
- * Copyright (c) 2020, IMT Atlantique. All rights reserved.
+ * Copyright (c) 2019, IMT Atlantique. All rights reserved.
  *
  * Licensed under the BSD 4-clause license.
  *
@@ -11,12 +11,11 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffACFast;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Zhang20;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Zhang20Choco;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.objects.Measurer;
 
 /**
  * Propagator for AllDifferent AC constraint for integer variables
@@ -30,13 +29,13 @@ import org.chocosolver.util.objects.Measurer;
  *
  * @author Jean-Guillaume Fages
  */
-public class PropAllDiffAC extends Propagator<IntVar> {
+public class PropAllDiffAC_Zhang20Choco extends Propagator<IntVar> {
 
     //***********************************************************************************
     // VARIABLES
     //***********************************************************************************
 
-    protected AlgoAllDiffAC filter;
+    protected AlgoAllDiffAC_Zhang20Choco filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -48,11 +47,9 @@ public class PropAllDiffAC extends Propagator<IntVar> {
      *
      * @param variables array of integer variables
      */
-    public PropAllDiffAC(IntVar[] variables, boolean fast) {
+    public PropAllDiffAC_Zhang20Choco(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-        this.filter = fast ?
-            new AlgoAllDiffACFast(variables, this):
-            new AlgoAllDiffAC(variables, this);
+        this.filter = new AlgoAllDiffAC_Zhang20Choco(variables, this);
 //        Measurer.numAllDiff++;
     }
 
@@ -63,6 +60,7 @@ public class PropAllDiffAC extends Propagator<IntVar> {
     @Override
     public void propagate(int evtmask) throws ContradictionException {
 //        System.out.println("----------------" + (Measurer.numProp) + ", " + this.getId() + " propagate----------------");
+//        Measurer.numProp++;
         filter.propagate();
     }
 

@@ -2,12 +2,16 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.stack.TIntStack;
+import gnu.trove.stack.array.TIntArrayStack;
+import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinder;
 import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR;
+import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR2;
 import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
@@ -30,7 +34,7 @@ import java.util.Stack;
  *
  * @author Jean-Guillaume Fages
  */
-public class AlgoAllDiffAC_Zhang20 {
+public class AlgoAllDiffAC20 {
 
     //***********************************************************************************
     // VARIABLES
@@ -79,19 +83,19 @@ public class AlgoAllDiffAC_Zhang20 {
     private DirectedGraph graph;
     private int[] nodeSCC;
     //    private StrongConnectivityNewFinder SCCfinder;
-    private StrongConnectivityFinderR SCCfinder;
+    private StrongConnectivityFinderR2 SCCfinder;
 //    private StrongConnectivityFinder SCCfinder;
 
     // for early detection
     protected IIntDeltaMonitor[] monitors;
     private UnaryIntProcedure<Integer> onValRem;
-    private Stack<IntTuple2> DE;
+    private TLongArrayStack DE;
     private boolean initialProp = true;
 
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_Zhang20(IntVar[] variables, ICause cause) {
+    public AlgoAllDiffAC20(IntVar[] variables, ICause cause) {
         id = num++;
 
         this.vars = variables;
@@ -147,12 +151,14 @@ public class AlgoAllDiffAC_Zhang20 {
 
         graph = new DirectedGraph(numNodes, SetType.BITSET, false);
 //        SCCfinder = new StrongConnectivityNewFinder(graph);
-        SCCfinder = new StrongConnectivityFinderR(graph);
+//        SCCfinder = new StrongConnectivityFinderR(graph);
+        SCCfinder = new StrongConnectivityFinderR2(graph, arity, numValues);
 //        SCCfinder = new StrongConnectivityFinder(graph);
 
         //for early detection
         // 存的是变量索引及原值
-        DE = new Stack<IntTuple2>();
+//        DE = new Stack<IntTuple2>();
+        DE = new TLongArrayStack();
 //        SCCfinder = new StrongConnectivityNewFinder(digraph, DE);
 
         // for delta
@@ -179,9 +185,7 @@ public class AlgoAllDiffAC_Zhang20 {
 
             @Override
             public void execute(int i) throws ContradictionException {
-                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
-//                IntVar v = vars[var];
-//                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
+                DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
             }
         };
     }
@@ -192,24 +196,24 @@ public class AlgoAllDiffAC_Zhang20 {
 
     public boolean propagate() throws ContradictionException {
         Measurer.enterProp();
-        long startTime = System.nanoTime();
         DE.clear();
         for (int i = 0; i < arity; ++i) {
             monitors[i].freeze();
             monitors[i].forEachRemVal(onValRem.set(i));
         }
+        long startTime = System.nanoTime();
 //        System.out.println("DE: " + DE);
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
         startTime = System.nanoTime();
         boolean filter = filter();
+        Measurer.filterTime += System.nanoTime() - startTime;
 
         for (int i = 0; i < vars.length; i++) {
             monitors[i].unfreeze();
         }
 
-        Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
     }
 

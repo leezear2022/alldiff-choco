@@ -1,14 +1,17 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 import gnu.trove.iterator.TIntIntIterator;
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinder;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR;
-import org.chocosolver.util.objects.IntTuple2;
+import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR2;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
@@ -16,7 +19,6 @@ import org.chocosolver.util.objects.setDataStructures.SetType;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
 import java.util.BitSet;
-import java.util.Stack;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -30,7 +32,7 @@ import java.util.Stack;
  *
  * @author Jean-Guillaume Fages
  */
-public class AlgoAllDiffAC_Zhang20 {
+public class AlgoAllDiffAC_Zhang20Choco {
 
     //***********************************************************************************
     // VARIABLES
@@ -77,21 +79,28 @@ public class AlgoAllDiffAC_Zhang20 {
     private int numNodes;
 
     private DirectedGraph graph;
-    private int[] nodeSCC;
+    private int[] node2SCC;
+    private TIntArrayList[] SCC2Node;
     //    private StrongConnectivityNewFinder SCCfinder;
-    private StrongConnectivityFinderR SCCfinder;
+    private StrongConnectivityFinderR2 SCCfinder;
 //    private StrongConnectivityFinder SCCfinder;
 
     // for early detection
     protected IIntDeltaMonitor[] monitors;
     private UnaryIntProcedure<Integer> onValRem;
-    private Stack<IntTuple2> DE;
+    private TLongArrayStack DE;
     private boolean initialProp = true;
+
+    private SparseSet triggeringVars;
+    private TIntHashSet changedSCCs;
+
+
+//    private int numNodes;
 
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_Zhang20(IntVar[] variables, ICause cause) {
+    public AlgoAllDiffAC_Zhang20Choco(IntVar[] variables, ICause cause) {
         id = num++;
 
         this.vars = variables;
@@ -143,16 +152,23 @@ public class AlgoAllDiffAC_Zhang20 {
 
         // SCC
         numNodes = addArity + numValues;
-        nodeSCC = new int[numNodes];
 
         graph = new DirectedGraph(numNodes, SetType.BITSET, false);
 //        SCCfinder = new StrongConnectivityNewFinder(graph);
-        SCCfinder = new StrongConnectivityFinderR(graph);
+//        SCCfinder = new StrongConnectivityFinderR(graph);
+        SCCfinder = new StrongConnectivityFinderR2(graph, arity, numValues);
+        numNodes = graph.getNbMaxNodes();
+        node2SCC = new int[numNodes];
+        SCC2Node = new TIntArrayList[numNodes];
+        for (int i = 0; i < numNodes; i++) {
+            SCC2Node[i] = new TIntArrayList();
+        }
 //        SCCfinder = new StrongConnectivityFinder(graph);
 
         //for early detection
         // 存的是变量索引及原值
-        DE = new Stack<IntTuple2>();
+//        DE = new Stack<IntTuple2>();
+        DE = new TLongArrayStack();
 //        SCCfinder = new StrongConnectivityNewFinder(digraph, DE);
 
         // for delta
@@ -165,23 +181,31 @@ public class AlgoAllDiffAC_Zhang20 {
         //for early detection
         // 存的是变量索引及原值
 //        DE = new Stack<IntTuple2>();
+        triggeringVars = new SparseSet(arity);
+        changedSCCs = new TIntHashSet();
+
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
         return new UnaryIntProcedure<Integer>() {
             int var;
+            boolean isNotTrigger;
 
             @Override
             public UnaryIntProcedure set(Integer o) {
                 var = o;
+                isNotTrigger = true;
                 return this;
             }
 
             @Override
             public void execute(int i) throws ContradictionException {
-                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
-//                IntVar v = vars[var];
-//                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
+                DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
+//                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
+                if (isNotTrigger && triggeringVars.contain(var)) {
+                    triggeringVars.add(var);
+                    isNotTrigger = false;
+                }
             }
         };
     }
@@ -192,27 +216,88 @@ public class AlgoAllDiffAC_Zhang20 {
 
     public boolean propagate() throws ContradictionException {
         Measurer.enterProp();
-        long startTime = System.nanoTime();
         DE.clear();
+        triggeringVars.clear();
+//        changedSCCs.clear();
         for (int i = 0; i < arity; ++i) {
             monitors[i].freeze();
             monitors[i].forEachRemVal(onValRem.set(i));
         }
+        long startTime = System.nanoTime();
 //        System.out.println("DE: " + DE);
+        prepareForMatching();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
         startTime = System.nanoTime();
         boolean filter = filter();
+        Measurer.filterTime += System.nanoTime() - startTime;
 
         for (int i = 0; i < vars.length; i++) {
             monitors[i].unfreeze();
         }
 
-        Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
     }
 
+    //***********************************************************************************
+    // Independent SCCs
+    //***********************************************************************************
+    private boolean propagate_SCC() throws ContradictionException {
+        boolean filter = false;
+        IntVar x, y;
+        changedSCCs.clear();
+        triggeringVars.iterateValid();
+//        TIntArrayList s;
+        TIntIterator iter;
+        while (triggeringVars.hasNextValid()) {
+            int xIdx = triggeringVars.next();
+            int valIdx = var2Val[xIdx];
+            int sccIdx = node2SCC[xIdx];
+            x = vars[xIdx];
+//            int val = idx2Val[valIdx];
+//            int s = nodeSCC[varIdx];
+            TIntArrayList s = SCC2Node[sccIdx];
+            if (valIdx == -1) {
+                findMaximumMatching(s);
+            }
+
+            if (x.isInstantiated()) {
+                int xVal = vars[xIdx].getValue();
+                if (changedSCCs.contains(sccIdx)) {
+                    changedSCCs.remove(sccIdx);
+                }
+
+                //parition s into s1 s2 , from now on s = s2
+                s.remove(xIdx);
+
+                iter = s.iterator();
+                while (iter.hasNext()) {
+                    int yIdx = iter.next();
+                    y = vars[yIdx];
+                    if (y.contains(xVal)) {
+                        filter |= y.removeValue(xVal, aCause);
+                    }
+
+                }
+
+                if (s.size() > 1) {
+                    changedSCCs.add(sccIdx);
+                }
+
+            } else {
+                if (s.size() > 1) {
+                    changedSCCs.add(sccIdx);
+                }
+            }
+        }
+        TIntIterator iter2 = changedSCCs.iterator();
+        while (iter2.hasNext()) {
+            int sccIdx = iter2.next();
+            SCCfinder.findAllSCC_ED(DE, SCC2Node[sccIdx]);
+        }
+        return filter;
+    }
     //***********************************************************************************
     // Initialization
     //***********************************************************************************
@@ -292,7 +377,7 @@ public class AlgoAllDiffAC_Zhang20 {
         }
     }
 
-    private void findMaximumMatching() throws ContradictionException {
+    private void prepareForMatching() {
         for (int i = 0; i < numValues; ++i) {
             valUnmatchedVar[i].clear();
             valUnmatchedVar[i].add(arity);
@@ -342,7 +427,36 @@ public class AlgoAllDiffAC_Zhang20 {
                 }
             }
         }
+    }
 
+
+    private void findMaximumMatching(TIntArrayList s) throws ContradictionException {
+        TIntIterator iter = s.iterator();
+        while (iter.hasNext()) {
+            int varIdx = iter.next();
+
+            if (var2Val[varIdx] == -1) {
+                value_visited_.clear();
+                variable_visited_.clear();
+                MakeAugmentingPath(varIdx);
+            }
+            if (var2Val[varIdx] == -1) {
+                // No augmenting path exists.
+
+                for (int i = 0; i < vars.length; i++) {
+                    monitors[i].unfreeze();
+                }
+
+                vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
+            }
+        }
+
+        for (int varIdx = 0; varIdx < arity; varIdx++) {
+            valUnmatchedVar[var2Val[varIdx]].remove(varIdx);
+        }
+    }
+
+    private void findMaximumMatching() throws ContradictionException {
         // Compute max matching.
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             if (var2Val[varIdx] == -1) {
@@ -364,17 +478,6 @@ public class AlgoAllDiffAC_Zhang20 {
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             valUnmatchedVar[var2Val[varIdx]].remove(varIdx);
         }
-
-//        if (id == 2) {
-//            System.out.println("-----final matching-----");
-//            for (int i = 0; i < arity; i++) {
-//                System.out.println(vars[i].getName() + " match " + idx2Val[var2Val[i]]);
-//            }
-//            System.out.println("------------------");
-//        }
-//        System.out.println(Arrays.toString(var2Val));
-//        System.out.println(Arrays.toString(val2Var));
-//        System.out.println(freeNode);
     }
 
     //***********************************************************************************
@@ -418,7 +521,8 @@ public class AlgoAllDiffAC_Zhang20 {
             }
         }
 
-        nodeSCC = SCCfinder.getNodesSCC();
+        SCCfinder.getNodesSCC(node2SCC, SCC2Node);
+
 //        System.out.println(Arrays.toString(nodeSCC));
 //        graph.removeNode(numNodes);
         return false;
@@ -436,7 +540,7 @@ public class AlgoAllDiffAC_Zhang20 {
                 int ub = v.getUB();
                 for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
                     int valIdx = val2Idx.get(k);
-                    if (nodeSCC[varIdx] != nodeSCC[valIdx + addArity]) {
+                    if (node2SCC[varIdx] != node2SCC[valIdx + addArity]) {
                         Measurer.enterP2();
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();

@@ -13,6 +13,7 @@ import java.util.BitSet;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISetIterator;
 import org.chocosolver.util.objects.setDataStructures.SetType;
@@ -106,13 +107,17 @@ public class AlgoAllDiffACFast extends AlgoAllDiffAC{
                 int j = map.get(k);
                 if (!distinction.get(j)) {
                     if (distinction.get(i)) { // Remove type 1 redundant edges between Γ(A) and Dc-A.
+                        ++Measurer.numDelValuesP1;
                         filter |= v.removeValue(k, aCause);
                         digraph.removeArc(i, j);
                     } else { // Remove type 2 redundant edges between Xc-Γ(A) and Dc-A.
                         if (nodeSCC[i] != nodeSCC[j]) {
+                            Measurer.enterP2();
                             if (matching[i] == j) {
+                                Measurer.numDelValuesP2 += v.getDomainSize() - 1;
                                 filter |= v.instantiateTo(k, aCause);
                             } else {
+                                ++Measurer.numDelValuesP2;
                                 filter |= v.removeValue(k, aCause);
                                 digraph.removeArc(i, j);
                             }

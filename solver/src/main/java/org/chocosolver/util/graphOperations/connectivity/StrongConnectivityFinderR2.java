@@ -1,5 +1,10 @@
 package org.chocosolver.util.graphOperations.connectivity;
 
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.iterator.TLongIterator;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
@@ -7,7 +12,7 @@ import org.chocosolver.util.objects.setDataStructures.ISet;
 
 import java.util.*;
 
-public class StrongConnectivityFinderR {
+public class StrongConnectivityFinderR2 {
     // input
     private DirectedGraph graph;
     private BitSet unvisited;
@@ -20,18 +25,21 @@ public class StrongConnectivityFinderR {
 
     // 标记SCC
     private int nbSCC;
-    private int[] nodeSCC;
+    private int[] node2SCC;
 
     //
     private int maxDFS = 1;
     private int[] DFSNum;
     private int[] lowLink;
     private boolean hasSCCSplit = false;
-    private Stack<IntTuple2> DE;
+    //    private Stack<IntTuple2> DE;
+//    private TIntArrayStack DE;
+    private TLongArrayStack DE;
     private boolean unconnected = false;
 
-    private ArrayList<IntTuple2> cycles;
-    IntTuple2 tt;
+    //    private ArrayList<IntTuple2> cycles;
+    private TLongArrayList cycles;
+//    IntTuple2 tt;
 
     private Iterator<Integer>[] iters;
     private int[] levelNodes;
@@ -39,48 +47,48 @@ public class StrongConnectivityFinderR {
     private SparseSet singleton;
     private int sccSize = 0;
     private int arity = 0;
+    private int addArity = 0;
     private int numValues = 0;
-    private Iterator<IntTuple2> iter;
+    //    private Iterator<IntTuple2> iter;
+    private TLongIterator iter;
+
+    private IntTuple2 nodePair;
+    private static int INT_SIZE = 32;
 
 //    private int index = 0;
 //    private BitSet visited;
 
 
-    public StrongConnectivityFinderR(DirectedGraph graph) {
+    public StrongConnectivityFinderR2(DirectedGraph graph, int arity, int numValues) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
 
         stack = new int[n];
         inStack = new BitSet(n);
 
-        nodeSCC = new int[n];
+        node2SCC = new int[n];
         nbSCC = 0;
 
         DFSNum = new int[n];
         lowLink = new int[n];
 
         unvisited = new BitSet(n);
-        cycles = new ArrayList<>();
+//        cycles = new ArrayList<>();
+        cycles = new TLongArrayList(n);
         iters = new Iterator[n + 1];
         levelNodes = new int[n + 1];
         singleton = new SparseSet(n);
-        arity = n;
-//        arity = arity;
-//        p = new int[n];
-//        inf = new int[n];
-//        nodeOfDfsNum = new int[n];
-//        dfsNumOfNode = new int[n];
-//        restriction = new BitSet(n);
-//        sccFirstNode = new int[n];
-//        nextNode = new int[n];
-//        nodeSCC = new int[n];
-//        nbSCC = 0;
-//        //noinspection unchecked
-//        iterator = new Iterator[n];
+        this.arity = arity;
+        this.addArity = arity + 1;
+        this.numValues = numValues;
+        nodePair = new IntTuple2(-1, -1);
+//        DE = new TIntArrayStack(n);
+        DE = new TLongArrayStack(n);
     }
 
     public void setArity(int arity) {
         this.arity = arity;
+        this.addArity = arity + 1;
     }
 
     public void findAllSCC() {
@@ -101,6 +109,17 @@ public class StrongConnectivityFinderR {
         findAllSCCOf(unvisited);
     }
 
+    public boolean findAllSCC(TIntArrayList restriction) {
+        singleton.clear();
+        ISet nodes = graph.getNodes();
+        TIntIterator iter = restriction.iterator();
+        while (iter.hasNext()) {
+            int i = iter.next();
+            unvisited.set(i, nodes.contains(i));
+        }
+        return findAllSCCOf_ED(unvisited);
+    }
+
     private void findAllSCCOf(BitSet restriction) {
         // initialization
         clearStack();
@@ -109,7 +128,7 @@ public class StrongConnectivityFinderR {
 
         for (int i = 0; i < n; i++) {
             lowLink[i] = n + 2;
-            nodeSCC[i] = -1;
+            node2SCC[i] = -1;
             DFSNum[i] = n + 2;
         }
 
@@ -159,7 +178,7 @@ public class StrongConnectivityFinderR {
                 while (stackNode != curNode) {
                     stackNode = popStack();
 //                    System.out.println("pop: " + stackNode + ", " + nbSCC + "," + DFSNum[stackNode]);
-                    nodeSCC[stackNode] = nbSCC;
+                    node2SCC[stackNode] = nbSCC;
                     sccSize++;
                 }
                 if (sccSize == 1) {
@@ -175,7 +194,7 @@ public class StrongConnectivityFinderR {
         ISet nodes = graph.getNodes();
         for (int i = restriction.nextSetBit(0); i >= 0; i = restriction.nextSetBit(i + 1)) {
             if (nodes.contains(i) && graph.getPredOf(i).size() * graph.getSuccOf(i).size() == 0) {
-                nodeSCC[i] = nbSCC;
+                node2SCC[i] = nbSCC;
                 singleton.add(nbSCC);
                 nbSCC++;
                 restriction.clear(i);
@@ -183,14 +202,41 @@ public class StrongConnectivityFinderR {
         }
 //        System.out.println("fs: " + Arrays.toString(nodeSCC));
     }
+//
+//    public boolean findAllSCC_ED(TIntArrayStack deleteEdge) {
+//        singleton.clear();
+//        DE = deleteEdge;
+//        ISet nodes = graph.getNodes();
+//        for (int i = 0; i < n; i++) {
+//            unvisited.set(i, nodes.contains(i));
+//        }
+//        return findAllSCCOf_ED(unvisited);
+//    }
 
-    public boolean findAllSCC_ED(Stack<IntTuple2> deleteEdge) {
+
+    public boolean findAllSCC_ED(TLongArrayStack deleteEdge) {
         singleton.clear();
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
         for (int i = 0; i < n; i++) {
             unvisited.set(i, nodes.contains(i));
         }
+        return findAllSCCOf_ED(unvisited);
+    }
+
+    public boolean findAllSCC_ED(TLongArrayStack deleteEdge, TIntArrayList restriction) {
+        singleton.clear();
+        DE = deleteEdge;
+        ISet nodes = graph.getNodes();
+        TIntIterator iter = restriction.iterator();
+
+        while (iter.hasNext()) {
+            int i = iter.next();
+            unvisited.set(i, nodes.contains(i));
+        }
+//        for (int i = exception.nextClearBit(0); i >= 0 && i < n; i = exception.nextClearBit(i + 1)) {
+//            unvisited.set(i, nodes.contains(i));
+//        }
         return findAllSCCOf_ED(unvisited);
     }
 
@@ -204,7 +250,7 @@ public class StrongConnectivityFinderR {
 
         for (int i = 0; i < n; i++) {
             lowLink[i] = n + 2;
-            nodeSCC[i] = -1;
+            node2SCC[i] = -1;
             DFSNum[i] = -1;
         }
 
@@ -234,8 +280,8 @@ public class StrongConnectivityFinderR {
                 if (inStack.get(newNode)) {
                     lowLink[curnode] = Math.min(lowLink[curnode], DFSNum[newNode]);
                     if (!unconnected) {
-                        addCycles(lowLink[newNode], maxDFS - 1);
-                        while (!DE.empty() && inCycles(DE.peek())) {
+                        addCycles(getIntTuple2Long(lowLink[newNode], maxDFS - 1));
+                        while (!(DE.size() == 0) && inCycles(DE.peek())) {
                             DE.pop();
                         }
                     }
@@ -258,7 +304,7 @@ public class StrongConnectivityFinderR {
                 while (stackNode != curnode) {
                     stackNode = popStack();
 //                    System.out.println("pop: " + stackNode + ", " + nbSCC);
-                    nodeSCC[stackNode] = nbSCC;
+                    node2SCC[stackNode] = nbSCC;
                     sccSize++;
                 }
                 if (sccSize == 1) {
@@ -270,7 +316,7 @@ public class StrongConnectivityFinderR {
             }
         }
 
-        if (!unconnected && DE.empty()) {
+        if (!unconnected && (DE.size() == 0)) {
 //            System.out.println("xixi");
             return true;
         }
@@ -328,7 +374,7 @@ public class StrongConnectivityFinderR {
                         while (stackNode != curNode) {
                             stackNode = popStack();
 //                            System.out.println("pop: " + stackNode + ", " + nbSCC);
-                            nodeSCC[stackNode] = nbSCC;
+                            node2SCC[stackNode] = nbSCC;
                             sccSize++;
                         }
                         if (sccSize == 1) {
@@ -383,8 +429,8 @@ public class StrongConnectivityFinderR {
 //                    System.out.println(Arrays.toString(lowLink));
 
                     if (!unconnected) {
-                        addCycles(lowLink[curNode], maxDFS - 1);
-                        while (!DE.empty() && inCycles(DE.peek())) {
+                        addCycles(getIntTuple2Long(lowLink[curNode], maxDFS - 1));
+                        while (!(DE.size() == 0) && inCycles(DE.peek())) {
                             DE.pop();
                         }
                     }
@@ -408,7 +454,7 @@ public class StrongConnectivityFinderR {
                         while (stackNode != curNode) {
                             stackNode = popStack();
 //                            System.out.println("pop: " + stackNode + ", " + nbSCC);
-                            nodeSCC[stackNode] = nbSCC;
+                            node2SCC[stackNode] = nbSCC;
                             sccSize++;
                         }
                         if (sccSize == 1) {
@@ -427,7 +473,7 @@ public class StrongConnectivityFinderR {
                 lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], lowLink[curNode]);
                 curLevel--;
 
-                if (!unconnected && DE.empty()) {
+                if (!unconnected && (DE.size() == 0)) {
 //                    System.out.println("xixi");
                     return true;
                 }
@@ -453,57 +499,191 @@ public class StrongConnectivityFinderR {
     }
 
     public int[] getNodesSCC() {
-        return nodeSCC;
+        return node2SCC;
     }
+
+    public void getNodesSCC(int[] n2c, TIntArrayList[] c2n) {
+        for (int i = 0; i < n; i++) {
+            int sccIdx = node2SCC[i];
+            n2c[i] = sccIdx;
+            c2n[sccIdx].add(i);
+        }
+    }
+
 
     public SparseSet getSingleton() {
         return singleton;
     }
 
     //
-    private void addCycles(int a, int b) {
-        iter = cycles.iterator();
-        while (iter.hasNext()) {
-            tt = iter.next();
-            if (tt.overlap(a, b)) {
-                tt.a = Math.min(tt.a, a);
-                tt.b = Math.max(tt.b, b);
-                return;
-            }
-        }
-
-
-//        for (int i = 0, len = cycles.size(); i < len; ++i) {
-//            tt = cycles.get(i);
+//    private void addCycles(int a, int b) {
+//        iter = cycles.iterator();
+//        while (iter.hasNext()) {
+//            tt = iter.next();
 //            if (tt.overlap(a, b)) {
 //                tt.a = Math.min(tt.a, a);
 //                tt.b = Math.max(tt.b, b);
 //                return;
 //            }
 //        }
-        cycles.add(new IntTuple2(a, b));
-    }
+//
+//
+////        for (int i = 0, len = cycles.size(); i < len; ++i) {
+////            tt = cycles.get(i);
+////            if (tt.overlap(a, b)) {
+////                tt.a = Math.min(tt.a, a);
+////                tt.b = Math.max(tt.b, b);
+////                return;
+////            }
+////        }
+//        cycles.add(new IntTuple2(a, b));
+//    }
 
-    private boolean inCycles(IntTuple2 t) {
-//        IntTuple2 tt;
-//        System.out.println("inc:" + t.a + "," + t.b + "=" + DFSNum[t.a] + "," + DFSNum[t.b]);
-        if (DFSNum[t.a] == -1 || DFSNum[t.b] == -1) {
-            return false;
-        }
-        for (int i = 0, len = cycles.size(); i < len; ++i) {
-            tt = cycles.get(i);
-            if (tt.cover(DFSNum[t.a]) && tt.cover(DFSNum[t.b])) {
-                return true;
-            }
-        }
-
-//        iter = cycles.iterator();
-//        while (iter.hasNext()) {
-//            tt = iter.next();
+//    private boolean inCycles(IntTuple2 t) {
+////        IntTuple2 tt;
+////        System.out.println("inc:" + t.a + "," + t.b + "=" + DFSNum[t.a] + "," + DFSNum[t.b]);
+//        if (DFSNum[t.a] == -1 || DFSNum[t.b] == -1) {
+//            return false;
+//        }
+//        for (int i = 0, len = cycles.size(); i < len; ++i) {
+//            tt = cycles.get(i);
 //            if (tt.cover(DFSNum[t.a]) && tt.cover(DFSNum[t.b])) {
 //                return true;
 //            }
 //        }
+//
+////        iter = cycles.iterator();
+////        while (iter.hasNext()) {
+////            tt = iter.next();
+////            if (tt.cover(DFSNum[t.a]) && tt.cover(DFSNum[t.b])) {
+////                return true;
+////            }
+////        }
+//        return false;
+//    }
+
+//    private boolean inCycles(long t) {
+////        IntTuple2 tt;
+////        System.out.println("inc:" + t.a + "," + t.b + "=" + DFSNum[t.a] + "," + DFSNum[t.b]);
+//        getIntTuple2(nodePair, t);
+//
+//        if (DFSNum[nodePair.a] == -1 || DFSNum[nodePair.b] == -1) {
+//            return false;
+//        }
+//
+//        for (int i = 0, len = cycles.size(); i < len; ++i) {
+//            long tt = cycles.get(i);
+//            if (tt.cover(DFSNum[nodePair.a]) && tt.cover(DFSNum[nodePair.b])) {
+//                return true;
+//            }
+//        }
+//
+//
+//        return false;
+//    }
+
+//    private boolean inCycles(int vvpIdx) {
+//
+//        getNodePair(nodePair, vvpIdx);
+//
+//        if (DFSNum[nodePair.a] == -1 || DFSNum[nodePair.b] == -1) {
+//            return false;
+//        }
+//
+//        for (int i = 0, len = cycles.size(); i < len; ++i) {
+//            tt = cycles.get(i);
+//            if (tt.cover(DFSNum[nodePair.a]) && tt.cover(DFSNum[nodePair.b])) {
+//                return true;
+//            }
+//        }
+//
+//        return false;
+//    }
+
+    private void addCycles(long e) {
+
+        for (int i = 0; i < cycles.size(); i++) {
+            long c = cycles.get(i);
+            if (overlap(c, e)) {
+                cycles.set(i, expand(c, e));
+                return;
+            }
+        }
+
+        cycles.add(e);
+    }
+
+    private boolean inCycles(long f) {
+//        IntTuple2 tt;
+        getIntTuple2(nodePair, f);
+//        System.out.println("inc:" + nodePair.a + "," + nodePair.b + "=" + DFSNum[nodePair.a] + "," + DFSNum[nodePair.b);
+
+        if (DFSNum[nodePair.a] == -1 || DFSNum[nodePair.b] == -1) {
+            return false;
+        }
+
+        for (int i = 0, len = cycles.size(); i < len; ++i) {
+            long e = cycles.get(i);
+            if (cover(e, DFSNum[nodePair.a], DFSNum[nodePair.b])) {
+                return true;
+            }
+        }
+
+
         return false;
+    }
+
+    public void getNodePair(IntTuple2 vvp, int vvpIdx) {
+        vvp.a = vvpIdx / numValues;
+        vvp.b = vvpIdx % numValues + addArity;
+    }
+
+    public long getVVPIdx(int x, int a) {
+        return x << +a;
+    }
+
+    public void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
+        vvp.a = (int) (vvpIdx >> INT_SIZE);
+        vvp.b = (int) vvpIdx;
+    }
+
+    public long getIntTuple2Long(int x, int a) {
+        long c = (long) x;
+        return c << INT_SIZE | a;
+    }
+
+    private boolean overlap(long e, long f) {
+        int a = (int) (e >> INT_SIZE);
+        int b = (int) e;
+        int x = (int) (f >> INT_SIZE);
+        int y = (int) f;
+//        System.out.println("overlap: " + x + "," + y + "," + a + "," + b);
+        return (x >= a && x <= b) || (y >= a && y <= b);
+    }
+
+    private boolean cover(long e, long f) {
+        int x = (int) (e >> INT_SIZE);
+        int y = (int) e;
+        int a = (int) (f >> INT_SIZE);
+        int b = (int) f;
+
+        return (x >= a && x <= b) && (y >= a && y <= b);
+    }
+
+    private boolean cover(long e, int dfsa, int dfsb) {
+        int a = (int) (e >> INT_SIZE);
+        int b = (int) e;
+//        int a = (int) (f >> INT_SIZE);
+//        int b = (int) f;
+
+        return (dfsa >= a && dfsa <= b) && (dfsb >= a && dfsb <= b);
+    }
+
+    private long expand(long e, long f) {
+        int x = (int) (e >> INT_SIZE);
+        int y = (int) e;
+        int a = (int) (f >> INT_SIZE);
+        int b = (int) f;
+        return getIntTuple2Long(Math.min(x, a), Math.max(y, b));
     }
 }

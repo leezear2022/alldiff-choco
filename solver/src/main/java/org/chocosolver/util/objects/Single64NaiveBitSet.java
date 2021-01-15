@@ -195,6 +195,15 @@ public class Single64NaiveBitSet implements INaiveBitSet {
 
     @Override
     public String toString() {
-        return Long.toBinaryString(words);
+//        return Long.toBinaryString(words);
+        if (size() == 0) {
+            return "{}";
+        }
+        StringBuilder sb = new StringBuilder("{");
+        for (int i = firstSetBit(); i < end(); i = nextSetBit(i + 1)) {
+            sb.append(i).append(",");
+        }
+        sb.replace(sb.length() - 1, sb.length(), "}");
+        return sb.toString();
     }
 }
