@@ -34,7 +34,7 @@ import org.chocosolver.util.ESat;
  * @author Jia'nan Chen
  */
 
-public class PropAllDiffAC_NaiveR extends Propagator<IntVar> {
+public class PropAllDiffAC_NaiveBitSetNew extends Propagator<IntVar> {
 
     //***********************************************************************************0
     // VARIABLES
@@ -53,7 +53,7 @@ public class PropAllDiffAC_NaiveR extends Propagator<IntVar> {
      *
      * @param variables array of integer variables
      */
-    public PropAllDiffAC_NaiveR(IntVar[] variables) {
+    public PropAllDiffAC_NaiveBitSetNew(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
 
 

@@ -60,11 +60,6 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     // 索引到值
     private TIntIntHashMap val2Idx;
 
-    // Xc-Γ(A)
-    private SparseSet notGamma;
-    // Dc-A
-    private SparseSet notA;
-
     // 与值相连的变量
     private INaiveBitSet[] B;
     private INaiveBitSet[] D;
@@ -77,11 +72,11 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     private INaiveBitSet needVisitValues;
     //    private INaiveBitSet unMatchedValues;
     private INaiveBitSet matchedValues;
-    private INaiveBitSet matchedMasks;
+//    private INaiveBitSet matchedMasks;
 
-    private INaiveBitSet varSingletonMask;
-    private INaiveBitSet valSingletonMask;
-    private INaiveBitSet varTmpMask;
+//    private INaiveBitSet varSingletonMask;
+//    private INaiveBitSet valSingletonMask;
+//    private INaiveBitSet varTmpMask;
     // matching
     private int[] val2Var;
     private int[] var2Val;
@@ -89,16 +84,6 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     // 记录队列
     private int[] visiting_;
     private int[] variable_visited_from_;
-
-    // 变量到变量的连通性
-    // 对于惰性算法，记录是否知道-变量到变量的连通性
-    private INaiveBitSet[] graphLinkedMatrix;
-    private INaiveBitSet[] graphLinkedFrontier;
-
-    // !! 记录gamma的前沿
-    private INaiveBitSet gammaFrontier;
-    // 记录gamma的bitset
-    private INaiveBitSet gammaMask;
 
     long startTime;
     //
@@ -201,11 +186,11 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         needVisitValues = INaiveBitSet.makeBitSet(numValues, true);
 //        unMatchedValues = INaiveBitSet.makeBitSet(numValues, true);
         matchedValues = INaiveBitSet.makeBitSet(numValues, false);
-        matchedMasks = INaiveBitSet.makeBitSet(numValues, true);
-        varSingletonMask = INaiveBitSet.makeBitSet(arity, false);
-        valSingletonMask = INaiveBitSet.makeBitSet(numValues, false);
+//        matchedMasks = INaiveBitSet.makeBitSet(numValues, true);
+//        varSingletonMask = INaiveBitSet.makeBitSet(arity, false);
+//        valSingletonMask = INaiveBitSet.makeBitSet(numValues, false);
         singleton = INaiveBitSet.makeBitSet(arity, false);
-        varTmpMask = INaiveBitSet.makeBitSet(arity, false);
+//        varTmpMask = INaiveBitSet.makeBitSet(arity, false);
 
         // for bit DFS
         varStack = new int[arity];
@@ -232,17 +217,6 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         }
 
         freeNode = new SparseSet(numValues);
-        gammaFrontier = INaiveBitSet.makeBitSet(arity, false);
-        gammaMask = INaiveBitSet.makeBitSet(arity, false);
-        notGamma = new SparseSet(arity);
-        notA = new SparseSet(numValues);
-
-        graphLinkedMatrix = new INaiveBitSet[arity];
-        graphLinkedFrontier = new INaiveBitSet[arity];
-        for (int i = 0; i < arity; ++i) {
-            graphLinkedMatrix[i] = INaiveBitSet.makeBitSet(arity, false);
-            graphLinkedFrontier[i] = INaiveBitSet.makeBitSet(arity, false);
-        }
     }
 
     //***********************************************************************************
@@ -654,9 +628,8 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
-                int ub = v.getUB();
-                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
-                    int valIdx = val2Idx.get(k);
+                for (int valIdx = D[varIdx].firstSetBit(); valIdx != D[varIdx].end(); valIdx = D[varIdx].nextSetBit(valIdx + 1)) {
+                    int k = idx2Val[valIdx];
                     if (varSCC[varIdx] != valSCC[valIdx]) {
                         Measurer.enterP2();
                         if (valIdx == var2Val[varIdx]) {

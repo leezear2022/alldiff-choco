@@ -88,7 +88,9 @@ public class AllDifferent extends Constraint {
             case ACNaive:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
             case ACNaiveR:
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveR(VARS)};
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveBitSetNew(VARS)};
+            case ACNaiveNew:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveBitSetNew(VARS)};
             case WordRam:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRam(VARS)};
 //                case ACNaiveNew:

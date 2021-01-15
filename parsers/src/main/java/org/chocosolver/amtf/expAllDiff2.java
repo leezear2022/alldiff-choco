@@ -52,14 +52,15 @@ public class expAllDiff2 {
 
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
-                "AC_REGIN",
+//                "AC_REGIN",
                 "ACFair",
                 "ACZhang18",
                 "ACZhang18M",
-                "ACZhang20",
-                "ACNaive",
+//                "ACZhang20",
+                "AC20",
+                "WordRam",
+                "ACNaiveNew",
                 "BC",
-                "WordRam"
         };
 
         int runNum = 1;
