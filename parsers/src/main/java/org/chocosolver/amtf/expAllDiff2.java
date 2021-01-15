@@ -15,7 +15,7 @@ import java.util.*;
 
 import static java.lang.System.out;
 
-public class expAllDiff {
+public class expAllDiff2 {
 
 
     public static void main(String[] args) {
@@ -52,13 +52,13 @@ public class expAllDiff {
 
         XCSPParser parser = new XCSPParser();
         String[] algorithms = new String[]{
-//                "AC_REGIN",
-//                "ACFair",
-//                "ACZhang18",
-//                "ACZhang18M",
-//                "ACZhang20",
-//                "ACNaive",
-//                "BC",
+                "AC_REGIN",
+                "ACFair",
+                "ACZhang18",
+                "ACZhang18M",
+                "ACZhang20",
+                "ACNaive",
+                "BC",
                 "WordRam"
         };
 
@@ -69,7 +69,7 @@ public class expAllDiff {
 
         for (String s : series) {
             try {
-                File csv = new File(outputFolder + "//WordRam_" + s + "_" + HeuName + "_" + dateTime + ".csv");
+                File csv = new File(outputFolder + "//" + s + "_" + HeuName + "_" + dateTime + ".csv");
                 BufferedWriter bw = new BufferedWriter(new FileWriter(csv, false));
                 bw.write("instance");
                 for (int i = 0; i < algorithms.length; i++) {
