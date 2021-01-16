@@ -80,7 +80,7 @@ public class GolombRulerExp {
                 m_diffs[i][j] = diffs[k];
             }
         }
-        model.allDifferent(diffs, "BC").post();
+        model.allDifferent(diffs, algo).post();
 
         // break symetries
         if (m > 2) {
