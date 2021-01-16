@@ -15,94 +15,92 @@ import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.strategy.Search;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.tools.StringUtils;
 import org.kohsuke.args4j.Option;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static java.lang.System.out;
-import static java.util.Arrays.fill;
 import static org.chocosolver.solver.search.strategy.Search.inputOrderLBSearch;
 
 /**
- * CSPLib prob019:<br/>
- * "An order n magic square is a n by n matrix containing the numbers 1 to n^2, with each row,
- * column and main diagonal equal the same sum.
- * As well as finding magic squares, we are interested in the number of a given size that exist."
+ * CSPLib prob006:<br/>
+ * A Golomb ruler may be defined as a set of m integers 0 = a_1 < a_2 < ... < a_m such that
+ * the m(m-1)/2 differences a_j - a_i, 1 <= i < j <= m are distinct.
+ * Such a ruler is said to contain m marks and is of length a_m.
+ * <br/>
+ * The objective is to find optimal (minimum length) or near optimal rulers.
  * <br/>
  *
  * @author Charles Prud'homme
  * @since 31/03/11
  */
-public class MagicSquareExp {
+public class GolombRulerExp {
 
-    @Option(name = "-n", usage = "Magic square size.", required = true)
-    int n = 5;
-    IntVar[] vars;
+    @Option(name = "-m", usage = "Golomb ruler order.", required = false)
+    private int m = 10;
+
+    IntVar[] ticks;
+    IntVar[] diffs;
+    IntVar[][] m_diffs;
+
     String algo;
     Model model;
 
-    public MagicSquareExp(Model model, int n, String algo) {
+    public GolombRulerExp(Model model, int n, String algo) {
         this.model = model;
-        this.n = n;
+        this.m = n;
         this.algo = algo;
     }
 
-
     public void buildModel() {
-//        model = new Model();
-        int ms = n * (n * n + 1) / 2;
+//        model = new Model("GolombRuler");
+        ticks = model.intVarArray("a", m, 0, (m < 31) ? (1 << (m + 1)) - 1 : 9999, false);
 
-        IntVar[][] matrix = new IntVar[n][n];
-        IntVar[][] invMatrix = new IntVar[n][n];
-        vars = new IntVar[n * n];
+        model.arithm(ticks[0], "=", 0).post();
 
-        int k = 0;
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++, k++) {
-                matrix[i][j] = model.intVar("square" + i + "," + j, 1, n * n, false);
-                vars[k] = matrix[i][j];
-                invMatrix[j][i] = matrix[i][j];
+        for (int i = 0; i < m - 1; i++) {
+            model.arithm(ticks[i + 1], ">", ticks[i]).post();
+        }
+
+        diffs = model.intVarArray("d", (m * m - m) / 2, 0, (m < 31) ? (1 << (m + 1)) - 1 : 9999, false);
+        m_diffs = new IntVar[m][m];
+        for (int k = 0, i = 0; i < m - 1; i++) {
+            for (int j = i + 1; j < m; j++, k++) {
+                // d[k] is m[j]-m[i] and must be at least sum of first j-i integers
+                // <cpru 04/03/12> it is worth adding a constraint instead of a view
+                model.scalar(new IntVar[]{ticks[j], ticks[i]}, new int[]{1, -1}, "=", diffs[k]).post();
+                model.arithm(diffs[k], ">=", (j - i) * (j - i + 1) / 2).post();
+                model.arithm(diffs[k], "-", ticks[m - 1], "<=", -((m - 1 - j + i) * (m - j + i)) / 2).post();
+                model.arithm(diffs[k], "<=", ticks[m - 1], "-", ((m - 1 - j + i) * (m - j + i)) / 2).post();
+                m_diffs[i][j] = diffs[k];
             }
         }
+        model.allDifferent(diffs, "BC").post();
 
-        IntVar[] diag1 = new IntVar[n];
-        IntVar[] diag2 = new IntVar[n];
-        for (int i = 0; i < n; i++) {
-            diag1[i] = matrix[i][i];
-            diag2[i] = matrix[(n - 1) - i][i];
+        // break symetries
+        if (m > 2) {
+            model.arithm(diffs[0], "<", diffs[diffs.length - 1]).post();
         }
-
-        model.allDifferent(vars, algo).post();
-
-        int[] coeffs = new int[n];
-        fill(coeffs, 1);
-        for (int i = 0; i < n; i++) {
-            model.scalar(matrix[i], coeffs, "=", ms).post();
-            model.scalar(invMatrix[i], coeffs, "=", ms).post();
-        }
-        model.scalar(diag1, coeffs, "=", ms).post();
-        model.scalar(diag2, coeffs, "=", ms).post();
-
-        // Symetries breaking
-        model.arithm(matrix[0][n - 1], "<", matrix[n - 1][0]).post();
-        model.arithm(matrix[0][0], "<", matrix[n - 1][n - 1]).post();
-        model.arithm(matrix[0][0], "<", matrix[n - 1][0]).post();
     }
 
-
     public void configureSearch() {
-        model.getSolver().setSearch(inputOrderLBSearch(vars));
+        model.getSolver().setSearch(inputOrderLBSearch(ticks));
+    }
+
+    public void solve() {
+        model.setObjective(false, (IntVar) model.getVars()[m - 1]);
+        while (model.getSolver().solve()) {
+            out.println("New solution found : " + model.getVars()[m - 1]);
+        }
     }
 
     public static void main(String[] args) throws IOException {
-        String name = "MagicSquare";
+        String name = "GolombRuler";
         // algorithms
         String[] algorithms = new String[]{
 //                "AC_REGIN",
@@ -136,7 +134,7 @@ public class MagicSquareExp {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 4; i <= 70; i++) {
+        for (int i = 50; i <= 80; i++) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);
@@ -162,7 +160,7 @@ public class MagicSquareExp {
                 Measurer.initial();
                 Measurer.maxAllDiffArity = 0l;
                 Model model = new Model();
-                MagicSquareExp instances = new MagicSquareExp(model, i, algorithm);
+                GolombRulerExp instances = new GolombRulerExp(model, i, algorithm);
                 instances.buildModel();
 
                 Solver solver = model.getSolver();
