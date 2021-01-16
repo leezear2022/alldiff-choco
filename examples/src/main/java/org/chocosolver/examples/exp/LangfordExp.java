@@ -80,7 +80,7 @@ public class LangfordExp {
             }
         }
         position[0].lt(position[n * k - 1]).post();
-        model.allDifferent(position, "AC").post();
+        model.allDifferent(position, algo).post();
     }
 
     public void configureSearch() {
@@ -144,7 +144,7 @@ public class LangfordExp {
         float IN_SEC = 1000 * 1000 * 1000f;
 
         // number of set
-        int[] ks = {100};
+        int[] ks = {20, 100};
         // number in set
         int[] ns = {17, 25, 30, 37, 45};
         for (int i = 0; i < ks.length; i++) {
