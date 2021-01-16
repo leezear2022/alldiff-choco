@@ -70,7 +70,7 @@ public class LangfordExp {
     }
 
     public void buildModel() {
-        model = new Model();
+//        model = new Model();
         // position of the colors
         // position[i], position[i+k], position[i+2*k]... occurrence of the same color
         position = model.intVarArray("p", n * k, 0, k * n - 1, false);
@@ -149,7 +149,7 @@ public class LangfordExp {
         int[] ns = {17, 25, 30, 37, 45};
         for (int i = 0; i < ks.length; i++) {
             int kk = ks[i];
-            for (int j = 0; j <= ns.length; j++) {
+            for (int j = 0; j < ns.length; j++) {
                 int nn = ns[j];
                 // instance name
                 String insName = name + "-" + kk + "-" + nn;
