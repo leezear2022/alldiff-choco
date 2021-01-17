@@ -144,15 +144,15 @@ public class LangfordExp {
         float IN_SEC = 1000 * 1000 * 1000f;
 
         // number of set
-        int[] ks = {20, 100};
+//        int[] ks = {20, 100};
         // number in set
-        int[] ns = {17, 25, 30, 37, 45};
-        for (int i = 0; i < ks.length; i++) {
-            int kk = ks[i];
-            for (int j = 0; j < ns.length; j++) {
-                int nn = ns[j];
+//        int[] ns = {17, 25, 30, 37, 45};
+        for (int i = 3; i <= 5; i++) {
+//            int kk = ks[i];
+            for (int j = 20; j <= 100; j += 5) {
+//                int nn = ns[j];
                 // instance name
-                String insName = name + "-" + kk + "-" + nn;
+                String insName = name + "-" + i + "-" + j;
                 bw.write(insName);
                 out.println(insName + " [" + dateTime + "]======>");
                 for (String algorithm : algorithms) {
@@ -176,7 +176,7 @@ public class LangfordExp {
                     Measurer.initial();
                     Measurer.maxAllDiffArity = 0l;
                     Model model = new Model();
-                    LangfordExp instances = new LangfordExp(model, kk, nn, algorithm);
+                    LangfordExp instances = new LangfordExp(model, i, j, algorithm);
                     instances.buildModel();
 
                     Solver solver = model.getSolver();
