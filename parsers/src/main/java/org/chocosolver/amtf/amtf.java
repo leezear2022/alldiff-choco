@@ -1,5 +1,6 @@
 package org.chocosolver.amtf;
 
+import gnu.trove.list.array.TIntArrayList;
 import org.chocosolver.util.objects.INaiveBitSet;
 
 //import org.objenesis.strategy.BaseInstantiatorStrategy;
@@ -120,6 +121,9 @@ public class amtf {
 
         b.setAfterMinus(a, b);
         System.out.println(b);
+
+
+        TIntArrayList t = new TIntArrayList(2);
     }
 
     private static int nextSetBit(long word, int pos) {

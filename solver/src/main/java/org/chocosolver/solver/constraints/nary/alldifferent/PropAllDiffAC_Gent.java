@@ -49,7 +49,7 @@ public class PropAllDiffAC_Gent extends Propagator<IntVar> {
      */
     public PropAllDiffAC_Gent(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-        this.filter = new AlgoAllDiffAC_Gent(variables, this);
+        this.filter = new AlgoAllDiffAC_Gent(variables, this, this.getModel());
     }
 
     //***********************************************************************************
