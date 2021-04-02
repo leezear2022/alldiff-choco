@@ -5,7 +5,9 @@ import gnu.trove.iterator.TLongIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.stack.array.TLongArrayStack;
+import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.IntTuple2;
+import org.chocosolver.util.objects.RSetPartion;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
@@ -55,6 +57,8 @@ public class StrongConnectivityFinderR2 {
     private IntTuple2 nodePair;
     private static int INT_SIZE = 32;
 
+    private RSetPartion partion;
+
 //    private int index = 0;
 //    private BitSet visited;
 
@@ -86,9 +90,44 @@ public class StrongConnectivityFinderR2 {
         DE = new TLongArrayStack(n);
     }
 
+    public StrongConnectivityFinderR2(DirectedGraph graph, int arity, int numValues, RSetPartion p) {
+        this.graph = graph;
+        this.n = graph.getNbMaxNodes();
+        partion = p;
+
+        stack = new int[n];
+        inStack = new BitSet(n);
+
+        node2SCC = new int[n];
+        nbSCC = 0;
+
+        DFSNum = new int[n];
+        lowLink = new int[n];
+
+        unvisited = new BitSet(n);
+//        cycles = new ArrayList<>();
+        cycles = new TLongArrayList(n);
+        iters = new Iterator[n + 1];
+        levelNodes = new int[n + 1];
+        singleton = new SparseSet(n);
+        this.arity = arity;
+        this.addArity = arity + 1;
+        this.numValues = numValues;
+        nodePair = new IntTuple2(-1, -1);
+//        DE = new TIntArrayStack(n);
+        DE = new TLongArrayStack(n);
+    }
+
     public void setArity(int arity) {
         this.arity = arity;
         this.addArity = arity + 1;
+    }
+
+    public void setUnvisitedValues() {
+        ISet nodes = graph.getNodes();
+        for (int i = arity; i < n; i++) {
+            unvisited.set(i, nodes.contains(i));
+        }
     }
 
     public void findAllSCC() {
@@ -120,6 +159,16 @@ public class StrongConnectivityFinderR2 {
         return findAllSCCOf_ED(unvisited);
     }
 
+    public void findAllSCC(INaiveBitSet vars) {
+        singleton.clear();
+        ISet nodes = graph.getNodes();
+        for (int i = vars.nextClearBit(0); i <= vars.lastSetIndex(); i = vars.nextClearBit(i + 1)) {
+            unvisited.set(i, nodes.contains(i));
+        }
+
+        findAllSCCOf(unvisited);
+    }
+
     private void findAllSCCOf(BitSet restriction) {
         // initialization
         clearStack();
@@ -142,6 +191,10 @@ public class StrongConnectivityFinderR2 {
             strongConnect(v);
             v = restriction.nextSetBit(v);
         }
+
+//        for (int varIdx = restriction.nextSetBit(0); varIdx < arity; varIdx = restriction.nextSetBit(varIdx + 1)) {
+//            strongConnect(varIdx);
+//        }
     }
 
     private void strongConnectR(int curNode) {

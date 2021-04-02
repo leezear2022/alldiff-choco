@@ -33,17 +33,31 @@ public class RSetPartion {
         dense[limit] = e;
     }
 
+    public void remove(int e) {
+        // 查找当前索引
+        int index = sparse[e];
+        // 查找边界索引
+        int index2 = splitPoint.nextClearBit(index);
+        int tmp = dense[index2];
+        sparse[e] = index2;
+        sparse[tmp] = index;
+        dense[index] = tmp;
+        dense[index2] = e;
+        // 前一处设置split
+        splitPoint.clear(index2 - 1);
+    }
+
     public int setSplit() {
         splitPoint.clear(limit);
         return limit;
     }
 
-    public void resetIterator(int e) {
-        iterIdx = splitPoint.prevClearBit(e);
+    public void resetIteratorByElement(int e) {
+        iterIdx = splitPoint.prevClearBit(sparse[e]) + 1;
     }
 
-    public void resetLimit(int e) {
-        limit = splitPoint.prevClearBit(e);
+    public void resetLimitByElement(int e) {
+        limit = splitPoint.prevClearBit(sparse[e]) + 1;
     }
 
     //    public getIterator()
@@ -55,5 +69,19 @@ public class RSetPartion {
         return dense[++iterIdx];
     }
 
+    public int getSCCStartIndexByElement(int e) {
+        return splitPoint.prevClearBit(sparse[e]) + 1;
+    }
 
+    public boolean inSameSCC(int a, int b) {
+        return getSCCStartIndexByElement(a) == getSCCStartIndexByElement(b);
+    }
+
+    public void setIterIdx(int iterIdx) {
+        this.iterIdx = iterIdx;
+    }
+
+    public boolean greatThanOne(int startIterIdx) {
+        return !splitPoint.get(startIterIdx);
+    }
 }

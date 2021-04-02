@@ -3,6 +3,8 @@ package org.chocosolver.amtf;
 import gnu.trove.list.array.TIntArrayList;
 import org.chocosolver.util.objects.INaiveBitSet;
 
+import java.util.BitSet;
+
 //import org.objenesis.strategy.BaseInstantiatorStrategy;
 
 public class amtf {
@@ -108,22 +110,27 @@ public class amtf {
 //            }
 //        }
 
-        INaiveBitSet a = INaiveBitSet.makeBitSet(5, false);
-        a.set(1);
-        a.set(2);
-        a.set(4);
-        INaiveBitSet b = INaiveBitSet.makeBitSet(5, false);
-        b.set(2);
-        b.set(3);
-        b.set(4);
-
-        INaiveBitSet c = INaiveBitSet.makeBitSet(5, false);
-
-        b.setAfterMinus(a, b);
-        System.out.println(b);
+//        INaiveBitSet a = INaiveBitSet.makeBitSet(5, false);
+//        a.set(1);
+//        a.set(2);
+//        a.set(4);
+//        INaiveBitSet b = INaiveBitSet.makeBitSet(5, false);
+//        b.set(2);
+//        b.set(3);
+//        b.set(4);
+//
+//        INaiveBitSet c = INaiveBitSet.makeBitSet(5, false);
+//
+//        b.setAfterMinus(a, b);
+//        System.out.println(b);
 
 
         TIntArrayList t = new TIntArrayList(2);
+        long haha = 0xffffffffffffffffL;
+        BitSet aa = new BitSet(64);
+        aa.set(0, 63);
+        System.out.println(aa);
+        System.out.println(aa.previousClearBit(62));
     }
 
     private static int nextSetBit(long word, int pos) {

@@ -96,6 +96,8 @@ public class AlgoAllDiffAC_Gent {
 
     private SparseSet triggeringVars;
     private TIntHashSet changedSCCs;
+    private TIntHashSet changedSCCStartIndex;
+    private RSetPartion SCC;
 
     //    //用于回溯
     private IStateBitSet[] RDbit, RBbit;
@@ -105,10 +107,12 @@ public class AlgoAllDiffAC_Gent {
     //    // bit论域
     private INaiveBitSet[] Dbit;
     private INaiveBitSet[] lastDbit;
+    private INaiveBitSet varsMask;
     private ArrayList<IntTuple2> delValues1;
     private ArrayList<IntTuple2> addValues;
     private ArrayList<IntTuple2> delValues2;
     IEnvironment env;
+
 
 //    private int numNodes;
 
@@ -199,6 +203,7 @@ public class AlgoAllDiffAC_Gent {
 //        DE = new Stack<IntTuple2>();
         triggeringVars = new SparseSet(arity);
         changedSCCs = new TIntHashSet();
+        changedSCCStartIndex = new TIntHashSet();
 
         // 两种记录已删除的值
         delValues1 = new ArrayList<>();
@@ -233,6 +238,8 @@ public class AlgoAllDiffAC_Gent {
                 RDbit[i].set(valIdx);
             }
         }
+
+        varsMask = INaiveBitSet.makeBitSet(arity, true);
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -383,57 +390,66 @@ public class AlgoAllDiffAC_Gent {
     private boolean propagate_SCC() throws ContradictionException {
         boolean filter = false;
         IntVar x, y;
-        changedSCCs.clear();
+//        changedSCCs.clear();
+        changedSCCStartIndex.clear();
         triggeringVars.iterateValid();
 //        TIntArrayList s;
         TIntIterator iter;
         while (triggeringVars.hasNextValid()) {
             int xIdx = triggeringVars.next();
             int valIdx = var2Val[xIdx];
-            int sccIdx = node2SCC[xIdx];
+            int sccStartIdx = SCC.getSCCStartIndexByElement(xIdx);
+//            int sccIdx = node2SCC[xIdx];
             x = vars[xIdx];
 //            int val = idx2Val[valIdx];
 //            int s = nodeSCC[varIdx];
-            TIntArrayList s = SCC2Node[sccIdx];
+//            TIntArrayList s = SCC2Node[sccIdx];
             if (valIdx == -1) {
-                findMaximumMatching(s);
+                findMaximumMatching(sccStartIdx);
             }
 
             if (x.isInstantiated()) {
                 int xVal = vars[xIdx].getValue();
-                if (changedSCCs.contains(sccIdx)) {
-                    changedSCCs.remove(sccIdx);
+//                if (changedSCCs.contains(sccIdx)) {
+//                    changedSCCs.remove(sccIdx);
+//                }
+                if (changedSCCStartIndex.contains(sccStartIdx)) {
+                    changedSCCStartIndex.remove(sccStartIdx);
                 }
-
                 //parition s into s1 s2 , from now on s = s2
-                s.remove(xIdx);
+                SCC.remove(xIdx);
 
-                iter = s.iterator();
-                while (iter.hasNext()) {
-                    int yIdx = iter.next();
+                SCC.setIterIdx(sccStartIdx);
+                while (SCC.hasNext()) {
+                    int yIdx = SCC.next();
                     y = vars[yIdx];
                     if (y.contains(xVal)) {
                         filter |= y.removeValue(xVal, aCause);
+                        Dbit[yIdx].clear(xVal);
                     }
 
                 }
 
-                if (s.size() > 1) {
-                    changedSCCs.add(sccIdx);
+                if (SCC.greatThanOne(sccStartIdx)) {
+
+//                    changedSCCs.add(sccIdx);
+                    changedSCCStartIndex.add(sccStartIdx);
                 }
 
             } else {
-                if (s.size() > 1) {
-                    changedSCCs.add(sccIdx);
+                if (SCC.greatThanOne(sccStartIdx)) {
+//                    changedSCCs.add(sccIdx);
+                    changedSCCStartIndex.add(sccStartIdx);
                 }
             }
         }
 
         buildGraph();
-        iter = changedSCCs.iterator();
+        SCCfinder.setUnvisitedValues();
+        iter = changedSCCStartIndex.iterator();
         while (iter.hasNext()) {
-            int sccIdx = iter.next();
-            SCCfinder.findAllSCC(SCC2Node[sccIdx]);
+            int sccStartIdx = iter.next();
+            SCCfinder.findAllSCC(sccStartIdx);
         }
         return filter;
     }
@@ -594,6 +610,32 @@ public class AlgoAllDiffAC_Gent {
         }
     }
 
+    private void findMaximumMatching(int SCCStartIndex) throws ContradictionException {
+        SCC.setIterIdx(SCCStartIndex);
+        while (SCC.hasNext()) {
+            int varIdx = SCC.next();
+
+            if (var2Val[varIdx] == -1) {
+                value_visited_.clear();
+                variable_visited_.clear();
+                MakeAugmentingPath(varIdx);
+            }
+            if (var2Val[varIdx] == -1) {
+                // No augmenting path exists.
+
+                for (int i = 0; i < vars.length; i++) {
+                    monitors[i].unfreeze();
+                }
+
+                vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
+            }
+        }
+
+        for (int varIdx = 0; varIdx < arity; varIdx++) {
+            valUnmatchedVar[var2Val[varIdx]].remove(varIdx);
+        }
+    }
+
     private void findMaximumMatching() throws ContradictionException {
         // Compute max matching.
         for (int varIdx = 0; varIdx < arity; varIdx++) {
@@ -727,7 +769,6 @@ public class AlgoAllDiffAC_Gent {
         }
         return filter;
     }
-
 
 
 }
