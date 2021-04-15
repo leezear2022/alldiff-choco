@@ -13,7 +13,7 @@ import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR2;
+import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR3;
 import org.chocosolver.util.objects.*;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
@@ -85,7 +85,7 @@ public class AlgoAllDiffAC_Gent {
     private int[] node2SCC;
     private TIntArrayList[] SCC2Node;
     //    private StrongConnectivityNewFinder SCCfinder;
-    private StrongConnectivityFinderR2 SCCfinder;
+    private StrongConnectivityFinderR3 SCCfinder;
 //    private StrongConnectivityFinder SCCfinder;
 
     // for early detection
@@ -97,7 +97,7 @@ public class AlgoAllDiffAC_Gent {
     private SparseSet triggeringVars;
     private TIntHashSet changedSCCs;
     private TIntHashSet changedSCCStartIndex;
-    private RSetPartion SCC;
+    private RSetPartion partion;
 
     //    //用于回溯
     private IStateBitSet[] RDbit, RBbit;
@@ -176,7 +176,9 @@ public class AlgoAllDiffAC_Gent {
         graph = new DirectedGraph(numNodes, SetType.BITSET, false);
 //        SCCfinder = new StrongConnectivityNewFinder(graph);
 //        SCCfinder = new StrongConnectivityFinderR(graph);
-        SCCfinder = new StrongConnectivityFinderR2(graph, arity, numValues);
+        partion = new RSetPartion(numNodes, env);
+        System.out.println(partion);
+        SCCfinder = new StrongConnectivityFinderR3(graph, arity, numValues, partion);
         numNodes = graph.getNbMaxNodes();
         node2SCC = new int[numNodes];
         SCC2Node = new TIntArrayList[numNodes];
@@ -315,7 +317,7 @@ public class AlgoAllDiffAC_Gent {
     public boolean propagate() throws ContradictionException {
 
         Measurer.enterProp();
-
+        partion.reset();
         //get deleted values
         DE.clear();
         triggeringVars.clear();
@@ -398,7 +400,7 @@ public class AlgoAllDiffAC_Gent {
         while (triggeringVars.hasNextValid()) {
             int xIdx = triggeringVars.next();
             int valIdx = var2Val[xIdx];
-            int sccStartIdx = SCC.getSCCStartIndexByElement(xIdx);
+            int sccStartIdx = partion.getSCCStartIndexByElement(xIdx);
 //            int sccIdx = node2SCC[xIdx];
             x = vars[xIdx];
 //            int val = idx2Val[valIdx];
@@ -417,11 +419,11 @@ public class AlgoAllDiffAC_Gent {
                     changedSCCStartIndex.remove(sccStartIdx);
                 }
                 //parition s into s1 s2 , from now on s = s2
-                SCC.remove(xIdx);
+                partion.remove(xIdx);
 
-                SCC.setIterIdx(sccStartIdx);
-                while (SCC.hasNext()) {
-                    int yIdx = SCC.next();
+                partion.setIterIdx(sccStartIdx);
+                while (partion.hasNext()) {
+                    int yIdx = partion.next();
                     y = vars[yIdx];
                     if (y.contains(xVal)) {
                         filter |= y.removeValue(xVal, aCause);
@@ -430,14 +432,14 @@ public class AlgoAllDiffAC_Gent {
 
                 }
 
-                if (SCC.greatThanOne(sccStartIdx)) {
+                if (partion.greatThanOne(sccStartIdx)) {
 
 //                    changedSCCs.add(sccIdx);
                     changedSCCStartIndex.add(sccStartIdx);
                 }
 
             } else {
-                if (SCC.greatThanOne(sccStartIdx)) {
+                if (partion.greatThanOne(sccStartIdx)) {
 //                    changedSCCs.add(sccIdx);
                     changedSCCStartIndex.add(sccStartIdx);
                 }
@@ -611,9 +613,9 @@ public class AlgoAllDiffAC_Gent {
     }
 
     private void findMaximumMatching(int SCCStartIndex) throws ContradictionException {
-        SCC.setIterIdx(SCCStartIndex);
-        while (SCC.hasNext()) {
-            int varIdx = SCC.next();
+        partion.setIterIdx(SCCStartIndex);
+        while (partion.hasNext()) {
+            int varIdx = partion.next();
 
             if (var2Val[varIdx] == -1) {
                 value_visited_.clear();
@@ -689,56 +691,117 @@ public class AlgoAllDiffAC_Gent {
         }
     }
 
-    private boolean buildSCC() {
+//    private boolean buildSCC() {
+//
+//        for (int i = 0; i < numNodes; i++) {
+//            graph.getSuccOf(i).clear();
+//            graph.getPredOf(i).clear();
+//        }
+//
+//        // 添加匹配边 var->val
+//        for (int i = 0; i < arity; ++i) {
+//            int matchedVal = var2Val[i];
+//            graph.addArc(i, matchedVal + addArity);
+//
+//        }
+//
+//        // 添加非匹配边 val->var; val->t
+//        for (int j = 0, k = 0; j < numValues; ++j) {
+//            if (freeNode.contain(j)) {
+//                graph.addArc(arity, j + addArity);
+//            }
+//            valUnmatchedVar[j].iterateValid();
+//            while (valUnmatchedVar[j].hasNextValid()) {
+//                k = valUnmatchedVar[j].next();
+//                graph.addArc(j + addArity, k);
+//            }
+//        }
+//
+//        if (initialProp) {
+//            SCCfinder.findAllSCC();
+//            initialProp = false;
+//        } else {
+//            if (SCCfinder.findAllSCC_ED(DE)) {
+//                Measurer.enterSkip();
+////                System.out.println("xixi");
+//                return true;
+//            }
+//        }
+//
+//        SCCfinder.getNodesSCC(node2SCC, SCC2Node);
+//
+//
+//        System.out.println("node2SCC: " + Arrays.toString(node2SCC));
+////        graph.removeNode(numNodes);
+//        return false;
+//
+//    }
+
+    private void buildSCC() {
 
         for (int i = 0; i < numNodes; i++) {
             graph.getSuccOf(i).clear();
             graph.getPredOf(i).clear();
         }
 
-        // 添加匹配边 var->val
+//        // 添加匹配边 var->val
+//        for (int i = 0; i < arity; ++i) {
+//            int matchedVal = var2Val[i];
+//            graph.addArc(i, matchedVal + addArity);
+//
+//        }
+//
+//        // 添加非匹配边 val->var; val->t
+//        for (int j = 0, k = 0; j < numValues; ++j) {
+//            if (freeNode.contain(j)) {
+//                graph.addArc(arity, j + addArity);
+//            }
+//            valUnmatchedVar[j].iterateValid();
+//            while (valUnmatchedVar[j].hasNextValid()) {
+//                k = valUnmatchedVar[j].next();
+//                graph.addArc(j + addArity, k);
+//            }
+//        }
+
+        // 反向边
+        // 添加匹配边 var<--val
         for (int i = 0; i < arity; ++i) {
             int matchedVal = var2Val[i];
-            graph.addArc(i, matchedVal + addArity);
+            graph.addArc(matchedVal + addArity, i);
 
         }
 
-        // 添加非匹配边 val->var; val->t
+        // 添加非匹配边 val<--var; val<--t
         for (int j = 0, k = 0; j < numValues; ++j) {
             if (freeNode.contain(j)) {
+                // free node: val->t
+                graph.addArc(j + addArity, arity);
+            } else {
+                // free node: t->val;
                 graph.addArc(arity, j + addArity);
             }
             valUnmatchedVar[j].iterateValid();
             while (valUnmatchedVar[j].hasNextValid()) {
                 k = valUnmatchedVar[j].next();
-                graph.addArc(j + addArity, k);
+                graph.addArc(k, j + addArity);
             }
         }
 
-        if (initialProp) {
-            SCCfinder.findAllSCC();
-            initialProp = false;
-        } else {
-            if (SCCfinder.findAllSCC_ED(DE)) {
-                Measurer.enterSkip();
-//                System.out.println("xixi");
-                return true;
-            }
-        }
 
-        SCCfinder.getNodesSCC(node2SCC, SCC2Node);
+        SCCfinder.findAllSCC();
+//        SCCfinder.findAllSCC(0);
+        node2SCC = SCCfinder.getNodesSCC();
+//        SCCfinder.getNodesSCC(node2SCC, SCC2Node);
 
-//        System.out.println(Arrays.toString(nodeSCC));
+        System.out.println(Arrays.toString(node2SCC));
+        System.out.println(partion);
 //        graph.removeNode(numNodes);
-        return false;
-
     }
 
     private boolean filter() throws ContradictionException {
         boolean filter = false;
-        if (buildSCC()) {
-            return true;
-        }
+        buildSCC();
+
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
