@@ -1,6 +1,8 @@
 package org.chocosolver.amtf;
 
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import org.chocosolver.util.objects.INaiveBitSet;
 
 import java.util.BitSet;
@@ -131,6 +133,13 @@ public class amtf {
         aa.set(0, 63);
         System.out.println(aa);
         System.out.println(aa.previousClearBit(62));
+
+        TIntSet ss = new TIntHashSet();
+        ss.add(1);
+        ss.add(1);
+        ss.add(2);
+
+        System.out.println(ss);
     }
 
     private static int nextSetBit(long word, int pos) {

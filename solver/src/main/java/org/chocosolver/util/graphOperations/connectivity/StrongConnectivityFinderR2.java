@@ -7,7 +7,7 @@ import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.IntTuple2;
-import org.chocosolver.util.objects.RSetPartion;
+import org.chocosolver.util.objects.RSetPartition;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
@@ -57,7 +57,7 @@ public class StrongConnectivityFinderR2 {
     private IntTuple2 nodePair;
     private static int INT_SIZE = 32;
 
-    private RSetPartion partion;
+    private RSetPartition partion;
 
 //    private int index = 0;
 //    private BitSet visited;
@@ -90,7 +90,7 @@ public class StrongConnectivityFinderR2 {
         DE = new TLongArrayStack(n);
     }
 
-    public StrongConnectivityFinderR2(DirectedGraph graph, int arity, int numValues, RSetPartion p) {
+    public StrongConnectivityFinderR2(DirectedGraph graph, int arity, int numValues, RSetPartition p) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
         partion = p;

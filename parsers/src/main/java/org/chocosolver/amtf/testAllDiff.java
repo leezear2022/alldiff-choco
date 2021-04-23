@@ -49,10 +49,10 @@ public class testAllDiff {
 //                "C:\\bench\\X3\\Queens\\Queens-0004-m1.xml",
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
-//                "/Users/lizhe/allDiff_Series/Queens/Queens-m1-s1/Queens-0008-m1.xml",
+                "/Users/lizhe/allDiff_Series/Queens/Queens-0004-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
-                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0004-m1.xml",
+//                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0004-m1.xml",
 //                "D:\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "G:/AllDiffBench/LatinSquare/qwh-o30-h374-04.xml",
 //                "D:\\AllDiffBench\\NumberPartitioning\\NumberPartitioning-032.xml"

@@ -95,9 +95,9 @@ public class AlgoAllDiffAC_Gent {
     private boolean initialProp = true;
 
     private SparseSet triggeringVars;
-    private TIntHashSet changedSCCs;
+    private TIntHashSet SCCStartIndex;
     private TIntHashSet changedSCCStartIndex;
-    private RSetPartion partion;
+    private RSetPartition partion;
 
     //    //用于回溯
     private IStateBitSet[] RDbit, RBbit;
@@ -176,7 +176,7 @@ public class AlgoAllDiffAC_Gent {
         graph = new DirectedGraph(numNodes, SetType.BITSET, false);
 //        SCCfinder = new StrongConnectivityNewFinder(graph);
 //        SCCfinder = new StrongConnectivityFinderR(graph);
-        partion = new RSetPartion(numNodes, env);
+        partion = new RSetPartition(numNodes, env);
         System.out.println(partion);
         SCCfinder = new StrongConnectivityFinderR3(graph, arity, numValues, partion);
         numNodes = graph.getNbMaxNodes();
@@ -204,7 +204,7 @@ public class AlgoAllDiffAC_Gent {
         // 存的是变量索引及原值
 //        DE = new Stack<IntTuple2>();
         triggeringVars = new SparseSet(arity);
-        changedSCCs = new TIntHashSet();
+        SCCStartIndex = new TIntHashSet();
         changedSCCStartIndex = new TIntHashSet();
 
         // 两种记录已删除的值
@@ -406,7 +406,8 @@ public class AlgoAllDiffAC_Gent {
 //            int val = idx2Val[valIdx];
 //            int s = nodeSCC[varIdx];
 //            TIntArrayList s = SCC2Node[sccIdx];
-            if (valIdx == -1) {
+//            if (valIdx == -1) {
+            if (!x.contains(idx2Val[valIdx])) {
                 findMaximumMatching(sccStartIdx);
             }
 
@@ -421,7 +422,7 @@ public class AlgoAllDiffAC_Gent {
                 //parition s into s1 s2 , from now on s = s2
                 partion.remove(xIdx);
 
-                partion.setIterIdx(sccStartIdx);
+                partion.setIteratorIndex(sccStartIdx);
                 while (partion.hasNext()) {
                     int yIdx = partion.next();
                     y = vars[yIdx];
@@ -613,25 +614,24 @@ public class AlgoAllDiffAC_Gent {
     }
 
     private void findMaximumMatching(int SCCStartIndex) throws ContradictionException {
-        partion.setIterIdx(SCCStartIndex);
-        while (partion.hasNext()) {
-            int varIdx = partion.next();
+        partion.setIteratorIndex(SCCStartIndex);
+        do {
+            int varIdx = partion.getValue();
 
             if (var2Val[varIdx] == -1) {
                 value_visited_.clear();
                 variable_visited_.clear();
                 MakeAugmentingPath(varIdx);
             }
-            if (var2Val[varIdx] == -1) {
-                // No augmenting path exists.
 
+            if (var2Val[varIdx] == -1) {
                 for (int i = 0; i < vars.length; i++) {
                     monitors[i].unfreeze();
                 }
 
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
-        }
+        } while (partion.nextValid());
 
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             valUnmatchedVar[var2Val[varIdx]].remove(varIdx);
@@ -744,57 +744,49 @@ public class AlgoAllDiffAC_Gent {
             graph.getPredOf(i).clear();
         }
 
-//        // 添加匹配边 var->val
-//        for (int i = 0; i < arity; ++i) {
-//            int matchedVal = var2Val[i];
-//            graph.addArc(i, matchedVal + addArity);
-//
-//        }
-//
-//        // 添加非匹配边 val->var; val->t
-//        for (int j = 0, k = 0; j < numValues; ++j) {
-//            if (freeNode.contain(j)) {
-//                graph.addArc(arity, j + addArity);
-//            }
-//            valUnmatchedVar[j].iterateValid();
-//            while (valUnmatchedVar[j].hasNextValid()) {
-//                k = valUnmatchedVar[j].next();
-//                graph.addArc(j + addArity, k);
-//            }
-//        }
-
         // 反向边
         // 添加匹配边 var<--val
         for (int i = 0; i < arity; ++i) {
             int matchedVal = var2Val[i];
             graph.addArc(matchedVal + addArity, i);
-
         }
 
         // 添加非匹配边 val<--var; val<--t
-        for (int j = 0, k = 0; j < numValues; ++j) {
+        for (int j = 0; j < numValues; ++j) {
             if (freeNode.contain(j)) {
                 // free node: val->t
                 graph.addArc(j + addArity, arity);
             } else {
-                // free node: t->val;
+                // sink node: t->val;
                 graph.addArc(arity, j + addArity);
             }
             valUnmatchedVar[j].iterateValid();
             while (valUnmatchedVar[j].hasNextValid()) {
-                k = valUnmatchedVar[j].next();
+                int k = valUnmatchedVar[j].next();
                 graph.addArc(k, j + addArity);
             }
         }
 
+        //新buildGraph
 
-        SCCfinder.findAllSCC();
+        SCCfinder.getAllSCCStartIndices(SCCStartIndex);
+        System.out.println(partion);
+        System.out.println("indices: " + SCCStartIndex);
+        SCCfinder.resetData();
+        TIntIterator iter = SCCStartIndex.iterator();
+        while (iter.hasNext()) {
+            SCCfinder.findAllSCC(iter.next());
+//            System.out.println("------");
+        }
+//        SCCfinder.findAllSCC();
 //        SCCfinder.findAllSCC(0);
         node2SCC = SCCfinder.getNodesSCC();
 //        SCCfinder.getNodesSCC(node2SCC, SCC2Node);
 
         System.out.println(Arrays.toString(node2SCC));
         System.out.println(partion);
+//        SCCfinder.getAllSCCStartIndices(SCCStartIndex);
+//        System.out.println("indices: " + SCCStartIndex);
 //        graph.removeNode(numNodes);
     }
 

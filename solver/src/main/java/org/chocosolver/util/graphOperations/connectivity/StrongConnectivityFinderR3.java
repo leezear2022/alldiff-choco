@@ -4,10 +4,11 @@ import gnu.trove.iterator.TIntIterator;
 import gnu.trove.iterator.TLongIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.IntTuple2;
-import org.chocosolver.util.objects.RSetPartion;
+import org.chocosolver.util.objects.RSetPartition;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
@@ -58,7 +59,7 @@ public class StrongConnectivityFinderR3 {
     private IntTuple2 nodePair;
     private static int INT_SIZE = 32;
 
-    private RSetPartion partion;
+    private RSetPartition partion;
 
 //    private int index = 0;
 //    private BitSet visited;
@@ -91,7 +92,7 @@ public class StrongConnectivityFinderR3 {
         DE = new TLongArrayStack(n);
     }
 
-    public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues, RSetPartion p) {
+    public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues, RSetPartition p) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
         partion = p;
@@ -138,26 +139,18 @@ public class StrongConnectivityFinderR3 {
             System.out.println("out: " + i);
             unvisited.set(i, nodes.contains(i));
         }
+        resetData();
         findAllSCCOf(unvisited);
     }
 
     public void findAllSCC(int sccIndexStart) {
         singleton.clear();
         ISet nodes = graph.getNodes();
-        partion.setIterIdx(sccIndexStart);
-        int ii;
-        while (partion.hasNext()) {
-            ii = partion.next();
-            System.out.println("out: " + ii);
+        partion.setIteratorIndex(sccIndexStart);
+        do {
+            int ii = partion.getValue();
             unvisited.set(ii, nodes.contains(ii));
-        }
-
-//        for (int i = 0; i < arity; i++) {
-//            unvisited.set(i, nodes.contains(i));
-//        }
-//        for (int i = arity; i < n; i++) {
-//            unvisited.set(i, nodes.contains(i));
-//        }
+        } while (partion.nextValid());
         findAllSCCOf(unvisited);
     }
 
@@ -167,6 +160,7 @@ public class StrongConnectivityFinderR3 {
         for (int i = exception.nextClearBit(0); i >= 0 && i < n; i = exception.nextClearBit(i + 1)) {
             unvisited.set(i, nodes.contains(i));
         }
+        resetData();
         findAllSCCOf(unvisited);
     }
 
@@ -178,6 +172,7 @@ public class StrongConnectivityFinderR3 {
             int i = iter.next();
             unvisited.set(i, nodes.contains(i));
         }
+        resetData();
         return findAllSCCOf_ED(unvisited);
     }
 
@@ -188,10 +183,11 @@ public class StrongConnectivityFinderR3 {
             unvisited.set(i, nodes.contains(i));
         }
 
+        resetData();
         findAllSCCOf(unvisited);
     }
 
-    private void findAllSCCOf(BitSet restriction) {
+    public void resetData() {
         // initialization
         clearStack();
         maxDFS = 0;
@@ -202,7 +198,9 @@ public class StrongConnectivityFinderR3 {
             node2SCC[i] = -1;
             DFSNum[i] = n + 2;
         }
+    }
 
+    private void findAllSCCOf(BitSet restriction) {
         findSingletons(restriction);
 //        System.out.println("----------");
 //        System.out.println(restriction);
@@ -448,6 +446,7 @@ public class StrongConnectivityFinderR3 {
 //                        System.out.println("scc: " + DFSNum[curNode]);
                         int stackNode = -1;
                         sccSize = 0;
+                        System.out.println("before set limit: " + partion);
                         int limit = partion.resetLimitByElement(curNode);
                         System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partion);
                         while (stackNode != curNode) {
@@ -767,5 +766,9 @@ public class StrongConnectivityFinderR3 {
         int a = (int) (f >> INT_SIZE);
         int b = (int) f;
         return getIntTuple2Long(Math.min(x, a), Math.max(y, b));
+    }
+
+    public void getAllSCCStartIndices(TIntHashSet sccStartIndex) {
+        partion.getSCCStartIndex(sccStartIndex);
     }
 }
