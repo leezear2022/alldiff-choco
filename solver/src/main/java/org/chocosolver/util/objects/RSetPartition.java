@@ -44,7 +44,7 @@ public class RSetPartition {
 
     public void reset() {
         sccStart.set(1, size);
-        limit = -1;
+        limit = 0;
     }
 
     public void remove(int e) {
@@ -121,7 +121,7 @@ public class RSetPartition {
     }
 
     public boolean isSingleton(int varID) {
-        // 如果varID的前一个是0那么它是singleton的
+        // 如果varID是0且它的后一个也是0 那么它是singleton的
         int index = sparse[varID];
         if (index == size) {
             return !sccStart.get(index);

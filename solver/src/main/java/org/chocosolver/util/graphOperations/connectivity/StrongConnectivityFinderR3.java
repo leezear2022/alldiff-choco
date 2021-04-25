@@ -59,7 +59,7 @@ public class StrongConnectivityFinderR3 {
     private IntTuple2 nodePair;
     private static int INT_SIZE = 32;
 
-    private RSetPartition partion;
+    private RSetPartition partition;
 
 //    private int index = 0;
 //    private BitSet visited;
@@ -95,7 +95,7 @@ public class StrongConnectivityFinderR3 {
     public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues, RSetPartition p) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
-        partion = p;
+        partition = p;
 
         stack = new int[n];
         inStack = new BitSet(n);
@@ -146,11 +146,11 @@ public class StrongConnectivityFinderR3 {
     public void findAllSCC(int sccIndexStart) {
         singleton.clear();
         ISet nodes = graph.getNodes();
-        partion.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndex(sccIndexStart);
         do {
-            int ii = partion.getValue();
+            int ii = partition.getValue();
             unvisited.set(ii, nodes.contains(ii));
-        } while (partion.nextValid());
+        } while (partition.nextValid());
         findAllSCCOf(unvisited);
     }
 
@@ -266,13 +266,13 @@ public class StrongConnectivityFinderR3 {
     private void findSingletons(BitSet restriction) {
         ISet nodes = graph.getNodes();
         for (int i = restriction.nextSetBit(0); i >= 0; i = restriction.nextSetBit(i + 1)) {
-            if (nodes.contains(i) && graph.getPredOf(i).size() * graph.getSuccOf(i).size() == 0) {
+            if (!partition.isSingleton(i) && nodes.contains(i) && graph.getPredOf(i).size() * graph.getSuccOf(i).size() == 0) {
                 node2SCC[i] = nbSCC;
                 singleton.add(i);
-                partion.remove(i);
+                partition.remove(i);
                 nbSCC++;
                 restriction.clear(i);
-                System.out.println("singleton add: " + i + ", " + partion);
+                System.out.println("singleton add: " + i + ", " + partition);
             }
         }
 //        System.out.println("fs: " + Arrays.toString(nodeSCC));
@@ -446,21 +446,21 @@ public class StrongConnectivityFinderR3 {
 //                        System.out.println("scc: " + DFSNum[curNode]);
                         int stackNode = -1;
                         sccSize = 0;
-                        System.out.println("before set limit: " + partion);
-                        int limit = partion.resetLimitByElement(curNode);
-                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partion);
+                        System.out.println("before set limit: " + partition);
+                        int limit = partition.resetLimitByElement(curNode);
+                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
                         while (stackNode != curNode) {
                             stackNode = popStack();
                             System.out.println("pop & add: " + stackNode + ", " + nbSCC);
 
-                            partion.add(stackNode);
+                            partition.add(stackNode);
                             node2SCC[stackNode] = nbSCC;
                             sccSize++;
                         }
                         if (sccSize == 1) {
                             singleton.add(stackNode);
                         }
-                        partion.setSplit();
+                        partition.setSplit();
                         nbSCC++;
                     }
                 }
@@ -769,6 +769,6 @@ public class StrongConnectivityFinderR3 {
     }
 
     public void getAllSCCStartIndices(TIntHashSet sccStartIndex) {
-        partion.getSCCStartIndex(sccStartIndex);
+        partition.getSCCStartIndex(sccStartIndex);
     }
 }
