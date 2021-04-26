@@ -269,11 +269,12 @@ public class StrongConnectivityFinderR3 {
             if (!partition.isSingleton(i) && nodes.contains(i) && graph.getPredOf(i).size() * graph.getSuccOf(i).size() == 0) {
                 node2SCC[i] = nbSCC;
                 singleton.add(i);
+                System.out.println("singleton add: " + i + ", " + partition);
                 partition.remove(i);
                 nbSCC++;
                 restriction.clear(i);
-                System.out.println("singleton add: " + i + ", " + partition);
             }
+
         }
 //        System.out.println("fs: " + Arrays.toString(nodeSCC));
     }

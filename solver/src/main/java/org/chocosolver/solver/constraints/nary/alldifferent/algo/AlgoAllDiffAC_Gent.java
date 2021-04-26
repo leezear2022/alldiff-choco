@@ -315,23 +315,25 @@ public class AlgoAllDiffAC_Gent {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
+        boolean filter;
+        long startTime;
         if (initialProp) {
             initialProp = false;
 
-            long startTime = System.nanoTime();
+            startTime = System.nanoTime();
             Measurer.enterProp();
             prepareForMatching();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
 
             startTime = System.nanoTime();
-            boolean filter = filter();
+            filter = filter();
             Measurer.filterTime += System.nanoTime() - startTime;
 
             return filter;
         } else {
             Measurer.enterProp();
-            long startTime = System.nanoTime();
+            startTime = System.nanoTime();
             triggeringVars.clear();
             DE.clear();
             for (int i = 0; i < arity; ++i) {
@@ -351,7 +353,58 @@ public class AlgoAllDiffAC_Gent {
             Measurer.matchingTime += System.nanoTime() - startTime;
 
             startTime = System.nanoTime();
-            boolean filter = filter();
+            filter = filter();
+
+            for (int i = 0; i < vars.length; i++) {
+                monitors[i].unfreeze();
+            }
+            Measurer.filterTime += System.nanoTime() - startTime;
+
+            return filter;
+        }
+
+    }
+
+    public boolean propagateOri2() throws ContradictionException {
+        boolean filter;
+        long startTime;
+        if (initialProp) {
+            initialProp = false;
+
+            startTime = System.nanoTime();
+            Measurer.enterProp();
+            prepareForMatching();
+            findMaximumMatching();
+            Measurer.matchingTime += System.nanoTime() - startTime;
+
+            startTime = System.nanoTime();
+            filter = filter();
+            Measurer.filterTime += System.nanoTime() - startTime;
+
+            return filter;
+        } else {
+            Measurer.enterProp();
+            startTime = System.nanoTime();
+            triggeringVars.clear();
+            DE.clear();
+            for (int i = 0; i < arity; ++i) {
+                monitors[i].freeze();
+                monitors[i].forEachRemVal(onValRem.set(i));
+            }
+//            findMaximumMatching();
+            SCCfinder.getAllSCCStartIndices(SCCStartIndex);
+            System.out.println(partition);
+            prepareForMatching();
+
+            TIntIterator iter = SCCStartIndex.iterator();
+            while (iter.hasNext()) {
+                repairMatching(iter.next());
+//            System.out.println("------");
+            }
+            Measurer.matchingTime += System.nanoTime() - startTime;
+
+            startTime = System.nanoTime();
+            filter = filter();
 
             for (int i = 0; i < vars.length; i++) {
                 monitors[i].unfreeze();
@@ -532,6 +585,7 @@ public class AlgoAllDiffAC_Gent {
             int node = visiting_[num_visited++];
             IntVar v = vars[node];
 
+            //? 可在一个scc中选择值
             for (int value = v.getLB(), ub = v.getUB(); value <= ub; value = v.nextValue(value)) {
                 int valIdx = val2Idx.get(value);
                 if (value_visited_.get(valIdx)) continue;
