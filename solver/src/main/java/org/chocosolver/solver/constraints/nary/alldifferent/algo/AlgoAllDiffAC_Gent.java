@@ -317,8 +317,14 @@ public class AlgoAllDiffAC_Gent {
     public boolean propagate() throws ContradictionException {
         boolean filter;
         long startTime;
+        triggeringVars.clear();
+
         if (initialProp) {
             initialProp = false;
+
+            for (int i = 0; i < arity; i++) {
+                triggeringVars.add(i);
+            }
 
             startTime = System.nanoTime();
             Measurer.enterProp();
@@ -334,31 +340,32 @@ public class AlgoAllDiffAC_Gent {
         } else {
             Measurer.enterProp();
             startTime = System.nanoTime();
-            triggeringVars.clear();
             DE.clear();
             for (int i = 0; i < arity; ++i) {
                 monitors[i].freeze();
                 monitors[i].forEachRemVal(onValRem.set(i));
             }
-//            findMaximumMatching();
+
             SCCfinder.getAllSCCStartIndices(SCCStartIndex);
             System.out.println(partition);
             prepareForMatching();
+//
+            filter = propagate_SCC();
 
-            TIntIterator iter = SCCStartIndex.iterator();
-            while (iter.hasNext()) {
-                repairMatching(iter.next());
-//            System.out.println("------");
-            }
-            Measurer.matchingTime += System.nanoTime() - startTime;
-
-            startTime = System.nanoTime();
-            filter = filter();
-
+//            TIntIterator iter = SCCStartIndex.iterator();
+//            while (iter.hasNext()) {
+//                repairMatching(iter.next());
+////            System.out.println("------");
+//            }
+//            Measurer.matchingTime += System.nanoTime() - startTime;
+//
+//            startTime = System.nanoTime();
+//            filter = filter();
+//
             for (int i = 0; i < vars.length; i++) {
                 monitors[i].unfreeze();
             }
-            Measurer.filterTime += System.nanoTime() - startTime;
+//            Measurer.filterTime += System.nanoTime() - startTime;
 
             return filter;
         }
@@ -507,8 +514,8 @@ public class AlgoAllDiffAC_Gent {
 //            int val = idx2Val[valIdx];
 //            int s = nodeSCC[varIdx];
 //            TIntArrayList s = SCC2Node[sccIdx];
-//            if (valIdx == -1) {
-            if (!x.contains(idx2Val[valIdx])) {
+            if (valIdx == -1) {
+//            if (!x.contains(idx2Val[valIdx])) {
                 repairMatching(sccStartIdx);
             }
 
@@ -526,12 +533,13 @@ public class AlgoAllDiffAC_Gent {
                 partition.setIteratorIndex(sccStartIdx);
                 while (partition.hasNext()) {
                     int yIdx = partition.next();
-                    y = vars[yIdx];
-                    if (y.contains(xVal)) {
-                        filter |= y.removeValue(xVal, aCause);
-                        Dbit[yIdx].clear(xVal);
+                    if (yIdx < arity) {
+                        y = vars[yIdx];
+                        if (y.contains(xVal)) {
+                            filter |= y.removeValue(xVal, aCause);
+                            Dbit[yIdx].clear(xVal);
+                        }
                     }
-
                 }
 
                 if (partition.greatThanOne(sccStartIdx)) {
@@ -549,12 +557,15 @@ public class AlgoAllDiffAC_Gent {
         }
 
         buildGraph();
-        SCCfinder.setUnvisitedValues();
+//        SCCfinder.setUnvisitedValues();
+        SCCfinder.resetData();
         var iter = changedSCCStartIndex.iterator();
         while (iter.hasNext()) {
-            int sccStartIdx = iter.next();
-            SCCfinder.findAllSCC(sccStartIdx);
+//            int sccStartIdx = ;
+            SCCfinder.findAllSCC(iter.next());
         }
+
+        filter |= filterDomains();
         return filter;
     }
     //***********************************************************************************
@@ -641,7 +652,9 @@ public class AlgoAllDiffAC_Gent {
         freeNode.fill();
         // 增量检查
         // matching 有效性检查
-        for (int varIdx = 0; varIdx < arity; varIdx++) {
+        triggeringVars.iterateValid();
+        while (triggeringVars.hasNextValid()) {
+            int varIdx = triggeringVars.next();
             IntVar v = vars[varIdx];
             if (v.getDomainSize() == 1) {
                 // 取出变量的唯一值
@@ -885,9 +898,15 @@ public class AlgoAllDiffAC_Gent {
     }
 
     private boolean filter() throws ContradictionException {
-        boolean filter = false;
+
         buildSCC();
 
+        return filterDomains();
+
+    }
+
+    private boolean filterDomains() throws ContradictionException {
+        boolean filter = false;
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
