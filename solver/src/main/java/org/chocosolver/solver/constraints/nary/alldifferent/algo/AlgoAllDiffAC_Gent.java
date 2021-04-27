@@ -314,7 +314,7 @@ public class AlgoAllDiffAC_Gent {
     // PROPAGATION
     //***********************************************************************************
 
-    public boolean propagate() throws ContradictionException {
+    public boolean propagateOri2() throws ContradictionException {
         boolean filter;
         long startTime;
         triggeringVars.clear();
@@ -372,7 +372,7 @@ public class AlgoAllDiffAC_Gent {
 
     }
 
-    public boolean propagateOri2() throws ContradictionException {
+    public boolean propagateOri3() throws ContradictionException {
         boolean filter;
         long startTime;
         if (initialProp) {
@@ -423,7 +423,7 @@ public class AlgoAllDiffAC_Gent {
 
     }
 
-    public boolean propagateOri() throws ContradictionException {
+    public boolean propagate() throws ContradictionException {
 
         Measurer.enterProp();
         partition.reset();
@@ -509,48 +509,39 @@ public class AlgoAllDiffAC_Gent {
             int xIdx = triggeringVars.next();
             int valIdx = var2Val[xIdx];
             int sccStartIdx = partition.getSCCStartIndexByElement(xIdx);
-//            int sccIdx = node2SCC[xIdx];
             x = vars[xIdx];
-//            int val = idx2Val[valIdx];
-//            int s = nodeSCC[varIdx];
-//            TIntArrayList s = SCC2Node[sccIdx];
+
             if (valIdx == -1) {
-//            if (!x.contains(idx2Val[valIdx])) {
                 repairMatching(sccStartIdx);
             }
 
             if (x.isInstantiated()) {
                 int xVal = vars[xIdx].getValue();
-//                if (changedSCCs.contains(sccIdx)) {
-//                    changedSCCs.remove(sccIdx);
-//                }
+
                 if (changedSCCStartIndex.contains(sccStartIdx)) {
                     changedSCCStartIndex.remove(sccStartIdx);
                 }
+
                 //parition s into s1 s2 , from now on s = s2
                 partition.remove(xIdx);
-
                 partition.setIteratorIndex(sccStartIdx);
-                while (partition.hasNext()) {
-                    int yIdx = partition.next();
+                do {
+                    int yIdx = partition.getValue();
                     if (yIdx < arity) {
                         y = vars[yIdx];
                         if (y.contains(xVal)) {
                             filter |= y.removeValue(xVal, aCause);
-                            Dbit[yIdx].clear(xVal);
+                            Dbit[yIdx].clear(val2Idx.get(xVal));
                         }
                     }
-                }
+                } while (partition.nextValid());
 
                 if (partition.greatThanOne(sccStartIdx)) {
-
-//                    changedSCCs.add(sccIdx);
                     changedSCCStartIndex.add(sccStartIdx);
                 }
 
             } else {
                 if (partition.greatThanOne(sccStartIdx)) {
-//                    changedSCCs.add(sccIdx);
                     changedSCCStartIndex.add(sccStartIdx);
                 }
             }
@@ -561,7 +552,6 @@ public class AlgoAllDiffAC_Gent {
         SCCfinder.resetData();
         var iter = changedSCCStartIndex.iterator();
         while (iter.hasNext()) {
-//            int sccStartIdx = ;
             SCCfinder.findAllSCC(iter.next());
         }
 
@@ -927,7 +917,7 @@ public class AlgoAllDiffAC_Gent {
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
-//                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             RDbit[varIdx].clear(valIdx);
                             Dbit[varIdx].clear(valIdx);
                             filter |= v.removeValue(k, aCause);
