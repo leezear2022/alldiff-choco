@@ -154,6 +154,7 @@ public class StrongConnectivityFinderR3 {
         findAllSCCOf(unvisited);
     }
 
+
     public void findAllSCC(BitSet exception) {
         singleton.clear();
         ISet nodes = graph.getNodes();
@@ -197,6 +198,21 @@ public class StrongConnectivityFinderR3 {
             lowLink[i] = n + 2;
             node2SCC[i] = -1;
             DFSNum[i] = n + 2;
+        }
+    }
+
+    public void resetData_ED() {
+        // initialization
+        clearStack();
+        maxDFS = 0;
+        nbSCC = 0;
+        unconnected = false;
+        cycles.clear();
+
+        for (int i = 0; i < n; i++) {
+            lowLink[i] = n + 2;
+            node2SCC[i] = -1;
+            DFSNum[i] = -1;
         }
     }
 
@@ -300,6 +316,18 @@ public class StrongConnectivityFinderR3 {
         return findAllSCCOf_ED(unvisited);
     }
 
+    public boolean findAllSCC_ED(int sccIndexStart, TLongArrayStack deleteEdge) {
+        singleton.clear();
+        DE = deleteEdge;
+        ISet nodes = graph.getNodes();
+        partition.setIteratorIndex(sccIndexStart);
+        do {
+            int ii = partition.getValue();
+            unvisited.set(ii, nodes.contains(ii));
+        } while (partition.nextValid());
+        return findAllSCCOf_ED(unvisited);
+    }
+
     public boolean findAllSCC_ED(TLongArrayStack deleteEdge, TIntArrayList restriction) {
         singleton.clear();
         DE = deleteEdge;
@@ -317,19 +345,6 @@ public class StrongConnectivityFinderR3 {
     }
 
     private boolean findAllSCCOf_ED(BitSet restriction) {
-        // initialization
-        clearStack();
-        maxDFS = 0;
-        nbSCC = 0;
-        unconnected = false;
-        cycles.clear();
-
-        for (int i = 0; i < n; i++) {
-            lowLink[i] = n + 2;
-            node2SCC[i] = -1;
-            DFSNum[i] = -1;
-        }
-
         findSingletons(restriction);
         int v = restriction.nextSetBit(0);
         while (v >= 0) {
@@ -402,7 +417,6 @@ public class StrongConnectivityFinderR3 {
 
     private void strongConnect(int curNode) {
         curLevel = 0;
-
         pushStack(curNode);
         DFSNum[curNode] = maxDFS;
         lowLink[curNode] = maxDFS;
@@ -479,7 +493,6 @@ public class StrongConnectivityFinderR3 {
 
     private boolean strongConnect_ED(int curNode) {
         curLevel = 0;
-        int start = curNode;
         pushStack(curNode);
         DFSNum[curNode] = maxDFS;
         lowLink[curNode] = maxDFS;
@@ -533,17 +546,21 @@ public class StrongConnectivityFinderR3 {
 //                        System.out.println(curLevel + ", f");
                         int stackNode = -1;
                         sccSize = 0;
+                        System.out.println("before set limit: " + partition);
+                        int limit = partition.resetLimitByElement(curNode);
+                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
                         while (stackNode != curNode) {
                             stackNode = popStack();
 //                            System.out.println("pop: " + stackNode + ", " + nbSCC);
+                            partition.add(stackNode);
                             node2SCC[stackNode] = nbSCC;
                             sccSize++;
                         }
                         if (sccSize == 1) {
                             singleton.add(stackNode);
                         }
+                        partition.setSplit();
                         nbSCC++;
-
                         unconnected = true;
                     }
                 }

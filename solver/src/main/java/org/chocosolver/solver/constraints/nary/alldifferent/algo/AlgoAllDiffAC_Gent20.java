@@ -35,7 +35,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages
  */
-public class AlgoAllDiffAC_Gent {
+public class AlgoAllDiffAC_Gent20 {
 
     //***********************************************************************************
     // VARIABLES
@@ -119,7 +119,7 @@ public class AlgoAllDiffAC_Gent {
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_Gent(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_Gent20(IntVar[] variables, ICause cause, Model model) {
         id = num++;
         env = model.getEnvironment();
 
@@ -261,16 +261,9 @@ public class AlgoAllDiffAC_Gent {
             @Override
             public void execute(int i) throws ContradictionException {
                 DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
-                if (!v.contains(i)) {
-                    delValues2.add(new IntTuple2(var, i));
-                } else {
-                    System.out.println(var + "," + i + " is contained");
-                }
-//                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
+
                 if (!triggeringVars.contain(var)) {
-                    System.out.printf("add: ( %d)\n", var);
                     triggeringVars.add(var);
-//                    isNotTrigger = false;
                 }
             }
         };
@@ -363,121 +356,6 @@ public class AlgoAllDiffAC_Gent {
         }
     }
 
-    public boolean propagateOri3() throws ContradictionException {
-        boolean filter;
-        long startTime;
-        if (initialProp) {
-            initialProp = false;
-
-            startTime = System.nanoTime();
-            Measurer.enterProp();
-            prepareForMatching();
-            findMaximumMatching();
-            Measurer.matchingTime += System.nanoTime() - startTime;
-
-            startTime = System.nanoTime();
-            filter = filter();
-            Measurer.filterTime += System.nanoTime() - startTime;
-
-            return filter;
-        } else {
-            Measurer.enterProp();
-            startTime = System.nanoTime();
-            triggeringVars.clear();
-            DE.clear();
-            for (int i = 0; i < arity; ++i) {
-                monitors[i].freeze();
-                monitors[i].forEachRemVal(onValRem.set(i));
-            }
-//            findMaximumMatching();
-            SCCfinder.getAllSCCStartIndices(SCCStartIndex);
-            System.out.println(partition);
-            prepareForMatching();
-
-            TIntIterator iter = SCCStartIndex.iterator();
-            while (iter.hasNext()) {
-                repairMatching(iter.next());
-//            System.out.println("------");
-            }
-            Measurer.matchingTime += System.nanoTime() - startTime;
-
-            startTime = System.nanoTime();
-            filter = filter();
-
-            for (int i = 0; i < vars.length; i++) {
-                monitors[i].unfreeze();
-            }
-            Measurer.filterTime += System.nanoTime() - startTime;
-
-            return filter;
-        }
-
-    }
-
-    public boolean propagateOri() throws ContradictionException {
-
-        Measurer.enterProp();
-        partition.reset();
-        //get deleted values
-        DE.clear();
-        triggeringVars.clear();
-        delValues2.clear();
-        System.out.println("-----------------------");
-        for (int i = 0; i < arity; ++i) {
-            monitors[i].freeze();
-            monitors[i].forEachRemVal(onValRem.set(i));
-        }
-        long startTime = System.nanoTime();
-
-        // 输出
-        System.out.printf("ID: %d, ", id);
-        System.out.print("Scope:");
-        for (var v : vars) {
-            System.out.print(" " + v.getName());
-        }
-        System.out.print(", traggerVars:");
-        triggeringVars.iterateValid();
-        while (triggeringVars.hasNextValid()) {
-            System.out.print(" " + triggeringVars.next());
-        }
-        System.out.println();
-
-        getDelta();
-
-        System.out.print("dv1: ");
-        printValues(delValues1);
-        System.out.print("av: ");
-        printValues(addValues);
-        System.out.print("dv2: ");
-        printValues(delValues2);
-        System.out.println("last dom:");
-        for (int i = 0; i < vars.length; i++) {
-            System.out.printf("lastDom[%d] = %s\n", i, lastDbit[i].toString());
-        }
-        System.out.println("current dom:");
-        for (int i = 0; i < vars.length; i++) {
-            System.out.printf("curDom[%d] = %s\n", i, Dbit[i].toString());
-        }
-        System.out.println("-----------------------");
-
-
-//        System.out.println("DE: " + DE);
-        prepareForMatching();
-        findMaximumMatching();
-        Measurer.matchingTime += System.nanoTime() - startTime;
-
-
-        startTime = System.nanoTime();
-        boolean filter = filter();
-        Measurer.filterTime += System.nanoTime() - startTime;
-
-        for (int i = 0; i < vars.length; i++) {
-            monitors[i].unfreeze();
-        }
-
-        return filter;
-    }
-
     private void printValues(ArrayList<IntTuple2> values) {
         for (var a : values) {
             System.out.print(a + ", ");
@@ -546,10 +424,10 @@ public class AlgoAllDiffAC_Gent {
     private boolean propagate_SCC_filter() throws ContradictionException {
         buildGraph();
 //        SCCfinder.setUnvisitedValues();
-        SCCfinder.resetData();
+        SCCfinder.resetData_ED();
         var iter = changedSCCStartIndex.iterator();
         while (iter.hasNext()) {
-            SCCfinder.findAllSCC(iter.next());
+            SCCfinder.findAllSCC_ED(iter.next(), DE);
         }
 
         boolean filter = filterDomains();
@@ -679,32 +557,6 @@ public class AlgoAllDiffAC_Gent {
         }
     }
 
-    private void findMaximumMatching(TIntArrayList s) throws ContradictionException {
-        TIntIterator iter = s.iterator();
-        while (iter.hasNext()) {
-            int varIdx = iter.next();
-
-            if (var2Val[varIdx] == -1) {
-                value_visited_.clear();
-                variable_visited_.clear();
-                MakeAugmentingPath(varIdx);
-            }
-            if (var2Val[varIdx] == -1) {
-                // No augmenting path exists.
-
-                for (int i = 0; i < vars.length; i++) {
-                    monitors[i].unfreeze();
-                }
-
-                vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
-            }
-        }
-
-//        for (int varIdx = 0; varIdx < arity; varIdx++) {
-//            valUnmatchedVar[var2Val[varIdx]].remove(varIdx);
-//        }
-    }
-
     private void repairMatching(int SCCStartIndex) throws ContradictionException {
         // repair max matching.
         partition.setIteratorIndex(SCCStartIndex);
@@ -744,86 +596,12 @@ public class AlgoAllDiffAC_Gent {
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
         }
-
-//        for (int varIdx = 0; varIdx < arity; varIdx++) {
-//            valUnmatchedVar[var2Val[varIdx]].remove(varIdx);
-//        }
     }
 
     //***********************************************************************************
     // PRUNING
     //***********************************************************************************
-//    private void buildGraph() {
-//        for (int i = 0; i < numNodes; i++) {
-//            graph.getSuccOf(i).clear();
-//            graph.getPredOf(i).clear();
-//        }
-//
-//        // 添加匹配边 var->val
-//        for (int i = 0; i < arity; ++i) {
-//            int matchedVal = var2Val[i];
-//            graph.addArc(i, matchedVal + addArity);
-//
-//        }
-//
-//        // 添加非匹配边 val->var; val->t
-//        for (int j = 0, k = 0; j < numValues; ++j) {
-//            if (freeNode.contain(j)) {
-//                graph.addArc(arity, j + addArity);
-//            }
-//            valUnmatchedVar[j].iterateValid();
-//            while (valUnmatchedVar[j].hasNextValid()) {
-//                k = valUnmatchedVar[j].next();
-//                graph.addArc(j + addArity, k);
-//            }
-//        }
-//    }
 
-    //    private boolean buildSCC() {
-//
-//        for (int i = 0; i < numNodes; i++) {
-//            graph.getSuccOf(i).clear();
-//            graph.getPredOf(i).clear();
-//        }
-//
-//        // 添加匹配边 var->val
-//        for (int i = 0; i < arity; ++i) {
-//            int matchedVal = var2Val[i];
-//            graph.addArc(i, matchedVal + addArity);
-//
-//        }
-//
-//        // 添加非匹配边 val->var; val->t
-//        for (int j = 0, k = 0; j < numValues; ++j) {
-//            if (freeNode.contain(j)) {
-//                graph.addArc(arity, j + addArity);
-//            }
-//            valUnmatchedVar[j].iterateValid();
-//            while (valUnmatchedVar[j].hasNextValid()) {
-//                k = valUnmatchedVar[j].next();
-//                graph.addArc(j + addArity, k);
-//            }
-//        }
-//
-//        if (initialProp) {
-//            SCCfinder.findAllSCC();
-//            initialProp = false;
-//        } else {
-//            if (SCCfinder.findAllSCC_ED(DE)) {
-//                Measurer.enterSkip();
-////                System.out.println("xixi");
-//                return true;
-//            }
-//        }
-//
-//        SCCfinder.getNodesSCC(node2SCC, SCC2Node);
-//
-//
-//        System.out.println("node2SCC: " + Arrays.toString(node2SCC));
-////        graph.removeNode(numNodes);
-//        return false;
-//
-//    }
     private void buildGraph() {
         for (int i = 0; i < numNodes; i++) {
             graph.getSuccOf(i).clear();
