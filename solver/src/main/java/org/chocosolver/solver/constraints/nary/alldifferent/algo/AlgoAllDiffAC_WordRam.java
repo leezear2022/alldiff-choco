@@ -74,7 +74,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     private INaiveBitSet matchedValues;
 //    private INaiveBitSet matchedMasks;
 
-//    private INaiveBitSet varSingletonMask;
+    //    private INaiveBitSet varSingletonMask;
 //    private INaiveBitSet valSingletonMask;
 //    private INaiveBitSet varTmpMask;
     // matching
@@ -224,6 +224,8 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
+        System.out.println("---------------");
+        System.out.println("propagate cid: " + id);
         Measurer.enterProp();
         startTime = System.nanoTime();
         fillBandD();
@@ -625,6 +627,8 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     private boolean filter() throws ContradictionException {
         boolean filter = false;
         findAllSCC();
+        System.out.println(Arrays.toString(varSCC));
+        System.out.println(Arrays.toString(valSCC));
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
@@ -980,7 +984,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //            stackNode = valStack[valStackIdx - 1];
         while (valStackIdx > 0 && valDFSNum[valStack[valStackIdx - 1]] >= rootNum) {
             stackNode = popValStack();
-//            System.out.println("pop var: " + stackNode + ", " + nbSCC + "," + valDFSNum[stackNode]);
+            System.out.println("pop var: " + stackNode + ", " + nbSCC + "," + valDFSNum[stackNode]);
             valSCC[stackNode] = nbSCC;
             sccSize++;
         }
@@ -990,7 +994,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //            stackNode = varStack[varStackIdx - 1];
         while (varStackIdx > 0 && varDFSNum[varStack[varStackIdx - 1]] >= rootNum) {
             stackNode = popVarStack();
-//            System.out.println("pop val: " + stackNode + ", " + addArity + stackNode + ", " + nbSCC + "," + varDFSNum[stackNode]);
+            System.out.println("pop val: " + stackNode + ", " + addArity + stackNode + ", " + nbSCC + "," + varDFSNum[stackNode]);
             varSCC[stackNode] = nbSCC;
             singleton.clear(stackNode);
             sccSize++;

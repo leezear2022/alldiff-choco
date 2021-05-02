@@ -177,7 +177,7 @@ public class AlgoAllDiffAC_Gent {
 //        SCCfinder = new StrongConnectivityNewFinder(graph);
 //        SCCfinder = new StrongConnectivityFinderR(graph);
         partition = new RSetPartition(numNodes, env);
-        System.out.println(partition);
+//        System.out.println(partition);
         SCCfinder = new StrongConnectivityFinderR3(graph, arity, numValues, partition);
         numNodes = graph.getNbMaxNodes();
         node2SCC = new int[numNodes];
@@ -316,30 +316,22 @@ public class AlgoAllDiffAC_Gent {
 
     public boolean propagate() throws ContradictionException {
         boolean filter = false;
-        long startTime;
+        long startTime = System.nanoTime();
         triggeringVars.clear();
-
+        Measurer.enterProp();
         if (initialProp) {
-            initialProp = false;
-
             for (int i = 0; i < arity; i++) {
                 triggeringVars.add(i);
             }
-
-            startTime = System.nanoTime();
-            Measurer.enterProp();
+            initialProp = false;
             prepareForMatching();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
 
             startTime = System.nanoTime();
             filter = filter();
-            Measurer.filterTime += System.nanoTime() - startTime;
 
-            return filter;
         } else {
-            Measurer.enterProp();
-            startTime = System.nanoTime();
             DE.clear();
             for (int i = 0; i < arity; ++i) {
                 monitors[i].freeze();
@@ -357,32 +349,25 @@ public class AlgoAllDiffAC_Gent {
             for (int i = 0; i < vars.length; i++) {
                 monitors[i].unfreeze();
             }
-            Measurer.filterTime += System.nanoTime() - startTime;
-
-            return filter;
         }
+        Measurer.filterTime += System.nanoTime() - startTime;
+        return filter;
     }
 
     public boolean propagateOri3() throws ContradictionException {
         boolean filter;
-        long startTime;
+        long startTime = System.nanoTime();
+        Measurer.enterProp();
         if (initialProp) {
             initialProp = false;
-
-            startTime = System.nanoTime();
-            Measurer.enterProp();
             prepareForMatching();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
 
             startTime = System.nanoTime();
             filter = filter();
-            Measurer.filterTime += System.nanoTime() - startTime;
 
-            return filter;
         } else {
-            Measurer.enterProp();
-            startTime = System.nanoTime();
             triggeringVars.clear();
             DE.clear();
             for (int i = 0; i < arity; ++i) {
@@ -407,11 +392,9 @@ public class AlgoAllDiffAC_Gent {
             for (int i = 0; i < vars.length; i++) {
                 monitors[i].unfreeze();
             }
-            Measurer.filterTime += System.nanoTime() - startTime;
-
-            return filter;
         }
-
+        Measurer.filterTime += System.nanoTime() - startTime;
+        return filter;
     }
 
     public boolean propagateOri() throws ContradictionException {

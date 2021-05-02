@@ -41,6 +41,7 @@ public class AllDifferent extends Constraint {
     public static final String ACNaive = "ACNaive";
     public static final String ACNaiveR = "ACNaiveR";
     public static final String WordRam = "WordRam";
+    public static final String WordRam2 = "WordRam2";
     public static final String ACNaiveNew = "ACNaiveNew";
 
     public AllDifferent(IntVar[] vars, String type) {
@@ -93,6 +94,8 @@ public class AllDifferent extends Constraint {
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveBitSetNew(VARS)};
             case WordRam:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRam(VARS)};
+            case WordRam2:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_GentBit(VARS)};
 //                case ACNaiveNew:
 //                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
 

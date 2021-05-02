@@ -133,18 +133,16 @@ public class StrongConnectivityFinderR3 {
     }
 
     public void findAllSCC() {
-        singleton.clear();
+        resetData();
         ISet nodes = graph.getNodes();
         for (int i = 0; i < n; i++) {
-            System.out.println("out: " + i);
+//            System.out.println("out: " + i);
             unvisited.set(i, nodes.contains(i));
         }
-        resetData();
         findAllSCCOf(unvisited);
     }
 
     public void findAllSCC(int sccIndexStart) {
-        singleton.clear();
         ISet nodes = graph.getNodes();
         partition.setIteratorIndex(sccIndexStart);
         do {
@@ -156,7 +154,6 @@ public class StrongConnectivityFinderR3 {
 
 
     public void findAllSCC(BitSet exception) {
-        singleton.clear();
         ISet nodes = graph.getNodes();
         for (int i = exception.nextClearBit(0); i >= 0 && i < n; i = exception.nextClearBit(i + 1)) {
             unvisited.set(i, nodes.contains(i));
@@ -166,7 +163,6 @@ public class StrongConnectivityFinderR3 {
     }
 
     public boolean findAllSCC(TIntArrayList restriction) {
-        singleton.clear();
         ISet nodes = graph.getNodes();
         TIntIterator iter = restriction.iterator();
         while (iter.hasNext()) {
@@ -178,7 +174,6 @@ public class StrongConnectivityFinderR3 {
     }
 
     public void findAllSCC(INaiveBitSet vars) {
-        singleton.clear();
         ISet nodes = graph.getNodes();
         for (int i = vars.nextClearBit(0); i <= vars.lastSetIndex(); i = vars.nextClearBit(i + 1)) {
             unvisited.set(i, nodes.contains(i));
@@ -199,6 +194,7 @@ public class StrongConnectivityFinderR3 {
             node2SCC[i] = -1;
             DFSNum[i] = n + 2;
         }
+        singleton.clear();
     }
 
     public void resetData_ED() {
@@ -214,6 +210,7 @@ public class StrongConnectivityFinderR3 {
             node2SCC[i] = -1;
             DFSNum[i] = -1;
         }
+        singleton.clear();
     }
 
     private void findAllSCCOf(BitSet restriction) {
@@ -307,7 +304,6 @@ public class StrongConnectivityFinderR3 {
 
 
     public boolean findAllSCC_ED(TLongArrayStack deleteEdge) {
-        singleton.clear();
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
         for (int i = 0; i < n; i++) {
@@ -317,7 +313,6 @@ public class StrongConnectivityFinderR3 {
     }
 
     public boolean findAllSCC_ED(int sccIndexStart, TLongArrayStack deleteEdge) {
-        singleton.clear();
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
         partition.setIteratorIndex(sccIndexStart);
@@ -329,7 +324,6 @@ public class StrongConnectivityFinderR3 {
     }
 
     public boolean findAllSCC_ED(TLongArrayStack deleteEdge, TIntArrayList restriction) {
-        singleton.clear();
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
         TIntIterator iter = restriction.iterator();
