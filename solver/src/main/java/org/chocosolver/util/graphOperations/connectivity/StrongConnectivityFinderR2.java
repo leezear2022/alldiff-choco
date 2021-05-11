@@ -183,7 +183,7 @@ public class StrongConnectivityFinderR2 {
         clearStack();
         maxDFS = 0;
         nbSCC = 0;
-
+        hasSCCSplit = false;
         for (int i = 0; i < n; i++) {
             lowLink[i] = n + 2;
             node2SCC[i] = -1;
@@ -309,7 +309,7 @@ public class StrongConnectivityFinderR2 {
         nbSCC = 0;
         unconnected = false;
         cycles.clear();
-
+        hasSCCSplit = false;
         for (int i = 0; i < n; i++) {
             lowLink[i] = n + 2;
             node2SCC[i] = -1;
@@ -420,7 +420,7 @@ public class StrongConnectivityFinderR2 {
                     curLevel--;
                 }
             } else {
-                hasSCCSplit = false;
+//                hasSCCSplit = false;
 //                curNode = levelNodes[curLevel - 1];
 //                System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
                 if (lowLink[curNode] == DFSNum[curNode]) {
@@ -501,7 +501,7 @@ public class StrongConnectivityFinderR2 {
                     curLevel--;
                 }
             } else {
-                hasSCCSplit = false;
+//                hasSCCSplit = false;
 //                curNode = levelNodes[curLevel - 1];
 //                System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
                 if (lowLink[curNode] == DFSNum[curNode]) {

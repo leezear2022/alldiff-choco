@@ -29,6 +29,7 @@ public class AllDifferent extends Constraint {
     public static final String BC = "BC";
     public static final String FC = "FC";
     public static final String Gent = "Gent";
+    public static final String Gent20 = "Gent20";
     public static final String NEQS = "NEQS";
     public static final String DEFAULT = "DEFAULT";
 
@@ -84,6 +85,8 @@ public class AllDifferent extends Constraint {
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang20Choco(VARS)};
             case AC20:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC20(VARS)};
+            case Gent20:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20(VARS)};
             case ACZhang18M:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang18M(VARS)};
             case ACNaive:

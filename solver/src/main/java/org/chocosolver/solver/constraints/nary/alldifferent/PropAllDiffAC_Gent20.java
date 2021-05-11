@@ -11,9 +11,6 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC20;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffACFast;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Gent20;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
@@ -31,14 +28,14 @@ import org.chocosolver.util.ESat;
  *
  * @author Jean-Guillaume Fages
  */
-public class PropAllDiffAC20 extends Propagator<IntVar> {
+public class PropAllDiffAC_Gent20 extends Propagator<IntVar> {
 
     //***********************************************************************************
     // VARIABLES
     //***********************************************************************************
 
-//    protected AlgoAllDiffAC_Gent20 filter;
-    protected AlgoAllDiffAC20 filter;
+    protected AlgoAllDiffAC_Gent20 filter;
+//    protected AlgoAllDiffAC20 filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -50,10 +47,10 @@ public class PropAllDiffAC20 extends Propagator<IntVar> {
      *
      * @param variables array of integer variables
      */
-    public PropAllDiffAC20(IntVar[] variables) {
+    public PropAllDiffAC_Gent20(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-        filter = new AlgoAllDiffAC20(variables, this);
-//        filter = new AlgoAllDiffAC_Gent20(variables, this, this.getModel());
+//        filter = new AlgoAllDiffAC20(variables, this);
+        filter = new AlgoAllDiffAC_Gent20(variables, this, this.getModel());
     }
 
     //***********************************************************************************

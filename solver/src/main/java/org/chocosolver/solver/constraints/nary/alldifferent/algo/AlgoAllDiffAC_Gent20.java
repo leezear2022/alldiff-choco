@@ -259,9 +259,9 @@ public class AlgoAllDiffAC_Gent20 {
             }
 
             @Override
+
             public void execute(int i) throws ContradictionException {
                 DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
-
                 if (!triggeringVars.contain(var)) {
                     triggeringVars.add(var);
                 }
@@ -426,8 +426,11 @@ public class AlgoAllDiffAC_Gent20 {
 //        SCCfinder.setUnvisitedValues();
         SCCfinder.resetData_ED();
         var iter = changedSCCStartIndex.iterator();
-        while (iter.hasNext()) {
-            SCCfinder.findAllSCC_ED(iter.next(), DE);
+        while (iter.hasNext() ) {
+            if (SCCfinder.findAllSCC_ED(iter.next(), DE)) {
+                Measurer.enterSkip();
+                return true;
+            }
         }
 
         boolean filter = filterDomains();
@@ -663,11 +666,8 @@ public class AlgoAllDiffAC_Gent20 {
     }
 
     private boolean filter() throws ContradictionException {
-
         buildSCC();
-
         return filterDomains();
-
     }
 
     private boolean filterDomains() throws ContradictionException {

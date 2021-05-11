@@ -1,9 +1,16 @@
 package org.chocosolver.amtf;
 
+import org.antlr.v4.runtime.misc.IntervalSet;
+
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import org.chocosolver.util.objects.INaiveBitSet;
+import org.chocosolver.util.objects.setDataStructures.iterable.IntIterableRangeSet;
+import org.chocosolver.util.objects.tree.Interval;
+import org.chocosolver.util.objects.tree.IntervalTree;
+import org.chocosolver.util.objects.IntInterval;
+import org.xcsp.common.domains.Values;
 
 import java.util.BitSet;
 
@@ -127,19 +134,66 @@ public class amtf {
 //        System.out.println(b);
 
 
-        TIntArrayList t = new TIntArrayList(2);
-        long haha = 0xffffffffffffffffL;
-        BitSet aa = new BitSet(64);
-        aa.set(0, 63);
-        System.out.println(aa);
-        System.out.println(aa.previousClearBit(62));
+//        TIntArrayList t = new TIntArrayList(2);
+//        long haha = 0xffffffffffffffffL;
+//        BitSet aa = new BitSet(64);
+//        aa.set(0, 63);
+//        System.out.println(aa);
+//        System.out.println(aa.previousClearBit(62));
+//
+//        TIntSet ss = new TIntHashSet();
+//        ss.add(1);
+//        ss.add(1);
+//        ss.add(2);
+//
+//        System.out.println(ss);
 
-        TIntSet ss = new TIntHashSet();
-        ss.add(1);
-        ss.add(1);
-        ss.add(2);
+//        IntervalSet s = new IntervalSet();
+//        s.add(1, 2);
+//        s.add(2, 3);
+//        s.add(3, 4);
+//        IntIterableRangeSet is = new IntIterableRangeSet(new int[]{1, 2, 4, 4, 6, 7, 9, 13, 15, 15});
+//        System.out.println(is);
+//        is.add(3);
+//        System.out.println(is);
+//        for (var a : is) {
+//            System.out.println(a);
+//        }
 
-        System.out.println(ss);
+        IntervalTree<IntInterval> it = new IntervalTree();
+
+//        t.insert()
+        IntInterval t = new IntInterval(1, 2);
+
+//        System.out.println(t);
+
+        it.insert(t);
+        it.insert(new IntInterval(3, 4));
+
+        for (var tt : it) {
+            System.out.println(tt);
+        }
+        System.out.println("--------");
+        it.insert(new IntInterval(2, 3));
+
+        for (var tt : it) {
+            System.out.println(tt);
+        }
+        System.out.println("--------");
+        var con = it.contains(new IntInterval(1, 4));
+        System.out.println(con);
+        System.out.println("--------");
+        IntervalSet is = new IntervalSet();
+        is.add(0,1);
+//        is.add(2,3);
+        is.add(4,5);
+        is.add(5,7);
+
+//        is.add(0,1);
+        System.out.println(is);
+        System.out.println(is.contains(6));
+//        System.out.println(is.or());
+
     }
 
     private static int nextSetBit(long word, int pos) {

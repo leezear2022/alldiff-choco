@@ -685,9 +685,11 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         singleton.flip();
 //        System.out.println("----------");
 //        System.out.println("singleton:" + singleton);
+        System.out.println("singleton: " + singleton);
         for (int varIdx = singleton.firstSetBit(); varIdx != singleton.end(); varIdx = singleton.nextSetBit(varIdx + 1)) {
 //            if (unVisitedVariables.get(varIdx)) {
 //                System.out.println(varIdx);
+            System.out.printf("out: %d\n", varIdx);
             strongConnectVar(varIdx);
 //            }
         }

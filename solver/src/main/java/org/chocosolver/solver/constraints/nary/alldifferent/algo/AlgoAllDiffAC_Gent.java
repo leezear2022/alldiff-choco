@@ -330,7 +330,6 @@ public class AlgoAllDiffAC_Gent {
 
             startTime = System.nanoTime();
             filter = filter();
-
         } else {
             DE.clear();
             for (int i = 0; i < arity; ++i) {

@@ -3,6 +3,7 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 //import org.chocosolver.amtf.Measurer;
 
 import gnu.trove.iterator.TIntIntIterator;
+import gnu.trove.iterator.TIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.array.TLongArrayStack;
@@ -11,13 +12,13 @@ import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.RSetPartition;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**
@@ -133,6 +134,9 @@ public class AlgoAllDiffAC_GentBit {
     private TLongArrayStack DE;
     private static int INT_SIZE = 32;
 
+    // for delta update
+    protected IIntDeltaMonitor[] monitors;
+    private UnaryIntProcedure<Integer> onValRem;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -237,6 +241,13 @@ public class AlgoAllDiffAC_GentBit {
         changedSCCStartIndex = new TIntHashSet();
         DE = new TLongArrayStack();
         partition = new RSetPartition(addArity + numValues, env);
+
+        // for delta
+        monitors = new IIntDeltaMonitor[vars.length];
+        for (int i = 0; i < vars.length; i++) {
+            monitors[i] = vars[i].monitorDelta(cause);
+        }
+        onValRem = makeProcedure();
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -267,7 +278,7 @@ public class AlgoAllDiffAC_GentBit {
     // PROPAGATION
     //***********************************************************************************
 
-    public boolean propagate() throws ContradictionException {
+    public boolean propagate_ori() throws ContradictionException {
         System.out.println("---------------");
         System.out.println("propagate cid: " + id);
         Measurer.enterProp();
@@ -275,11 +286,60 @@ public class AlgoAllDiffAC_GentBit {
         fillBandD();
 //        printDomains();
         prepareForMatching();
-        repairMatching();
+        findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
         startTime = System.nanoTime();
         boolean filter = filter();
+        Measurer.filterTime += System.nanoTime() - startTime;
+        return filter;
+    }
+
+    public boolean propagate() throws ContradictionException {
+        System.out.println("---------------");
+        System.out.println("propagate cid: " + id);
+        Measurer.enterProp();
+        boolean filter = false;
+        startTime = System.nanoTime();
+        fillBandD();
+
+        if (initialProp) {
+            for (int i = 0; i < arity; i++) {
+                triggeringVars.add(i);
+            }
+            initialProp = false;
+            prepareForMatching();
+            findMaximumMatching();
+            Measurer.matchingTime += System.nanoTime() - startTime;
+
+            startTime = System.nanoTime();
+            filter = filter();
+        }else {
+            DE.clear();
+            for (int i = 0; i < arity; ++i) {
+                monitors[i].freeze();
+                monitors[i].forEachRemVal(onValRem.set(i));
+            }
+
+            getAllSCCStartIndices(SCCStartIndex);
+            System.out.println(partition);
+            prepareForMatching();
+            filter |= propagate_SCC_Match();
+            Measurer.matchingTime += System.nanoTime() - startTime;
+
+            startTime = System.nanoTime();
+            filter |= propagate_SCC_filter();
+            for (int i = 0; i < vars.length; i++) {
+                monitors[i].unfreeze();
+            }
+        }
+
+//        prepareForMatching();
+//        repairMatching();
+//        Measurer.matchingTime += System.nanoTime() - startTime;
+//
+//        startTime = System.nanoTime();
+//        boolean filter = filter();
         Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
     }
@@ -470,7 +530,7 @@ public class AlgoAllDiffAC_GentBit {
         }
     }
 
-    private void repairMatching() throws ContradictionException {
+    private void findMaximumMatching() throws ContradictionException {
         // Compute max matching.
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             if (var2Val[varIdx] == -1) {
@@ -510,6 +570,82 @@ public class AlgoAllDiffAC_GentBit {
             }
         } while (partition.nextValid());
     }
+
+    //***********************************************************************************
+    // Independent SCCs
+    //***********************************************************************************
+
+
+    private boolean propagate_SCC_Match() throws ContradictionException {
+        boolean res = false;
+        IntVar x, y;
+//        changedSCCs.clear();
+        changedSCCStartIndex.clear();
+        triggeringVars.iterateValid();
+//        TIntArrayList s;
+//        TIntIterator iter;
+        while (triggeringVars.hasNextValid()) {
+            int xIdx = triggeringVars.next();
+            int valIdx = var2Val[xIdx];
+            int sccStartIdx = partition.getSCCStartIndexByElement(xIdx);
+            x = vars[xIdx];
+
+            if (valIdx == -1) {
+                repairMatching(sccStartIdx);
+            }
+
+            if (x.isInstantiated()) {
+                int xVal = vars[xIdx].getValue();
+
+                if (changedSCCStartIndex.contains(sccStartIdx)) {
+                    changedSCCStartIndex.remove(sccStartIdx);
+                }
+
+                //parition s into s1 s2 , from now on s = s2
+                partition.remove(xIdx);
+                partition.setIteratorIndex(sccStartIdx);
+                do {
+                    int yIdx = partition.getValue();
+                    if (yIdx < arity) {
+                        y = vars[yIdx];
+                        if (y.contains(xVal)) {
+                            res |= y.removeValue(xVal, aCause);
+                            int xValIdx = val2Idx.get(xVal);
+                            D[yIdx].clear(xValIdx);
+                            B[xValIdx].clear(yIdx);
+                        }
+                    }
+                } while (partition.nextValid());
+
+                if (partition.greatThanOne(sccStartIdx)) {
+                    changedSCCStartIndex.add(sccStartIdx);
+                }
+
+            } else {
+                if (partition.greatThanOne(sccStartIdx)) {
+                    changedSCCStartIndex.add(sccStartIdx);
+                }
+            }
+        }
+
+        return res;
+    }
+
+    private boolean propagate_SCC_filter() throws ContradictionException {
+//        buildGraph();
+////        SCCfinder.setUnvisitedValues();
+//        SCCfinder.resetData();
+        resetData();
+        var iter = changedSCCStartIndex.iterator();
+        while (iter.hasNext()) {
+            findAllSCC(iter.next());
+        }
+
+        boolean filter = filterDomains();
+        return filter;
+    }
+
+
 
     //***********************************************************************************
     // PRUNING
@@ -625,9 +761,45 @@ public class AlgoAllDiffAC_GentBit {
 //        return false;
 //    }
 
+    private boolean filterDomains() throws ContradictionException {
+        boolean filter = false;
+
+        for (int varIdx = 0; varIdx < arity; varIdx++) {
+            IntVar v = vars[varIdx];
+            if (!v.isInstantiated()) {
+                for (int valIdx = D[varIdx].firstSetBit(); valIdx != D[varIdx].end(); valIdx = D[varIdx].nextSetBit(valIdx + 1)) {
+                    int k = idx2Val[valIdx];
+                    if (varSCC[varIdx] != valSCC[valIdx]) {
+                        Measurer.enterP2();
+                        if (valIdx == var2Val[varIdx]) {
+                            int valNum = v.getDomainSize();
+                            Measurer.numDelValuesP2 += valNum - 1;
+//                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+                            filter |= v.instantiateTo(k, aCause);
+                        } else {
+                            ++Measurer.numDelValuesP2;
+                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+                            filter |= v.removeValue(k, aCause);
+                        }
+                    }
+                }
+            }
+        }
+        return filter;
+    }
+
     private boolean filter() throws ContradictionException {
         boolean filter = false;
-        findAllSCC();
+
+        resetData();
+
+//        findAllSCC();
+        partition.getSCCStartIndex(SCCStartIndex);
+        TIntIterator iter = SCCStartIndex.iterator();
+        while (iter.hasNext()) {
+            findAllSCC(iter.next());
+        }
+
         System.out.println(Arrays.toString(varSCC));
         System.out.println(Arrays.toString(valSCC));
         System.out.println(partition);
@@ -687,7 +859,7 @@ public class AlgoAllDiffAC_GentBit {
         restriction.clear();
         restriction.set();
 
-        resetData();
+//        resetData();
 
         clearVarStack();
         clearValStack();
@@ -696,6 +868,8 @@ public class AlgoAllDiffAC_GentBit {
 //        singleton.flip();
 //        System.out.println("----------");
 //        System.out.println("singleton:" + singleton);
+        System.out.println("restriction: " + restriction);
+        System.out.println("partition: " + partition);
         for (int varIdx = restriction.firstSetBit(); varIdx < arity; varIdx = restriction.nextSetBit(varIdx + 1)) {
 //            if (unVisitedVariables.get(varIdx)) {
 //                System.out.println(varIdx);
@@ -712,6 +886,7 @@ public class AlgoAllDiffAC_GentBit {
         // initialization
 //        resetData();
         restriction.clear();
+
         partition.setIteratorIndex(sccStartIdx);
         do {
             int i = partition.getValue();
@@ -721,41 +896,53 @@ public class AlgoAllDiffAC_GentBit {
         clearVarStack();
         clearValStack();
 
-//        findSingletons(restriction);
-        for (int i = restriction.firstSetBit(); i != restriction.end(); i = restriction.nextSetBit(i + 1)) {
-            // 变量只有一个值，即只有匹配值
-            // 若匹配边由变量指向值，若D[x]=1则表示变量x只有一个出边即匹配边，没有入边，即满足singleton条件
-            if (D[i].size() == 1) {
-                varSCC[i] = nbSCC;
-                singleton.set(i);
-                partition.remove(i);
-                restriction.clear(i);
-                nbSCC++;
-            }
+        findSingletons();
 
-            if (!partition.isSingleton(i)) {
-                if (i < arity && D[i].size() == 1) {
-                    varSCC[i] = nbSCC;
-                    singleton.set(i);
-                    partition.remove(i);
-                    restriction.clear(i);
-                    nbSCC++;
-                } else if (i > arity && B[getValueInGraph(i)].size() == 1) {
-                    valSCC[getValueInGraph(i)] = nbSCC;
-                    singleton.set(i);
-                    partition.remove(i);
-                    restriction.clear(i);
-                    nbSCC++;
-                }
-            }
-        }
+//        for (int i = restriction.firstSetBit(); i < arity; i = restriction.nextSetBit(i + 1)) {
+//            // 变量只有一个值，即只有匹配值
+//            // 若匹配边由变量指向值，若D[x]=1则表示变量x只有一个出边即匹配边，没有入边，即满足singleton条件
+////            if (D[i].size() == 1) {
+////                varSCC[i] = nbSCC;
+////                singleton.set(i);
+////                partition.remove(i);
+////                restriction.clear(i);
+////                nbSCC++;
+////            }
+//
+//            if (!partition.isSingleton(i)) {
+//                if (i < arity && D[i].size() == 1) {
+//                    varSCC[i] = nbSCC;
+//                    singleton.set(i);
+//                    partition.remove(i);
+//                    restriction.clear(i);
+//                    nbSCC++;
+//                } else if (i > arity && B[getValueInGraph(i)].size() == 1) {
+//                    valSCC[getValueInGraph(i)] = nbSCC;
+//                    singleton.set(i);
+//                    partition.remove(i);
+//                    restriction.clear(i);
+//                    nbSCC++;
+//                }
+//            }
+//        }
 //        singleton.flip();
 
 //        System.out.println("----------");
 //        System.out.println("singleton:" + singleton);
+
+        System.out.println("restriction: " + restriction);
+//        for (int varIdx = restriction.firstSetBit(); varIdx < arity; varIdx = restriction.nextSetBit(varIdx + 1)) {
+////            if (unVisitedVariables.get(varIdx)) {
+////                System.out.println(varIdx);
+//            System.out.printf("out: %d\n", varIdx);
+//            strongConnectVar(varIdx);
+////            }
+//        }
+        System.out.println("partition: " + partition);
         for (int varIdx = restriction.firstSetBit(); varIdx < arity; varIdx = restriction.nextSetBit(varIdx + 1)) {
 //            if (unVisitedVariables.get(varIdx)) {
 //                System.out.println(varIdx);
+            System.out.printf("out: %d\n", varIdx);
             strongConnectVar(varIdx);
 //            }
         }
@@ -769,7 +956,8 @@ public class AlgoAllDiffAC_GentBit {
         for (int i = 0; i < arity; i++) {
             // 变量只有一个值，即只有匹配值
             // 若匹配边由变量指向值，若D[x]=1则表示变量x只有一个出边即匹配边，没有入边，即满足singleton条件
-            if (!partition.isSingleton(i) && D[i].size() == 1) {
+//            if (!partition.isSingleton(i) && D[i].size() == 1) {
+            if (D[i].size() == 1) {
                 varSCC[i] = nbSCC;
                 singleton.set(i);
                 restriction.clear(i);
@@ -1101,5 +1289,9 @@ public class AlgoAllDiffAC_GentBit {
 
     private int getValueInGraph(int valueIndex) {
         return valueIndex - addArity;
+    }
+
+    private void getAllSCCStartIndices(TIntHashSet sccStartIndex) {
+        partition.getSCCStartIndex(sccStartIndex);
     }
 }
