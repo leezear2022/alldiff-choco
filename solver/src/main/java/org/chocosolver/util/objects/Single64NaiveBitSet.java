@@ -194,6 +194,11 @@ public class Single64NaiveBitSet implements INaiveBitSet {
     }
 
     @Override
+    public boolean overlap(INaiveBitSet s) {
+        return s.overlap(this);
+    }
+
+    @Override
     public String toString() {
 //        return Long.toBinaryString(words);
         if (size() == 0) {

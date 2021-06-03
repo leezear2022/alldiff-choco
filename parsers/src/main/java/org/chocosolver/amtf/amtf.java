@@ -194,6 +194,8 @@ public class amtf {
         System.out.println(is.contains(6));
 //        System.out.println(is.or());
 
+//        BitSet
+
     }
 
     private static int nextSetBit(long word, int pos) {

@@ -99,18 +99,18 @@ public class AlgoAllDiffAC_Gent {
     private TIntHashSet changedSCCStartIndex;
     private RSetPartition partition;
 
-    //    //用于回溯
-    private IStateBitSet[] RDbit, RBbit;
-
-    //    // 与值相连的变量
-    private INaiveBitSet[] Bbit;
-    //    // bit论域
-    private INaiveBitSet[] Dbit;
-    private INaiveBitSet[] lastDbit;
-    private INaiveBitSet varsMask;
-    private ArrayList<IntTuple2> delValues1;
-    private ArrayList<IntTuple2> addValues;
-    private ArrayList<IntTuple2> delValues2;
+//    //    //用于回溯
+//    private IStateBitSet[] RDbit, RBbit;
+//
+//    //    // 与值相连的变量
+//    private INaiveBitSet[] Bbit;
+//    //    // bit论域
+//    private INaiveBitSet[] Dbit;
+//    private INaiveBitSet[] lastDbit;
+//    private INaiveBitSet varsMask;
+//    private ArrayList<IntTuple2> delValues1;
+//    private ArrayList<IntTuple2> addValues;
+//    private ArrayList<IntTuple2> delValues2;
     IEnvironment env;
 
 
@@ -207,41 +207,41 @@ public class AlgoAllDiffAC_Gent {
         SCCStartIndex = new TIntHashSet();
         changedSCCStartIndex = new TIntHashSet();
 
-        // 两种记录已删除的值
-        delValues1 = new ArrayList<>();
-        delValues2 = new ArrayList<>();
-        addValues = new ArrayList<>();
-
-        Bbit = new INaiveBitSet[numValues];
-        RBbit = new IStateBitSet[numValues];
-        for (int i = 0; i < numValues; ++i) {
-            Bbit[i] = INaiveBitSet.makeBitSet(arity, false);
-            RBbit[i] = env.makeBitSet(arity);
-        }
-
-        Dbit = new INaiveBitSet[arity];
-        lastDbit = new INaiveBitSet[arity];
-        RDbit = new IStateBitSet[arity];
-        int valSize = val2Idx.size();
-        for (int i = 0; i < arity; i++) {
-            Dbit[i] = INaiveBitSet.makeBitSet(valSize, false);
-            lastDbit[i] = INaiveBitSet.makeBitSet(valSize, false);
-            RDbit[i] = env.makeBitSet(valSize);
-        }
-
-        for (int i = 0; i < arity; ++i) {
-            IntVar v = vars[i];
-            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-                int valIdx = val2Idx.get(j);
-                Bbit[valIdx].set(i);
-                RBbit[valIdx].set(i);
-                Dbit[i].set(valIdx);
-                lastDbit[i].set(valIdx);
-                RDbit[i].set(valIdx);
-            }
-        }
-
-        varsMask = INaiveBitSet.makeBitSet(arity, true);
+//        // 两种记录已删除的值
+//        delValues1 = new ArrayList<>();
+//        delValues2 = new ArrayList<>();
+//        addValues = new ArrayList<>();
+//
+//        Bbit = new INaiveBitSet[numValues];
+//        RBbit = new IStateBitSet[numValues];
+//        for (int i = 0; i < numValues; ++i) {
+//            Bbit[i] = INaiveBitSet.makeBitSet(arity, false);
+//            RBbit[i] = env.makeBitSet(arity);
+//        }
+//
+//        Dbit = new INaiveBitSet[arity];
+//        lastDbit = new INaiveBitSet[arity];
+//        RDbit = new IStateBitSet[arity];
+//        int valSize = val2Idx.size();
+//        for (int i = 0; i < arity; i++) {
+//            Dbit[i] = INaiveBitSet.makeBitSet(valSize, false);
+//            lastDbit[i] = INaiveBitSet.makeBitSet(valSize, false);
+//            RDbit[i] = env.makeBitSet(valSize);
+//        }
+//
+//        for (int i = 0; i < arity; ++i) {
+//            IntVar v = vars[i];
+//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+//                int valIdx = val2Idx.get(j);
+//                Bbit[valIdx].set(i);
+//                RBbit[valIdx].set(i);
+//                Dbit[i].set(valIdx);
+//                lastDbit[i].set(valIdx);
+//                RDbit[i].set(valIdx);
+//            }
+//        }
+//
+//        varsMask = INaiveBitSet.makeBitSet(arity, true);
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -261,14 +261,14 @@ public class AlgoAllDiffAC_Gent {
             @Override
             public void execute(int i) throws ContradictionException {
                 DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
-                if (!v.contains(i)) {
-                    delValues2.add(new IntTuple2(var, i));
-                } else {
-                    System.out.println(var + "," + i + " is contained");
-                }
+//                if (!v.contains(i)) {
+//                    delValues2.add(new IntTuple2(var, i));
+//                } else {
+//                    System.out.println(var + "," + i + " is contained");
+//                }
 //                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
                 if (!triggeringVars.contain(var)) {
-                    System.out.printf("add: ( %d)\n", var);
+//                    System.out.printf("add: ( %d)\n", var);
                     triggeringVars.add(var);
 //                    isNotTrigger = false;
                 }
@@ -276,39 +276,39 @@ public class AlgoAllDiffAC_Gent {
         };
     }
 
-    public void getDelta() {
-        delValues1.clear();
-        addValues.clear();
-        // 新加的值
-
-        for (int i = 0; i < arity; i++) {
-            IntVar v = vars[i];
-            lastDbit[i].set(Dbit[i]);
-            Dbit[i].clear();
-
-            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-                int valIdx = val2Idx.get(j);
-                Dbit[i].set(valIdx);
-                if (!RDbit[i].get(valIdx)) {
-                    addValues.add(new IntTuple2(i, j));
-                }
-            }
-
-            for (int j = RDbit[i].nextSetBit(0); j >= 0; j = RDbit[i].nextSetBit(j + 1)) {
-                int val = idx2Val[j];
-                if (!v.contains(val)) {
-                    delValues1.add(new IntTuple2(i, val));
-                }
-            }
-
-            RDbit[i].clear();
-            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-                int valIdx = val2Idx.get(j);
-                Dbit[i].set(valIdx);
-                RDbit[i].set(valIdx);
-            }
-        }
-    }
+//    public void getDelta() {
+//        delValues1.clear();
+//        addValues.clear();
+//        // 新加的值
+//
+//        for (int i = 0; i < arity; i++) {
+//            IntVar v = vars[i];
+//            lastDbit[i].set(Dbit[i]);
+//            Dbit[i].clear();
+//
+//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+//                int valIdx = val2Idx.get(j);
+//                Dbit[i].set(valIdx);
+//                if (!RDbit[i].get(valIdx)) {
+//                    addValues.add(new IntTuple2(i, j));
+//                }
+//            }
+//
+//            for (int j = RDbit[i].nextSetBit(0); j >= 0; j = RDbit[i].nextSetBit(j + 1)) {
+//                int val = idx2Val[j];
+//                if (!v.contains(val)) {
+//                    delValues1.add(new IntTuple2(i, val));
+//                }
+//            }
+//
+//            RDbit[i].clear();
+//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+//                int valIdx = val2Idx.get(j);
+//                Dbit[i].set(valIdx);
+//                RDbit[i].set(valIdx);
+//            }
+//        }
+//    }
 
     //***********************************************************************************
     // PROPAGATION
@@ -396,69 +396,69 @@ public class AlgoAllDiffAC_Gent {
         return filter;
     }
 
-    public boolean propagateOri() throws ContradictionException {
-
-        Measurer.enterProp();
-        partition.reset();
-        //get deleted values
-        DE.clear();
-        triggeringVars.clear();
-        delValues2.clear();
-        System.out.println("-----------------------");
-        for (int i = 0; i < arity; ++i) {
-            monitors[i].freeze();
-            monitors[i].forEachRemVal(onValRem.set(i));
-        }
-        long startTime = System.nanoTime();
-
-        // 输出
-        System.out.printf("ID: %d, ", id);
-        System.out.print("Scope:");
-        for (var v : vars) {
-            System.out.print(" " + v.getName());
-        }
-        System.out.print(", traggerVars:");
-        triggeringVars.iterateValid();
-        while (triggeringVars.hasNextValid()) {
-            System.out.print(" " + triggeringVars.next());
-        }
-        System.out.println();
-
-        getDelta();
-
-        System.out.print("dv1: ");
-        printValues(delValues1);
-        System.out.print("av: ");
-        printValues(addValues);
-        System.out.print("dv2: ");
-        printValues(delValues2);
-        System.out.println("last dom:");
-        for (int i = 0; i < vars.length; i++) {
-            System.out.printf("lastDom[%d] = %s\n", i, lastDbit[i].toString());
-        }
-        System.out.println("current dom:");
-        for (int i = 0; i < vars.length; i++) {
-            System.out.printf("curDom[%d] = %s\n", i, Dbit[i].toString());
-        }
-        System.out.println("-----------------------");
-
-
-//        System.out.println("DE: " + DE);
-        prepareForMatching();
-        findMaximumMatching();
-        Measurer.matchingTime += System.nanoTime() - startTime;
-
-
-        startTime = System.nanoTime();
-        boolean filter = filter();
-        Measurer.filterTime += System.nanoTime() - startTime;
-
-        for (int i = 0; i < vars.length; i++) {
-            monitors[i].unfreeze();
-        }
-
-        return filter;
-    }
+//    public boolean propagateOri() throws ContradictionException {
+//
+//        Measurer.enterProp();
+//        partition.reset();
+//        //get deleted values
+//        DE.clear();
+//        triggeringVars.clear();
+//        delValues2.clear();
+//        System.out.println("-----------------------");
+//        for (int i = 0; i < arity; ++i) {
+//            monitors[i].freeze();
+//            monitors[i].forEachRemVal(onValRem.set(i));
+//        }
+//        long startTime = System.nanoTime();
+//
+//        // 输出
+//        System.out.printf("ID: %d, ", id);
+//        System.out.print("Scope:");
+//        for (var v : vars) {
+//            System.out.print(" " + v.getName());
+//        }
+//        System.out.print(", traggerVars:");
+//        triggeringVars.iterateValid();
+//        while (triggeringVars.hasNextValid()) {
+//            System.out.print(" " + triggeringVars.next());
+//        }
+//        System.out.println();
+//
+//        getDelta();
+//
+//        System.out.print("dv1: ");
+//        printValues(delValues1);
+//        System.out.print("av: ");
+//        printValues(addValues);
+//        System.out.print("dv2: ");
+//        printValues(delValues2);
+//        System.out.println("last dom:");
+//        for (int i = 0; i < vars.length; i++) {
+//            System.out.printf("lastDom[%d] = %s\n", i, lastDbit[i].toString());
+//        }
+//        System.out.println("current dom:");
+//        for (int i = 0; i < vars.length; i++) {
+//            System.out.printf("curDom[%d] = %s\n", i, Dbit[i].toString());
+//        }
+//        System.out.println("-----------------------");
+//
+//
+////        System.out.println("DE: " + DE);
+//        prepareForMatching();
+//        findMaximumMatching();
+//        Measurer.matchingTime += System.nanoTime() - startTime;
+//
+//
+//        startTime = System.nanoTime();
+//        boolean filter = filter();
+//        Measurer.filterTime += System.nanoTime() - startTime;
+//
+//        for (int i = 0; i < vars.length; i++) {
+//            monitors[i].unfreeze();
+//        }
+//
+//        return filter;
+//    }
 
     private void printValues(ArrayList<IntTuple2> values) {
         for (var a : values) {
@@ -506,7 +506,7 @@ public class AlgoAllDiffAC_Gent {
                         y = vars[yIdx];
                         if (y.contains(xVal)) {
                             res |= y.removeValue(xVal, aCause);
-                            Dbit[yIdx].clear(val2Idx.get(xVal));
+//                            Dbit[yIdx].clear(val2Idx.get(xVal));
                         }
                     }
                 } while (partition.nextValid());
@@ -889,16 +889,16 @@ public class AlgoAllDiffAC_Gent {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
 //                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
-                            RDbit[varIdx].clear();
-                            RDbit[varIdx].set(valIdx);
-                            Dbit[varIdx].clear();
-                            Dbit[varIdx].set(valIdx);
+//                            RDbit[varIdx].clear();
+//                            RDbit[varIdx].set(valIdx);
+//                            Dbit[varIdx].clear();
+//                            Dbit[varIdx].set(valIdx);
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
-                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
-                            RDbit[varIdx].clear(valIdx);
-                            Dbit[varIdx].clear(valIdx);
+//                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            RDbit[varIdx].clear(valIdx);
+//                            Dbit[varIdx].clear(valIdx);
                             filter |= v.removeValue(k, aCause);
                         }
                     }

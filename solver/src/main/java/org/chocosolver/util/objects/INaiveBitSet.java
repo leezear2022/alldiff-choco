@@ -75,6 +75,8 @@ public interface INaiveBitSet {
 
     int end();
 
+    boolean overlap(INaiveBitSet s);
+
     static final int INDEX_OVERFLOW = -1;
 
     static int min(int a, int b) {

@@ -302,6 +302,7 @@ public class AlgoAllDiffAC_GentBit {
         boolean filter = false;
         startTime = System.nanoTime();
         fillBandD();
+        triggeringVars.clear();
 
         if (initialProp) {
             for (int i = 0; i < arity; i++) {
@@ -314,18 +315,22 @@ public class AlgoAllDiffAC_GentBit {
 
             startTime = System.nanoTime();
             filter = filter();
-        }else {
+        } else {
             DE.clear();
+//            triggeringVars.clear();
             for (int i = 0; i < arity; ++i) {
                 monitors[i].freeze();
                 monitors[i].forEachRemVal(onValRem.set(i));
             }
-
+//            System.out.println("triggeringVars: " + triggeringVars);
+//            System.out.println("triggeringVars: " + DE);
             getAllSCCStartIndices(SCCStartIndex);
+            System.out.println("triggeringVars: " + triggeringVars);
             System.out.println(partition);
             prepareForMatching();
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
+            System.out.println("SCCStartIndex: " + changedSCCStartIndex);
 
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
@@ -334,12 +339,6 @@ public class AlgoAllDiffAC_GentBit {
             }
         }
 
-//        prepareForMatching();
-//        repairMatching();
-//        Measurer.matchingTime += System.nanoTime() - startTime;
-//
-//        startTime = System.nanoTime();
-//        boolean filter = filter();
         Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
     }
@@ -577,6 +576,17 @@ public class AlgoAllDiffAC_GentBit {
 
 
     private boolean propagate_SCC_Match() throws ContradictionException {
+//        StringBuilder sb = new StringBuilder();
+//        sb.append("-------\n");
+//        sb.append("propagate_SCC_Match\ntriggerVar: ");
+//        triggeringVars.iterateValid();
+//        while (triggeringVars.hasNextValid()) {
+//            sb.append(triggeringVars.next()).append(" ");
+//        }
+//        sb.append("\n");
+//        sb.append("-------\n");
+//        System.out.println(sb.toString());
+
         boolean res = false;
         IntVar x, y;
 //        changedSCCs.clear();
@@ -594,7 +604,7 @@ public class AlgoAllDiffAC_GentBit {
                 repairMatching(sccStartIdx);
             }
 
-            if (x.isInstantiated()) {
+            if (x.isInstantiated() && partition.greatThanOne(sccStartIdx)) {
                 int xVal = vars[xIdx].getValue();
 
                 if (changedSCCStartIndex.contains(sccStartIdx)) {
@@ -610,6 +620,7 @@ public class AlgoAllDiffAC_GentBit {
                         y = vars[yIdx];
                         if (y.contains(xVal)) {
                             res |= y.removeValue(xVal, aCause);
+                            System.out.println("remove: " + yIdx + "," + xVal);
                             int xValIdx = val2Idx.get(xVal);
                             D[yIdx].clear(xValIdx);
                             B[xValIdx].clear(yIdx);
@@ -638,13 +649,18 @@ public class AlgoAllDiffAC_GentBit {
         resetData();
         var iter = changedSCCStartIndex.iterator();
         while (iter.hasNext()) {
-            findAllSCC(iter.next());
+            int startIdx = iter.next();
+            System.out.println("startIndex: " + startIdx);
+            findAllSCC(startIdx);
         }
+
+        System.out.println(Arrays.toString(varSCC));
+        System.out.println(Arrays.toString(valSCC));
+        System.out.println(partition);
 
         boolean filter = filterDomains();
         return filter;
     }
-
 
 
     //***********************************************************************************

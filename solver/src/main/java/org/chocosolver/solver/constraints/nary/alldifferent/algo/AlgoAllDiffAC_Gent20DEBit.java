@@ -7,22 +7,21 @@ import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.memory.IEnvironment;
+import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR3;
-import org.chocosolver.util.objects.IntTuple2;
-import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.objects.RSetPartition;
-import org.chocosolver.util.objects.SparseSet;
+import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR4;
+import org.chocosolver.util.objects.*;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Map;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -36,7 +35,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages
  */
-public class AlgoAllDiffAC_Gent20 {
+public class AlgoAllDiffAC_Gent20DEBit {
 
     //***********************************************************************************
     // VARIABLES
@@ -86,7 +85,7 @@ public class AlgoAllDiffAC_Gent20 {
     private int[] node2SCC;
     private TIntArrayList[] SCC2Node;
     //    private StrongConnectivityNewFinder SCCfinder;
-    private StrongConnectivityFinderR3 SCCfinder;
+    private StrongConnectivityFinderR4 SCCfinder;
 //    private StrongConnectivityFinder SCCfinder;
 
     // for early detection
@@ -114,13 +113,16 @@ public class AlgoAllDiffAC_Gent20 {
 //    private ArrayList<IntTuple2> delValues2;
     IEnvironment env;
 
-
-//    private int numNodes;
+    //for bit deletion
+    private INaiveBitSet[] bitDE;
+    private INaiveBitSet bitSCCDE;
+    private ArrayList<INaiveBitSet> bitCycle;
 
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_Gent20(IntVar[] variables, ICause cause, Model model) {
+
+    public AlgoAllDiffAC_Gent20DEBit(IntVar[] variables, ICause cause, Model model) {
         id = num++;
         env = model.getEnvironment();
 
@@ -178,8 +180,8 @@ public class AlgoAllDiffAC_Gent20 {
 //        SCCfinder = new StrongConnectivityNewFinder(graph);
 //        SCCfinder = new StrongConnectivityFinderR(graph);
         partition = new RSetPartition(numNodes, env);
-//        System.out.println(partition);
-        SCCfinder = new StrongConnectivityFinderR3(graph, arity, numValues, partition);
+        System.out.println(partition);
+        SCCfinder = new StrongConnectivityFinderR4(graph, arity, numValues, partition);
         numNodes = graph.getNbMaxNodes();
         node2SCC = new int[numNodes];
         SCC2Node = new TIntArrayList[numNodes];
@@ -243,6 +245,16 @@ public class AlgoAllDiffAC_Gent20 {
 //        }
 //
 //        varsMask = INaiveBitSet.makeBitSet(arity, true);
+
+        // for bit DE
+
+        bitDE = new INaiveBitSet[arity];
+        for (int i = 0; i < arity; i++) {
+            bitDE[i] = INaiveBitSet.makeBitSet(numNodes, false);
+        }
+
+        bitSCCDE = INaiveBitSet.makeBitSet(numNodes, false);
+        bitCycle = new ArrayList<>();
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -262,7 +274,8 @@ public class AlgoAllDiffAC_Gent20 {
             @Override
 
             public void execute(int i) throws ContradictionException {
-                DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
+                DE.push(SCCfinder.getIntTuple2Long(var, valIdx2ValNodeIdx(val2Idx.get(i))));
+                bitDE[var].set(val2Idx.get(i));
                 if (!triggeringVars.contain(var)) {
                     triggeringVars.add(var);
                 }
@@ -309,8 +322,6 @@ public class AlgoAllDiffAC_Gent20 {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-        System.out.println("---------------");
-        System.out.println("propagate cid: " + id);
         boolean filter = false;
         long startTime;
         triggeringVars.clear();
@@ -337,15 +348,14 @@ public class AlgoAllDiffAC_Gent20 {
             Measurer.enterProp();
             startTime = System.nanoTime();
             DE.clear();
-//            triggeringVars.clear();
             for (int i = 0; i < arity; ++i) {
+                bitDE[i].clear();
                 monitors[i].freeze();
                 monitors[i].forEachRemVal(onValRem.set(i));
             }
 
             SCCfinder.getAllSCCStartIndices(SCCStartIndex);
-            System.out.println("triggeringVars: " + triggeringVars);
-//            System.out.println(partition);
+            System.out.println(partition);
             prepareForMatching();
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
@@ -374,18 +384,6 @@ public class AlgoAllDiffAC_Gent20 {
 
 
     private boolean propagate_SCC_Match() throws ContradictionException {
-
-//        StringBuilder sb = new StringBuilder();
-//        sb.append("-------\n");
-//        sb.append("propagate_SCC_Match\ntriggerVar: ");
-//        triggeringVars.iterateValid();
-//        while (triggeringVars.hasNextValid()) {
-//            sb.append(triggeringVars.next()).append(" ");
-//        }
-//        sb.append("\n");
-//        sb.append("-------\n");
-//        System.out.println(sb.toString());
-
         boolean res = false;
         IntVar x, y;
 //        changedSCCs.clear();
@@ -419,8 +417,6 @@ public class AlgoAllDiffAC_Gent20 {
                         y = vars[yIdx];
                         if (y.contains(xVal)) {
                             res |= y.removeValue(xVal, aCause);
-                            System.out.println("remove: " + yIdx + "," + xVal);
-//                            Dbit[yIdx].clear(val2Idx.get(xVal));
                         }
                     }
                 } while (partition.nextValid());
@@ -445,7 +441,7 @@ public class AlgoAllDiffAC_Gent20 {
         SCCfinder.resetData_ED();
         var iter = changedSCCStartIndex.iterator();
         while (iter.hasNext()) {
-            if (SCCfinder.findAllSCC_ED(iter.next(), DE)) {
+            if (SCCfinder.findAllSCC_ED(iter.next(), bitDE)) {
                 Measurer.enterSkip();
                 return true;
             }
@@ -638,10 +634,10 @@ public class AlgoAllDiffAC_Gent20 {
                 int valIdx = val2Idx.get(j);
                 if (valIdx == matchedVal) {
                     // 添加匹配边 var<--val
-                    graph.addArc(valIdx + addArity, i);
+                    graph.addArc(valIdx2ValNodeIdx(valIdx), i);
                 } else {
                     // 添加非匹配边 var-->val
-                    graph.addArc(i, valIdx + addArity);
+                    graph.addArc(i, valIdx2ValNodeIdx(valIdx));
                 }
             }
         }
@@ -650,10 +646,10 @@ public class AlgoAllDiffAC_Gent20 {
         for (int j = 0; j < numValues; ++j) {
             if (freeNode.contain(j)) {
                 // free node: val->t
-                graph.addArc(j + addArity, arity);
+                graph.addArc(valIdx2ValNodeIdx(j), arity);
             } else {
                 // sink node: t->val;
-                graph.addArc(arity, j + addArity);
+                graph.addArc(arity, valIdx2ValNodeIdx(j));
             }
         }
     }
@@ -663,8 +659,8 @@ public class AlgoAllDiffAC_Gent20 {
         buildGraph();
 
         SCCfinder.getAllSCCStartIndices(SCCStartIndex);
-//        System.out.println(partition);
-//        System.out.println("indices: " + SCCStartIndex);
+        System.out.println(partition);
+        System.out.println("indices: " + SCCStartIndex);
         SCCfinder.resetData();
         TIntIterator iter = SCCStartIndex.iterator();
         while (iter.hasNext()) {
@@ -677,7 +673,7 @@ public class AlgoAllDiffAC_Gent20 {
 //        SCCfinder.getNodesSCC(node2SCC, SCC2Node);
 
 //        System.out.println(Arrays.toString(node2SCC));
-//        System.out.println(partition);
+        System.out.println(partition);
 //        SCCfinder.getAllSCCStartIndices(SCCStartIndex);
 //        System.out.println("indices: " + SCCStartIndex);
 //        graph.removeNode(numNodes);
@@ -696,8 +692,8 @@ public class AlgoAllDiffAC_Gent20 {
                 int ub = v.getUB();
                 for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
                     int valIdx = val2Idx.get(k);
-//                    if (node2SCC[varIdx] != node2SCC[valIdx + addArity]) {
-                    if (!partition.inSameSCC(varIdx, valIdx + addArity)) {
+//                    if (node2SCC[varIdx] != node2SCC[valIdx2ValNodeIdx(valIdx) + addArity]) {
+                    if (!partition.inSameSCC(varIdx, valIdx2ValNodeIdx(valIdx))) {
                         Measurer.enterP2();
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
@@ -720,6 +716,14 @@ public class AlgoAllDiffAC_Gent20 {
             }
         }
         return filter;
+    }
+
+    private int valIdx2ValNodeIdx(int valIdx) {
+        return valIdx + addArity;
+    }
+
+    private int valNodeIdx2ValIdx(int valNodeIdx) {
+        return valNodeIdx - addArity;
     }
 
 

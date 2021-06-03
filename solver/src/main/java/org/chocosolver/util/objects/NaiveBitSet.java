@@ -397,6 +397,16 @@ public class NaiveBitSet implements INaiveBitSet {
     }
 
     @Override
+    public boolean overlap(INaiveBitSet s) {
+        for (int i = 0; i <= longSize; ++i) {
+            if((words[i] & s.getWord(i))!=0){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public String toString() {
         StringBuilder ss = new StringBuilder();
         for (long w : words) {

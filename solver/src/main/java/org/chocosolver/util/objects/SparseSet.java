@@ -175,24 +175,27 @@ public class SparseSet {
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
-        s.append("dense  = {");
-        for (int i = 0; i < sparse.length; i++) {
-            if (i == 0) {
-                s.append(dense[i]);
-            } else {
-                s.append(", ").append(dense[i]);
-            }
+//        s.append("dense  = {");
+//        for (int i = 0; i < sparse.length; i++) {
+//            if (i == 0) {
+//                s.append(dense[i]);
+//            } else {
+//                s.append(", ").append(dense[i]);
+//            }
+//        }
+//        s.append("}\n");
+//        s.append("sparse = {");
+//        for (int i = 0; i < sparse.length; i++) {
+//            if (i == 0) {
+//                s.append(sparse[i]);
+//            } else {
+//                s.append(", ").append(sparse[i]);
+//            }
+//        }
+//        s.append("}\nlimit = ").append(limit);
+        for (int i = 0; i < limit; i++) {
+            s.append(dense[i]).append(" ");
         }
-        s.append("}\n");
-        s.append("sparse = {");
-        for (int i = 0; i < sparse.length; i++) {
-            if (i == 0) {
-                s.append(sparse[i]);
-            } else {
-                s.append(", ").append(sparse[i]);
-            }
-        }
-        s.append("}\nlimit = ").append(limit);
         return s.toString();
     }
 }

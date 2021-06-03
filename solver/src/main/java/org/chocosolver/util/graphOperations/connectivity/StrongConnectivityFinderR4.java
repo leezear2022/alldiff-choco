@@ -6,6 +6,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.array.TLongArrayStack;
+import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.RSetPartition;
@@ -13,10 +14,11 @@ import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 
-public class StrongConnectivityFinderR3 {
+public class StrongConnectivityFinderR4 {
     // input
     private DirectedGraph graph;
     private BitSet unvisited;
@@ -34,6 +36,7 @@ public class StrongConnectivityFinderR3 {
     //
     private int maxDFS = 1;
     private int[] DFSNum;
+    private int[] DFSNum2Node;
     private int[] lowLink;
     private boolean hasSCCSplit = false;
     //    private Stack<IntTuple2> DE;
@@ -61,41 +64,18 @@ public class StrongConnectivityFinderR3 {
 
     private RSetPartition partition;
 
+    // for bit delta
+    private ArrayList<INaiveBitSet> bitCycles;
+
+    private INaiveBitSet SCCDE;
+    private INaiveBitSet tmpBitCycle;
 
 
 //    private int index = 0;
 //    private BitSet visited;
 
 
-    public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues) {
-        this.graph = graph;
-        this.n = graph.getNbMaxNodes();
-
-        stack = new int[n];
-        inStack = new BitSet(n);
-
-        node2SCC = new int[n];
-        nbSCC = 0;
-
-        DFSNum = new int[n];
-        lowLink = new int[n];
-
-        unvisited = new BitSet(n);
-//        cycles = new ArrayList<>();
-        cycles = new TLongArrayList(n);
-        iters = new Iterator[n + 1];
-        levelNodes = new int[n + 1];
-        singleton = new SparseSet(n);
-        this.arity = arity;
-        this.addArity = arity + 1;
-        this.numValues = numValues;
-        nodePair = new IntTuple2(-1, -1);
-//        DE = new TIntArrayStack(n);
-        DE = new TLongArrayStack(n);
-
-    }
-
-    public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues, RSetPartition p) {
+    public StrongConnectivityFinderR4(DirectedGraph graph, int arity, int numValues, RSetPartition p) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
         partition = p;
@@ -107,10 +87,11 @@ public class StrongConnectivityFinderR3 {
         nbSCC = 0;
 
         DFSNum = new int[n];
+        DFSNum2Node = new int[n + 2];
         lowLink = new int[n];
 
         unvisited = new BitSet(n);
-//        cycles = new ArrayList<>();
+        //        cycles = new ArrayList<>();
         cycles = new TLongArrayList(n);
         iters = new Iterator[n + 1];
         levelNodes = new int[n + 1];
@@ -119,8 +100,13 @@ public class StrongConnectivityFinderR3 {
         this.addArity = arity + 1;
         this.numValues = numValues;
         nodePair = new IntTuple2(-1, -1);
-//        DE = new TIntArrayStack(n);
+        //        DE = new TIntArrayStack(n);
         DE = new TLongArrayStack(n);
+
+        // for bit DE
+        SCCDE = INaiveBitSet.makeBitSet(addArity + numValues, false);
+        tmpBitCycle = INaiveBitSet.makeBitSet(addArity + numValues, false);
+        bitCycles = new ArrayList<>();
     }
 
     public void setArity(int arity) {
@@ -285,7 +271,7 @@ public class StrongConnectivityFinderR3 {
             if (!partition.isSingleton(i) && nodes.contains(i) && graph.getPredOf(i).size() * graph.getSuccOf(i).size() == 0) {
                 node2SCC[i] = nbSCC;
                 singleton.add(i);
-//                System.out.println("singleton add: " + i + ", " + partition);
+                System.out.println("singleton add: " + i + ", " + partition);
                 partition.remove(i);
                 nbSCC++;
                 restriction.clear(i);
@@ -315,6 +301,22 @@ public class StrongConnectivityFinderR3 {
         return findAllSCCOf_ED(unvisited);
     }
 
+    public boolean findAllSCC_ED(int sccIndexStart, INaiveBitSet[] bitDE) {
+//        DE = deleteEdge;
+        SCCDE.clear();
+
+        ISet nodes = graph.getNodes();
+        partition.setIteratorIndex(sccIndexStart);
+        do {
+            int ii = partition.getValue();
+            SCCDE.set(ii);
+            SCCDE.or(bitDE[ii]);
+            unvisited.set(ii, nodes.contains(ii));
+        } while (partition.nextValid());
+        return findAllSCCOf_ED(unvisited);
+    }
+
+
     public boolean findAllSCC_ED(int sccIndexStart, TLongArrayStack deleteEdge) {
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
@@ -325,7 +327,6 @@ public class StrongConnectivityFinderR3 {
         } while (partition.nextValid());
         return findAllSCCOf_ED(unvisited);
     }
-
 
     public boolean findAllSCC_ED(TLongArrayStack deleteEdge, TIntArrayList restriction) {
         DE = deleteEdge;
@@ -343,6 +344,19 @@ public class StrongConnectivityFinderR3 {
     }
 
     private boolean findAllSCCOf_ED(BitSet restriction) {
+        findSingletons(restriction);
+        int v = restriction.nextSetBit(0);
+        while (v >= 0) {
+//            if (strongConnect_EDR(v)) {
+            if (strongConnect_ED(v)) {
+                return true;
+            }
+            v = restriction.nextSetBit(v);
+        }
+        return false;
+    }
+
+    private boolean findAllSCCOf_EDBit(BitSet restriction) {
         findSingletons(restriction);
         int v = restriction.nextSetBit(0);
         while (v >= 0) {
@@ -459,12 +473,12 @@ public class StrongConnectivityFinderR3 {
 //                        System.out.println("scc: " + DFSNum[curNode]);
                         int stackNode = -1;
                         sccSize = 0;
-//                        System.out.println("before set limit: " + partition);
+                        System.out.println("before set limit: " + partition);
                         int limit = partition.resetLimitByElement(curNode);
-//                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
+                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
                         while (stackNode != curNode) {
                             stackNode = popStack();
-//                            System.out.println("pop & add: " + stackNode + ", " + nbSCC);
+                            System.out.println("pop & add: " + stackNode + ", " + nbSCC);
 
                             partition.add(stackNode);
                             node2SCC[stackNode] = nbSCC;
@@ -544,9 +558,103 @@ public class StrongConnectivityFinderR3 {
 //                        System.out.println(curLevel + ", f");
                         int stackNode = -1;
                         sccSize = 0;
-//                        System.out.println("before set limit: " + partition);
+                        System.out.println("before set limit: " + partition);
                         int limit = partition.resetLimitByElement(curNode);
-//                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
+                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
+                        while (stackNode != curNode) {
+                            stackNode = popStack();
+//                            System.out.println("pop: " + stackNode + ", " + nbSCC);
+                            partition.add(stackNode);
+                            node2SCC[stackNode] = nbSCC;
+                            sccSize++;
+                        }
+                        if (sccSize == 1) {
+                            singleton.add(stackNode);
+                        }
+                        partition.setSplit();
+                        nbSCC++;
+                        unconnected = true;
+                    }
+                }
+
+                if (curLevel == 0) {
+                    break;
+                }
+
+                lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], lowLink[curNode]);
+                curLevel--;
+
+                if (!unconnected && (DE.size() == 0)) {
+//                    System.out.println("xixi");
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean strongConnect_EDBit(int curNode) {
+        curLevel = 0;
+        pushStack(curNode);
+        DFSNum[curNode] = maxDFS;
+        DFSNum2Node[maxDFS] = curNode;
+        lowLink[curNode] = maxDFS;
+        maxDFS++;
+        unvisited.clear(curNode);
+        levelNodes[curLevel] = curNode;
+        iters[curLevel] = graph.getSuccOf(curNode).iterator();
+
+        while (stackIdx > 0) {
+            curNode = levelNodes[curLevel];
+//            System.out.println(curNode + ", " + curLevel);
+            if (iters[curLevel].hasNext()) {
+                curNode = iters[curLevel].next();
+                levelNodes[++curLevel] = curNode;
+//                System.out.println(levelNodes[curLevel - 1] + ", " + curNode + ", " + unvisited.get(curNode) + "," + start);
+                if (unvisited.get(curNode)) {
+                    pushStack(curNode);
+                    DFSNum[curNode] = maxDFS;
+                    DFSNum2Node[maxDFS] = curNode;
+                    lowLink[curNode] = maxDFS;
+                    maxDFS++;
+                    unvisited.clear(curNode);
+                    iters[curLevel] = graph.getSuccOf(curNode).iterator();
+                } else if (inStack.get(curNode)) {
+//                    System.out.println("addc:" + levelNodes[curLevel - 1] + ", " + curNode + ", " + lowLink[curNode] + ", " + (maxDFS - 1));
+                    lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], DFSNum[curNode]);
+//                    System.out.println(Arrays.toString(lowLink));
+
+                    if (!unconnected) {
+                        tmpBitCycle.clear();
+                        for (int i = lowLink[curNode]; i < maxDFS; i++) {
+                            curLevel--;
+                            tmpBitCycle.set(DFSNum2Node[i]);
+                        }
+                        addCycles(getIntTuple2Long(lowLink[curNode], maxDFS - 1));
+                        while (!(SCCDE.size() == 0) && inCycles(DE.peek())) {
+                            DE.pop();
+                        }
+                    }
+                } else {
+//                    System.out.println("xixi");/**/
+                    curLevel--;
+                }
+            } else {
+//                hasSCCSplit = false;
+//                curNode = levelNodes[curLevel - 1];
+//                System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+                if (lowLink[curNode] == DFSNum[curNode]) {
+//                    System.out.println(curLevel+", e");
+                    if (lowLink[curNode] > 0 || inStack.cardinality() > 0) {
+                        hasSCCSplit = true;
+                    }
+                    if (hasSCCSplit) {
+//                        System.out.println(curLevel + ", f");
+                        int stackNode = -1;
+                        sccSize = 0;
+                        System.out.println("before set limit: " + partition);
+                        int limit = partition.resetLimitByElement(curNode);
+                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
                         while (stackNode != curNode) {
                             stackNode = popStack();
 //                            System.out.println("pop: " + stackNode + ", " + nbSCC);
@@ -710,6 +818,18 @@ public class StrongConnectivityFinderR3 {
         cycles.add(e);
     }
 
+    private void addCycleBit(INaiveBitSet s) {
+        for (int i = 0; i < bitCycles.size(); i++) {
+            INaiveBitSet bc = bitCycles.get(i);
+            if (bc.overlap(s)) {
+                bitCycles.get(i).or(s);
+                return;
+            }
+        }
+
+        bitCycles.add(s);
+    }
+
     private boolean inCycles(long f) {
 //        IntTuple2 tt;
         getIntTuple2(nodePair, f);
@@ -757,6 +877,15 @@ public class StrongConnectivityFinderR3 {
 //        System.out.println("overlap: " + x + "," + y + "," + a + "," + b);
         return (x >= a && x <= b) || (y >= a && y <= b);
     }
+
+//    private boolean overlap(Ina e, long f) {
+//        int a = (int) (e >> INT_SIZE);
+//        int b = (int) e;
+//        int x = (int) (f >> INT_SIZE);
+//        int y = (int) f;
+////        System.out.println("overlap: " + x + "," + y + "," + a + "," + b);
+//        return (x >= a && x <= b) || (y >= a && y <= b);
+//    }
 
     private boolean cover(long e, long f) {
         int x = (int) (e >> INT_SIZE);
