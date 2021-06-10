@@ -12,7 +12,7 @@ import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR3;
+import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR5;
 import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.RSetPartition;
@@ -36,7 +36,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages
  */
-public class AlgoAllDiffAC_Gent20 {
+public class AlgoAllDiffAC_Gent20BitIS {
 
     //***********************************************************************************
     // VARIABLES
@@ -86,7 +86,7 @@ public class AlgoAllDiffAC_Gent20 {
     private int[] node2SCC;
     private TIntArrayList[] SCC2Node;
     //    private StrongConnectivityNewFinder SCCfinder;
-    private StrongConnectivityFinderR3 SCCfinder;
+    private StrongConnectivityFinderR5 SCCfinder;
 //    private StrongConnectivityFinder SCCfinder;
 
     // for early detection
@@ -120,7 +120,7 @@ public class AlgoAllDiffAC_Gent20 {
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_Gent20(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_Gent20BitIS(IntVar[] variables, ICause cause, Model model) {
         id = num++;
         env = model.getEnvironment();
 
@@ -179,7 +179,7 @@ public class AlgoAllDiffAC_Gent20 {
 //        SCCfinder = new StrongConnectivityFinderR(graph);
         partition = new RSetPartition(numNodes, env);
 //        System.out.println(partition);
-        SCCfinder = new StrongConnectivityFinderR3(graph, arity, numValues, partition);
+        SCCfinder = new StrongConnectivityFinderR5(graph, arity, numValues, partition);
         numNodes = graph.getNbMaxNodes();
         node2SCC = new int[numNodes];
         SCC2Node = new TIntArrayList[numNodes];
@@ -192,11 +192,11 @@ public class AlgoAllDiffAC_Gent20 {
         // 存的是变量索引及原值
 //        DE = new Stack<IntTuple2>();
         DE = new TLongArrayStack();
-//        SCCfinder = new StrongConnectivityNewFinder(digraph, DE);
         deletedValues = new TIntArrayList[arity];
         for (int i = 0; i < arity; i++) {
             deletedValues[i] = new TIntArrayList(numValues);
         }
+//        SCCfinder = new StrongConnectivityNewFinder(digraph, DE);
 
         // for delta
         monitors = new IIntDeltaMonitor[vars.length];
@@ -259,21 +259,57 @@ public class AlgoAllDiffAC_Gent20 {
             public UnaryIntProcedure set(Integer o) {
                 var = o;
                 v = vars[var];
+                // isNotTrigger = true;
                 return this;
             }
 
             @Override
 
             public void execute(int i) throws ContradictionException {
+//                DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
                 if (!triggeringVars.contain(var)) {
                     triggeringVars.add(var);
                     deletedValues[var].clear();
                 }
 
-                deletedValues[var].add(val2Idx.get(i) + addArity);
+                deletedValues[var].add(val2Idx.get(i));
             }
         };
     }
+
+//    public void getDelta() {
+//        delValues1.clear();
+//        addValues.clear();
+//        // 新加的值
+//
+//        for (int i = 0; i < arity; i++) {
+//            IntVar v = vars[i];
+//            lastDbit[i].set(Dbit[i]);
+//            Dbit[i].clear();
+//
+//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+//                int valIdx = val2Idx.get(j);
+//                Dbit[i].set(valIdx);
+//                if (!RDbit[i].get(valIdx)) {
+//                    addValues.add(new IntTuple2(i, j));
+//                }
+//            }
+//
+//            for (int j = RDbit[i].nextSetBit(0); j >= 0; j = RDbit[i].nextSetBit(j + 1)) {
+//                int val = idx2Val[j];
+//                if (!v.contains(val)) {
+//                    delValues1.add(new IntTuple2(i, val));
+//                }
+//            }
+//
+//            RDbit[i].clear();
+//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+//                int valIdx = val2Idx.get(j);
+//                Dbit[i].set(valIdx);
+//                RDbit[i].set(valIdx);
+//            }
+//        }
+//    }
 
     //***********************************************************************************
     // PROPAGATION
@@ -390,7 +426,7 @@ public class AlgoAllDiffAC_Gent20 {
                         y = vars[yIdx];
                         if (y.contains(xVal)) {
                             res |= y.removeValue(xVal, aCause);
-//                            System.out.println("remove: " + yIdx + "," + xVal);
+                            System.out.println("remove: " + yIdx + "," + xVal);
 //                            Dbit[yIdx].clear(val2Idx.get(xVal));
                         }
                     }
@@ -416,20 +452,33 @@ public class AlgoAllDiffAC_Gent20 {
         SCCfinder.resetData_ED();
         boolean isSkip = true;
         var iter = changedSCCStartIndex.iterator();
-
         while (iter.hasNext()) {
             DE.clear();
             int sccStartIndex = iter.next();
             partition.setIteratorIndex(sccStartIndex);
+//            System.out.println("++++++++");
             do {
                 int varIdx = partition.getValue();
+//                System.out.println("varIdx: " + varIdx + ", " + (varIdx < arity && triggeringVars.contain(varIdx)));
                 if (varIdx < arity && triggeringVars.contain(varIdx)) {
                     var valIter = deletedValues[varIdx].iterator();
                     while ((valIter.hasNext())) {
-                        DE.push(SCCfinder.getIntTuple2Long(varIdx, valIter.next()));
+                        int j = valIter.next();
+//                        System.out.println("DE add: (" + varIdx + ", " + j + ")");
+                        DE.push(SCCfinder.getIntTuple2Long(varIdx, j + addArity));
                     }
                 }
             } while (partition.nextValid());
+//            System.out.println("++++++++");
+            // res全是true表明了生了ED
+//            boolean res = SCCfinder.findAllSCC_ED(iter.next(), deletedValues);
+
+//            var deArr = DE.toArray();
+//            System.out.print("de: ");
+//            for (var a : deArr) {
+//                System.out.print(SCCfinder.getIntTuple2(a) + " ");
+//            }
+//            System.out.println();
 
             boolean res = SCCfinder.findAllSCC_ED(sccStartIndex, DE);
             isSkip = res && isSkip;

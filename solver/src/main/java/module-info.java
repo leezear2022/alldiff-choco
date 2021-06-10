@@ -131,6 +131,7 @@ module org.chocosolver.solver {
     requires xchart;
     requires java.management;
     requires automaton;
+    requires org.antlr.antlr4.runtime;
 
     opens org.chocosolver.memory to testng;
     opens org.chocosolver.solver.constraints.unary to org.chocosolver.parsers;

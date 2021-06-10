@@ -193,7 +193,7 @@ public class SparseSet {
 //            }
 //        }
 //        s.append("}\nlimit = ").append(limit);
-        for (int i = 0; i < limit; i++) {
+        for (int i = 0; i <= limit; i++) {
             s.append(dense[i]).append(" ");
         }
         return s.toString();

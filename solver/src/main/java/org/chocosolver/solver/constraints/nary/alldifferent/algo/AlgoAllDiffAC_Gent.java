@@ -337,8 +337,8 @@ public class AlgoAllDiffAC_Gent {
                 monitors[i].forEachRemVal(onValRem.set(i));
             }
 
-            SCCfinder.getAllSCCStartIndices(SCCStartIndex);
-            System.out.println(partition);
+//            SCCfinder.getAllSCCStartIndices(SCCStartIndex);
+//            System.out.println(partition);
             prepareForMatching();
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
@@ -846,8 +846,8 @@ public class AlgoAllDiffAC_Gent {
         buildGraph();
 
         SCCfinder.getAllSCCStartIndices(SCCStartIndex);
-        System.out.println(partition);
-        System.out.println("indices: " + SCCStartIndex);
+//        System.out.println(partition);
+//        System.out.println("indices: " + SCCStartIndex);
         SCCfinder.resetData();
         TIntIterator iter = SCCStartIndex.iterator();
         while (iter.hasNext()) {
@@ -860,7 +860,7 @@ public class AlgoAllDiffAC_Gent {
 //        SCCfinder.getNodesSCC(node2SCC, SCC2Node);
 
 //        System.out.println(Arrays.toString(node2SCC));
-        System.out.println(partition);
+//        System.out.println(partition);
 //        SCCfinder.getAllSCCStartIndices(SCCStartIndex);
 //        System.out.println("indices: " + SCCStartIndex);
 //        graph.removeNode(numNodes);

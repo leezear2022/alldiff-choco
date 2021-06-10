@@ -6,17 +6,14 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.array.TLongArrayStack;
-import org.chocosolver.util.objects.INaiveBitSet;
-import org.chocosolver.util.objects.IntTuple2;
-import org.chocosolver.util.objects.RSetPartition;
-import org.chocosolver.util.objects.SparseSet;
+import org.chocosolver.util.objects.*;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
 
 import java.util.BitSet;
 import java.util.Iterator;
 
-public class StrongConnectivityFinderR3 {
+public class StrongConnectivityFinderR5 {
     // input
     private DirectedGraph graph;
     private BitSet unvisited;
@@ -61,12 +58,14 @@ public class StrongConnectivityFinderR3 {
 
     private RSetPartition partition;
 
+    private BitIntervalSet bitIS;
+
 
 //    private int index = 0;
 //    private BitSet visited;
 
 
-    public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues) {
+    public StrongConnectivityFinderR5(DirectedGraph graph, int arity, int numValues) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
 
@@ -92,9 +91,10 @@ public class StrongConnectivityFinderR3 {
 //        DE = new TIntArrayStack(n);
         DE = new TLongArrayStack(n);
 
+        bitIS = new BitIntervalSet(n + 4);
     }
 
-    public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues, RSetPartition p) {
+    public StrongConnectivityFinderR5(DirectedGraph graph, int arity, int numValues, RSetPartition p) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
         partition = p;
@@ -120,6 +120,7 @@ public class StrongConnectivityFinderR3 {
         nodePair = new IntTuple2(-1, -1);
 //        DE = new TIntArrayStack(n);
         DE = new TLongArrayStack(n);
+        bitIS = new BitIntervalSet(n + 4);
     }
 
     public void setArity(int arity) {
@@ -325,6 +326,29 @@ public class StrongConnectivityFinderR3 {
         return findAllSCCOf_ED(unvisited);
     }
 
+    public boolean findAllSCC_ED(int sccIndexStart, TIntArrayList[] delValues) {
+//        DE = deleteEdge;
+        DE.clear();
+        ISet nodes = graph.getNodes();
+        partition.setIteratorIndex(sccIndexStart);
+        System.out.println("+++++++++");
+        do {
+            int ii = partition.getValue();
+            unvisited.set(ii, nodes.contains(ii));
+            System.out.println("var: " + ii);
+            if (ii < arity) {
+                var valIter = delValues[ii].iterator();
+                while (valIter.hasNext()) {
+                    int valIdx = valIter.next();
+                    System.out.println("DE add: (" + ii + ", " + valIdx + ")");
+                    DE.push(getIntTuple2Long(ii, valIdx));
+                }
+            }
+        } while (partition.nextValid());
+        System.out.println("+++++++++");
+        return findAllSCCOf_ED(unvisited);
+    }
+
 
     public boolean findAllSCC_ED(TLongArrayStack deleteEdge, TIntArrayList restriction) {
         DE = deleteEdge;
@@ -343,9 +367,8 @@ public class StrongConnectivityFinderR3 {
 
     private boolean findAllSCCOf_ED(BitSet restriction) {
         findSingletons(restriction);
-//        cycles.clear();
-//        unconnected = false;
         int v = restriction.nextSetBit(0);
+        bitIS.clear();
         while (v >= 0) {
 //            if (strongConnect_EDR(v)) {
             if (strongConnect_ED(v)) {
@@ -519,12 +542,108 @@ public class StrongConnectivityFinderR3 {
                     lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], DFSNum[curNode]);
                     curLevel--;
 
+
+//                    System.out.println(Arrays.toString(lowLink));
+
+//                    if (!unconnected) {
+//                        addCycles(getIntTuple2Long(lowLink[curNode], maxDFS - 1));
+//                        while (!(DE.size() == 0) && inCycles(DE.peek())) {
+//                            DE.pop();
+//                        }
+//                    }
+//                    System.out.println("DETest: " + lowLink[curNode] + ", curNode: " + curNode + ", dfs" + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
+                    DETest(lowLink[curNode], maxDFS - 1);
+                } else {
+//                    System.out.println("xixi");/**/
+                    curLevel--;
+                }
+            } else {
+//                hasSCCSplit = false;
+//                curNode = levelNodes[curLevel - 1];
+//                System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+                if (lowLink[curNode] == DFSNum[curNode]) {
+//                    System.out.println(curLevel+", e");
+                    if (lowLink[curNode] > 0 || inStack.cardinality() > 0) {
+                        hasSCCSplit = true;
+                    }
+                    if (hasSCCSplit) {
+//                        System.out.println(curLevel + ", f");
+                        int stackNode = -1;
+                        sccSize = 0;
+//                        System.out.println("before set limit: " + partition);
+                        int limit = partition.resetLimitByElement(curNode);
+//                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
+                        while (stackNode != curNode) {
+                            stackNode = popStack();
+//                            System.out.println("pop: " + stackNode + ", " + nbSCC);
+                            partition.add(stackNode);
+                            node2SCC[stackNode] = nbSCC;
+                            sccSize++;
+                        }
+                        if (sccSize == 1) {
+                            singleton.add(stackNode);
+                        }
+                        partition.setSplit();
+                        nbSCC++;
+                        unconnected = true;
+                    }
+                }
+
+                if (curLevel == 0) {
+                    break;
+                }
+
+                lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], lowLink[curNode]);
+                curLevel--;
+
+                if (!unconnected && (DE.size() == 0)) {
+//                    System.out.println("xixi");
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean strongConnect_EDBitIS(int curNode) {
+        curLevel = 0;
+        pushStack(curNode);
+        DFSNum[curNode] = maxDFS;
+        lowLink[curNode] = maxDFS;
+        maxDFS++;
+        unvisited.clear(curNode);
+        levelNodes[curLevel] = curNode;
+        iters[curLevel] = graph.getSuccOf(curNode).iterator();
+
+        while (stackIdx > 0) {
+            curNode = levelNodes[curLevel];
+//            System.out.println(curNode + ", " + curLevel);
+            if (iters[curLevel].hasNext()) {
+                curNode = iters[curLevel].next();
+                levelNodes[++curLevel] = curNode;
+//                System.out.println(levelNodes[curLevel - 1] + ", " + curNode + ", " + unvisited.get(curNode) + "," + start);
+                if (unvisited.get(curNode)) {
+                    pushStack(curNode);
+                    DFSNum[curNode] = maxDFS;
+                    lowLink[curNode] = maxDFS;
+                    maxDFS++;
+                    unvisited.clear(curNode);
+                    iters[curLevel] = graph.getSuccOf(curNode).iterator();
+                } else if (inStack.get(curNode)) {
+//                    System.out.println("addc:" + levelNodes[curLevel - 1] + ", " + curNode + ", " + lowLink[curNode] + ", " + (maxDFS - 1));
+                    lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], DFSNum[curNode]);
+                    curLevel--;
+
+
+//                    System.out.println(Arrays.toString(lowLink));
+
                     if (!unconnected) {
                         addCycles(getIntTuple2Long(lowLink[curNode], maxDFS - 1));
                         while (!(DE.size() == 0) && inCycles(DE.peek())) {
                             DE.pop();
                         }
                     }
+
 
                 } else {
 //                    System.out.println("xixi");/**/
@@ -743,6 +862,10 @@ public class StrongConnectivityFinderR3 {
         vvp.b = (int) vvpIdx;
     }
 
+    public IntTuple2 getIntTuple2(long vvpIdx) {
+        return new IntTuple2((int) (vvpIdx >> INT_SIZE), (int) vvpIdx);
+    }
+
     public long getIntTuple2Long(int x, int a) {
         long c = (long) x;
         return c << INT_SIZE | a;
@@ -783,13 +906,42 @@ public class StrongConnectivityFinderR3 {
         return getIntTuple2Long(Math.min(x, a), Math.max(y, b));
     }
 
-
-    public IntTuple2 getIntTuple2(long vvpIdx) {
-        return new IntTuple2((int) (vvpIdx >> INT_SIZE), (int) vvpIdx);
-    }
-
-
     public void getAllSCCStartIndices(TIntHashSet sccStartIndex) {
         partition.getSCCStartIndex(sccStartIndex);
+    }
+
+    private void DETest(int lowLinkNewNode, int dfs) {
+
+        if (!unconnected) {
+            bitIS.add(lowLinkNewNode, dfs);
+//            getIntTuple2(nodePair, DE.peek());
+            while (!(DE.size() == 0) && inCyclesBit(DE.peek())) {
+                DE.pop();
+            }
+        }
+    }
+
+    private boolean inCyclesBit(long f) {
+//        IntTuple2 tt;
+        getIntTuple2(nodePair, f);
+//        System.out.println("inc:" + nodePair.a + "," + nodePair.b + "=" + DFSNum[nodePair.a] + "," + DFSNum[nodePair.b);
+        int a = DFSNum[nodePair.a], b = DFSNum[nodePair.b];
+        if (DFSNum[nodePair.a] <= DFSNum[nodePair.b]) {
+            a = DFSNum[nodePair.a];
+            b = DFSNum[nodePair.b];
+        } else {
+            b = DFSNum[nodePair.a];
+            a = DFSNum[nodePair.b];
+        }
+
+        if (a == -1 || b == -1) {
+            return false;
+        }
+
+        if (bitIS.contains(a, b)) {
+            return true;
+        }
+
+        return false;
     }
 }

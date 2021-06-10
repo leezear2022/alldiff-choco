@@ -160,38 +160,38 @@ public class amtf {
 //            System.out.println(a);
 //        }
 
-        IntervalTree<IntInterval> it = new IntervalTree();
-
-//        t.insert()
-        IntInterval t = new IntInterval(1, 2);
-
-//        System.out.println(t);
-
-        it.insert(t);
-        it.insert(new IntInterval(3, 4));
-
-        for (var tt : it) {
-            System.out.println(tt);
-        }
-        System.out.println("--------");
-        it.insert(new IntInterval(2, 3));
-
-        for (var tt : it) {
-            System.out.println(tt);
-        }
-        System.out.println("--------");
-        var con = it.contains(new IntInterval(1, 4));
-        System.out.println(con);
-        System.out.println("--------");
-        IntervalSet is = new IntervalSet();
-        is.add(0,1);
-//        is.add(2,3);
-        is.add(4,5);
-        is.add(5,7);
-
+//        IntervalTree<IntInterval> it = new IntervalTree();
+//
+////        t.insert()
+//        IntInterval t = new IntInterval(1, 2);
+//
+////        System.out.println(t);
+//
+//        it.insert(t);
+//        it.insert(new IntInterval(3, 4));
+//
+//        for (var tt : it) {
+//            System.out.println(tt);
+//        }
+//        System.out.println("--------");
+//        it.insert(new IntInterval(2, 3));
+//
+//        for (var tt : it) {
+//            System.out.println(tt);
+//        }
+//        System.out.println("--------");
+//        var con = it.contains(new IntInterval(1, 4));
+//        System.out.println(con);
+//        System.out.println("--------");
+//        IntervalSet is = new IntervalSet();
 //        is.add(0,1);
-        System.out.println(is);
-        System.out.println(is.contains(6));
+////        is.add(2,3);
+//        is.add(4,5);
+//        is.add(5,7);
+//
+////        is.add(0,1);
+//        System.out.println(is);
+//        System.out.println(is.contains(6));
 //        System.out.println(is.or());
 
 //        BitSet
