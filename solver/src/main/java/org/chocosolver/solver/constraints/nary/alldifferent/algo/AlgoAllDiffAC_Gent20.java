@@ -74,7 +74,7 @@ public class AlgoAllDiffAC_Gent20 {
 //    private SparseSet[] valUnmatchedVar;
 
     // 自由值集合
-    private SparseSet freeNode;
+//    private SparseSet freeNode;
 
     // 新增一点（视为变量）
     private int addArity;
@@ -169,7 +169,7 @@ public class AlgoAllDiffAC_Gent20 {
         }
 
         // freeNode区分匹配点和非匹配点(正好是新增变量的取值范围）
-        freeNode = new SparseSet(numValues);
+//        freeNode = new SparseSet(numValues);
 
         // SCC
         numNodes = addArity + numValues;
@@ -179,7 +179,7 @@ public class AlgoAllDiffAC_Gent20 {
 //        SCCfinder = new StrongConnectivityFinderR(graph);
         partition = new RSetPartition(numNodes, env);
 //        System.out.println(partition);
-        SCCfinder = new StrongConnectivityFinderR3(graph, arity, numValues, partition);
+        SCCfinder = new StrongConnectivityFinderR3(graph, arity, numValues, partition, id);
         numNodes = graph.getNbMaxNodes();
         node2SCC = new int[numNodes];
         SCC2Node = new TIntArrayList[numNodes];
@@ -374,7 +374,7 @@ public class AlgoAllDiffAC_Gent20 {
                 repairMatching(sccStartIdx);
             }
 
-            if (x.isInstantiated()) {
+            if (x.isInstantiated()&& partition.greatThanOne(sccStartIdx)) {
                 int xVal = vars[xIdx].getValue();
 
                 if (changedSCCStartIndex.contains(sccStartIdx)) {
@@ -504,7 +504,7 @@ public class AlgoAllDiffAC_Gent20 {
                         path_value = old_value;
                     }
 
-                    freeNode.remove(valIdx);
+//                    freeNode.remove(valIdx);
 //                    System.out.println(valIdx + " is not free");
                     return;
                 } else {
@@ -518,14 +518,14 @@ public class AlgoAllDiffAC_Gent20 {
                     // 把这个变量加入队列中
                     visiting_[num_to_visit++] = next_node;
                     variable_visited_from_[next_node] = node;
-                    freeNode.remove(valIdx);
+//                    freeNode.remove(valIdx);
                 }
             }
         }
     }
 
     private void prepareForMatching() {
-        freeNode.fill();
+//        freeNode.fill();
         // 增量检查
         // matching 有效性检查
         triggeringVars.iterateValid();
@@ -550,7 +550,7 @@ public class AlgoAllDiffAC_Gent20 {
 
                 val2Var[valIdx] = varIdx;
                 var2Val[varIdx] = valIdx;
-                freeNode.remove(valIdx);
+//                freeNode.remove(valIdx);
             } else {
                 // 检查原匹配是否失效
                 int oldMatchingIndex = var2Val[varIdx];
@@ -560,7 +560,7 @@ public class AlgoAllDiffAC_Gent20 {
                         val2Var[oldMatchingIndex] = -1;
                         var2Val[varIdx] = -1;
                     } else {
-                        freeNode.remove(oldMatchingIndex);
+//                        freeNode.remove(oldMatchingIndex);
 //                    System.out.println(oldMatchingIndex + " is free");
                     }
                 }
@@ -629,21 +629,23 @@ public class AlgoAllDiffAC_Gent20 {
                 if (valIdx == matchedVal) {
                     // 添加匹配边 var<--val
                     graph.addArc(valIdx + addArity, i);
+//                    System.out.printf("添加匹配边 %d->%d\n", valIdx + addArity, i);
                 } else {
                     // 添加非匹配边 var-->val
                     graph.addArc(i, valIdx + addArity);
+//                    System.out.printf("添加非匹配边 %d->%d\n", i, valIdx + addArity);
                 }
-            }
-        }
 
-        // 添加非匹配边 val<--var; val<--t
-        for (int j = 0; j < numValues; ++j) {
-            if (freeNode.contain(j)) {
-                // free node: val->t
-                graph.addArc(j + addArity, arity);
-            } else {
-                // sink node: t->val;
-                graph.addArc(arity, j + addArity);
+                // 值的匹配变量=-1表明它是freenode
+                if (val2Var[valIdx] == -1) {
+                    // free node: val->t
+                    graph.addArc(valIdx + addArity, arity);
+//                    System.out.printf("free node: %d->%d\n", j + addArity, arity);
+                } else {
+                    // matched node: t->val;
+                    graph.addArc(arity, valIdx + addArity);
+//                    System.out.printf("matched node: %d->%d\n", arity, valIdx + addArity);
+                }
             }
         }
     }

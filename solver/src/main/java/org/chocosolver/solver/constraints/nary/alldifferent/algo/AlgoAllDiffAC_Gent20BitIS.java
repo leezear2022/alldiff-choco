@@ -319,32 +319,29 @@ public class AlgoAllDiffAC_Gent20BitIS {
 //        System.out.println("---------------");
 //        System.out.println("propagate cid: " + id);
         boolean filter = false;
-        long startTime;
         triggeringVars.clear();
+        Measurer.enterProp();
+        long startTime;
 
         if (initialProp) {
-            initialProp = false;
-
+            // initial
             for (int i = 0; i < arity; i++) {
                 triggeringVars.add(i);
             }
-
+            initialProp = false;
+            // matching
             startTime = System.nanoTime();
-            Measurer.enterProp();
             prepareForMatching();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
-
+            // filtering
             startTime = System.nanoTime();
             filter = filter();
             Measurer.filterTime += System.nanoTime() - startTime;
-
-            return filter;
         } else {
-            Measurer.enterProp();
-            startTime = System.nanoTime();
 //            DE.clear();
 //            triggeringVars.clear();
+            // initial
             for (int i = 0; i < arity; ++i) {
                 monitors[i].freeze();
                 monitors[i].forEachRemVal(onValRem.set(i));
@@ -353,19 +350,24 @@ public class AlgoAllDiffAC_Gent20BitIS {
 //            SCCfinder.getAllSCCStartIndices(SCCStartIndex);
 //            System.out.println("triggeringVars: " + triggeringVars);
 //            System.out.println(partition);
+            //matching
+            startTime = System.nanoTime();
             prepareForMatching();
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
-
+            //build Graph
+            buildGraph();
+            //filtering
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
+            Measurer.filterTime += System.nanoTime() - startTime;
+
             for (int i = 0; i < vars.length; i++) {
                 monitors[i].unfreeze();
             }
-            Measurer.filterTime += System.nanoTime() - startTime;
-
-            return filter;
         }
+
+        return filter;
     }
 
     private void printValues(ArrayList<IntTuple2> values) {
@@ -447,7 +449,7 @@ public class AlgoAllDiffAC_Gent20BitIS {
     }
 
     private boolean propagate_SCC_filter() throws ContradictionException {
-        buildGraph();
+
 //        SCCfinder.setUnvisitedValues();
         SCCfinder.resetData_ED();
         boolean isSkip = true;

@@ -198,4 +198,12 @@ public class SparseSet {
         }
         return s.toString();
     }
+
+    int[] toArray() {
+        int[] arr = new int[limit + 1];
+        for (int i = 0; i <= limit; i++) {
+            arr[i] = dense[i];
+        }
+        return arr;
+    }
 }

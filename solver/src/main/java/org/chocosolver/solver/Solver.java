@@ -72,12 +72,15 @@ import static org.chocosolver.util.ESat.*;
  * <p>
  * Created by cprudhom on 01/09/15.
  * Project: choco.
+ *
  * @author Charles Prud'homme
  * @since 01/09/15.
  */
 public class Solver implements ISolver, IMeasures, IOutputFactory {
 
-    /** Define the possible actions of SearchLoop */
+    /**
+     * Define the possible actions of SearchLoop
+     */
     public enum Action {
         /**
          * Initialization step
@@ -119,30 +122,46 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      */
     private transient PrintStream err = System.err;
 
-    /** The propagate component of this search loop */
+    /**
+     * The propagate component of this search loop
+     */
     protected Propagate P;
 
-    /** The learning component of this search loop */
+    /**
+     * The learning component of this search loop
+     */
     protected Learn L;
 
-    /** The moving component of this search loop */
+    /**
+     * The moving component of this search loop
+     */
     protected Move M;
 
-    /** The declaring model */
+    /**
+     * The declaring model
+     */
     protected Model mModel;
 
-    /** The objective manager declare */
+    /**
+     * The objective manager declare
+     */
     @SuppressWarnings("WeakerAccess")
     protected IObjectiveManager objectivemanager;
 
-    /** The next action to execute in the search <u>loop</u> */
+    /**
+     * The next action to execute in the search <u>loop</u>
+     */
     protected Action action;
 
-    /** The measure recorder to keep up to date */
+    /**
+     * The measure recorder to keep up to date
+     */
     @SuppressWarnings("WeakerAccess")
     protected MeasuresRecorder mMeasures;
 
-    /** The current decision */
+    /**
+     * The current decision
+     */
     @SuppressWarnings("WeakerAccess")
     protected DecisionPath dpath;
     /**
@@ -151,7 +170,9 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      */
     private int rootWorldIndex = 0;
 
-    /** Index of the world where the search starts, after initialization. */
+    /**
+     * Index of the world where the search starts, after initialization.
+     */
     private int searchWorldIndex = 0;
     /**
      * List of stopping criteria.
@@ -159,20 +180,30 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      */
     protected List<Criterion> criteria;
 
-    /** Indicates if the default search loop is in use (set to <tt>true</tt> in that case). */
+    /**
+     * Indicates if the default search loop is in use (set to <tt>true</tt> in that case).
+     */
     private boolean defaultSearch = false;
 
-    /** Indicates if a complementary search strategy should be added (set to <tt>true</tt> in that case). */
+    /**
+     * Indicates if a complementary search strategy should be added (set to <tt>true</tt> in that case).
+     */
     private boolean completeSearch = false;
 
-    /** An events observer */
+    /**
+     * An events observer
+     */
     private AbstractEventObserver eventObserver;
 
-    /** List of search monitors attached to this search loop */
+    /**
+     * List of search monitors attached to this search loop
+     */
     @SuppressWarnings("WeakerAccess")
     protected SearchMonitorList searchMonitors;
 
-    /** The propagation engine to use */
+    /**
+     * The propagation engine to use
+     */
     protected PropagationEngine engine;
     /**
      * Internal unique contradiction exception, used on propagation failures
@@ -186,13 +217,19 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      */
     protected ESat feasible = ESat.UNDEFINED;
 
-    /** Counter that indicates how many world should be rolled back when backtracking */
+    /**
+     * Counter that indicates how many world should be rolled back when backtracking
+     */
     private int jumpTo;
 
-    /** Set to <tt>true</tt> to stop the search loop **/
+    /**
+     * Set to <tt>true</tt> to stop the search loop
+     **/
     protected boolean stop;
 
-    /** Set to <tt>true</tt> when no more reparation can be achieved, ie entire search tree explored. */
+    /**
+     * Set to <tt>true</tt> when no more reparation can be achieved, ie entire search tree explored.
+     */
     private boolean canBeRepaired = true;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -235,12 +272,13 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Executes the resolver as it is configured.
-     *
+     * <p>
      * Default configuration:
      * - SATISFACTION : Computes a feasible solution. Use while(solve()) to enumerate all solutions.
      * - OPTIMISATION : Computes a feasible solution, wrt to the objective defined. Use while(solve()) to find the optimal solution.
      * Indeed, each new solution improves the objective. If no new solution is found (and no stop criterion encountered),
      * the last one is guaranteed to be the optimal one.
+     *
      * @return if at least one new solution has been found.
      */
     public boolean solve() {
@@ -268,6 +306,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Executes the search loop
+     *
      * @return <tt>true</tt> if ends on a solution, <tt>false</tt> otherwise
      */
     @SuppressWarnings("WeakerAccess")
@@ -275,7 +314,9 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
         boolean solution = false;
         boolean left = true;
         Thread th = Thread.currentThread();
+        int numIter = 0;
         while (!stop) {
+            System.out.println("*****" + (numIter++) + "*****");
             stop = isStopCriterionMet();
             if (stop || th.isInterrupted()) {
                 if (stop) {
@@ -338,13 +379,13 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
                         .findFirst();
                 if (undeclared.isPresent()) {
                     getErr().print(
-                        "At least one constraint is free, i.e., neither posted or reified. ).\n");
+                            "At least one constraint is free, i.e., neither posted or reified. ).\n");
                     instances
-                        .stream()
-                        .filter(c -> c.getStatus() == FREE)
-                        .limit(mModel.getSettings().printAllUndeclaredConstraints() ? Integer.MAX_VALUE
-                                                                                    : 1)
-                        .forEach(c -> getErr().printf("%s is free\n", c.toString()));
+                            .stream()
+                            .filter(c -> c.getStatus() == FREE)
+                            .limit(mModel.getSettings().printAllUndeclaredConstraints() ? Integer.MAX_VALUE
+                                    : 1)
+                            .forEach(c -> getErr().printf("%s is free\n", c.toString()));
                 }
             }
         }
@@ -409,6 +450,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Search loop propagation phase. This needs to be distinguished from {@link #propagate()}
+     *
      * @param left true if we are branching on the left false otherwise
      */
     protected void propagate(boolean left) {
@@ -481,24 +523,25 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Search loop validate phase
+     *
      * @return <code>true</code> if a solution is found
      */
     private boolean validate() {
         if (!getModel().getSettings().checkModel(this)) {
             throw new SolverException("The current solution does not satisfy the checker." +
-                                          "Either (a) the search strategy is not complete or " +
-                                          "(b) the model is not constrained enough or " +
-                                          "(c) a constraint's checker (\"isSatisfied()\") is not correct or " +
-                                          "(d) some constraints' filtering algorithm (\"propagate(...)\") is not correct.\n" +
-                                          Reporting.fullReport(mModel));
+                    "Either (a) the search strategy is not complete or " +
+                    "(b) the model is not constrained enough or " +
+                    "(c) a constraint's checker (\"isSatisfied()\") is not correct or " +
+                    "(d) some constraints' filtering algorithm (\"propagate(...)\") is not correct.\n" +
+                    Reporting.fullReport(mModel));
         }
         feasible = TRUE;
         mMeasures.incSolutionCount();
-        if(mModel.getResolutionPolicy() == ResolutionPolicy.SATISFACTION && mMeasures.getSolutionCount() == 1) {
+        if (mModel.getResolutionPolicy() == ResolutionPolicy.SATISFACTION && mMeasures.getSolutionCount() == 1) {
             mMeasures.updateTimeToBestSolution();
-        } else if(mModel.getResolutionPolicy() != ResolutionPolicy.SATISFACTION) {
+        } else if (mModel.getResolutionPolicy() != ResolutionPolicy.SATISFACTION) {
             boolean bestSolutionHasBeenUpdated = objectivemanager.updateBestSolution();
-            if(bestSolutionHasBeenUpdated) {
+            if (bestSolutionHasBeenUpdated) {
                 mMeasures.updateTimeToBestSolution();
             }
         }
@@ -550,6 +593,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      *     <li>remove all stop criteria {@link #removeAllStopCriteria()}</li>
      *     <li>set {@link #feasible} to {@link ESat#UNDEFINED}</li>
      * </ul>
+     *
      * @see #hardReset()
      */
     public void reset() {
@@ -588,6 +632,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      *     <li>call {@link Model#removeNogoodStore()}</li>
      * </ul>
      * </p>
+     *
      * @see #reset()
      */
     public void hardReset() {
@@ -606,12 +651,11 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
     /**
      * Propagates constraints and related events through the constraint network until a fix point is find,
      * or a contradiction is detected.
-     * @implNote
-     * The propagation engine is ensured to be empty (no pending events) after this method.
-     * Indeed, if no contradiction occurs, a fix point is reached.
-     * Otherwise, a call to {@link PropagationEngine#flush()} is made.
      *
      * @throws ContradictionException inconsistency is detected, the problem has no solution with the current set of domains and constraints.
+     * @implNote The propagation engine is ensured to be empty (no pending events) after this method.
+     * Indeed, if no contradiction occurs, a fix point is reached.
+     * Otherwise, a call to {@link PropagationEngine#flush()} is made.
      */
     public void propagate() throws ContradictionException {
         if (!engine.isInitialized()) {
@@ -674,9 +718,9 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      *     <li>push a back-up copy of internal states</li>
      *     <li>propagate</li>
      * </ol>
-     *
+     * <p>
      * Steps 1. and 2. are ignored when <i>dec</i> is <i>null</i>.
-     *
+     * <p>
      * In case of success, a call {@link #moveForward(Decision)} is possible.
      * Otherwise, a call {@link #moveBackward()} is required to keep on exploring the search space.
      * If no such call is done, the state maybe inconsistent with the decision path.
@@ -708,11 +752,11 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      * @see #getDecisionPath()
      * @see AbstractStrategy#getDecision()
      */
-    public boolean moveForward(Decision decision){
-        if(!engine.isInitialized()){
+    public boolean moveForward(Decision decision) {
+        if (!engine.isInitialized()) {
             engine.initialize();
         }
-        if(this.getEnvironment().getWorldIndex()==0){
+        if (this.getEnvironment().getWorldIndex() == 0) {
             this.getEnvironment().worldPush();
         }
         boolean success = true;
@@ -721,11 +765,11 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
             this.getEnvironment().worldPush();
             this.getDecisionPath().buildNext();
         }
-        try{
+        try {
             this.getDecisionPath().apply();
             this.getObjectiveManager().postDynamicCut();
             this.getEngine().propagate();
-        }catch (ContradictionException cex){
+        } catch (ContradictionException cex) {
             engine.flush();
             success = false;
         }
@@ -744,13 +788,13 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      * If step 2. is not possible or step 3. throws a failure,
      * the last decision of the decision path is popped and the three-step loop is applied
      * until a successful refutation or emptying decision path.
-     *
+     * <p>
      * In case of success, a call {@link #moveForward(Decision)} is possible.
      * </p>
      * <p>
      * Example of usage: looking for all solutions of a problem.
      * </p>
-     <pre> {@code
+     * <pre> {@code
      * // Declare model, variables and constraints, then
      * Decision<IntVar> dec = null;
      * boolean search = true;
@@ -772,7 +816,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      * @see #moveForward(Decision)
      * @see #getDecisionPath()
      */
-    public boolean moveBackward(){
+    public boolean moveBackward() {
         this.getEnvironment().worldPop();
         boolean success = false;
         Decision head = dpath.getLastDecision();
@@ -785,7 +829,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
                     this.getObjectiveManager().postDynamicCut();
                     this.getEngine().propagate();
                     success = true;
-                }catch (ContradictionException cex) {
+                } catch (ContradictionException cex) {
                     engine.flush();
                 }
             } else {
@@ -850,7 +894,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
     public <V extends Variable> AbstractStrategy<V> getSearch() {
         if (M.getChildMoves().size() > 1 && mModel.getSettings().warnUser()) {
             err.print(
-                "This search loop is based on a sequential Move, the returned strategy may not reflect the reality.");
+                    "This search loop is based on a sequential Move, the returned strategy may not reflect the reality.");
         }
         return M.getStrategy();
     }
@@ -866,6 +910,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Indicates if the default search strategy is used
+     *
      * @return false if a specific search strategy is used
      */
     public boolean isDefaultSearchUsed() {
@@ -874,6 +919,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Indicates if the search strategy is completed with one over all variables
+     *
      * @return false if no strategy over all variables complete the declared one
      */
     public boolean isSearchCompleted() {
@@ -909,6 +955,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
     /**
      * Returns a reference to the measures recorder.
      * This enables to get, for instance, the number of solutions found, time count, etc.
+     *
      * @return this model's measure recorder
      */
     public MeasuresRecorder getMeasures() {
@@ -918,6 +965,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Return the events observer plugged into {@code this}.
+     *
      * @return this events observer
      */
     public AbstractEventObserver getEventObserver() {
@@ -955,6 +1003,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      * <br/>- {@link ESat#UNDEFINED}: neither satisfiability nor  unsatisfiability could be proven so far.
      * <p>
      * Presumably, not all variables are instantiated.
+     *
      * @return <tt>ESat.TRUE</tt> if all constraints of the problem are satisfied,
      * <tt>ESat.FLASE</tt> if at least one constraint is not satisfied,
      * <tt>ESat.UNDEFINED</tt> neither satisfiability nor  unsatisfiability could be proven so far.
@@ -1002,6 +1051,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Replaces the current learn with {@code l}
+     *
      * @param l the new learn to apply
      */
     public void setLearner(Learn l) {
@@ -1010,6 +1060,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Replaces the current move with {@code m}
+     *
      * @param m the new move to apply
      */
     public void setMove(Move... m) {
@@ -1024,6 +1075,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Overrides the Propagate object
+     *
      * @param p the new Propagate to use
      */
     public void setPropagate(Propagate p) {
@@ -1032,6 +1084,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Declares an objective manager to use.
+     *
      * @param om the objective manager to use instead of the declared one (if any).
      */
     public void setObjectiveManager(IObjectiveManager om) {
@@ -1055,8 +1108,8 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
         }
         if (M.getChildMoves().size() > 1) {
             throw new UnsupportedOperationException("The Move declared is composed of many Moves.\n" +
-                                                        "A strategy must be attached to each of them independently, and it cannot be achieved calling this method." +
-                                                        "An iteration over it child moves is needed: this.getMove().getChildMoves().");
+                    "A strategy must be attached to each of them independently, and it cannot be achieved calling this method." +
+                    "An iteration over it child moves is needed: this.getMove().getChildMoves().");
         } else {
             //noinspection unchecked
             M.setStrategy(strategies.length == 1 ? strategies[0] : Search.sequencer(strategies));
@@ -1065,6 +1118,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Overrides the explanation engine.
+     *
      * @param explainer the explanation to use
      */
     public void setEventObserver(AbstractEventObserver explainer) {
@@ -1077,18 +1131,18 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      * if no propagation was done yet.
      * Indeed, some incremental propagators may have set up their internal structure,
      * which cannot be set up twice safely.
-     *
+     * <p>
      * If propagation was done calling {@link #solve()},
      * calling {@link #reset()} enables to set the propagation engine anew.
-     *
+     * <p>
      * If propagation was done "manually" (calling {@link #propagate()}, then nothing can be done.
      *
      * @param propagationEngine a propagation strategy
-     * @exception SolverException is already initialized.
+     * @throws SolverException is already initialized.
      */
     public void setEngine(PropagationEngine propagationEngine) {
         if (!engine.isInitialized()
-            || getEnvironment().getWorldIndex() == rootWorldIndex) {
+                || getEnvironment().getWorldIndex() == rootWorldIndex) {
             this.engine = propagationEngine;
         } else {
             throw new SolverException("Illegal propagation engine modification.");
@@ -1097,6 +1151,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Completes (or not) the declared search strategy with one over all variables
+     *
      * @param isComplete set to true to complete the current search strategy
      */
     @SuppressWarnings("WeakerAccess")
@@ -1109,9 +1164,9 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
      * There can be multiple stop criteria, a logical OR is then applied.
      * The stop criteria are declared to the search loop just before launching the search,
      * the previously defined ones are erased.
-     *
+     * <p>
      * There is no check if there are any duplicates.
-     *
+     * <p>
      * <br/>
      * Examples:
      * <br/>
@@ -1136,6 +1191,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Removes one or many stop criterion from the one to declare to the search loop.
+     *
      * @param criterion criterion to remove
      */
     public void removeStopCriterion(Criterion... criterion) {
@@ -1165,7 +1221,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
     /**
      * Put a search monitor to react on search events (solutions, decisions, fails, ...).
      * Any search monitor is actually plugged just before the search starts.
-     *
+     * <p>
      * There is no check if there are any duplicates.
      * A search monitor added during while the resolution has started will not be taken into account.
      *
@@ -1177,6 +1233,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Removes a search monitors from the ones to plug when the search will start.
+     *
      * @param sm a search monitor to be unplugged in the solver
      */
     public void unplugMonitor(ISearchMonitor sm) {
@@ -1193,6 +1250,7 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
 
     /**
      * Sets how many worlds to rollback when backtracking
+     *
      * @param jto how many worlds to rollback when backtracking
      */
     public void setJumpTo(int jto) {

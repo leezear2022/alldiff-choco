@@ -1,7 +1,6 @@
 package org.chocosolver.amtf;
 
 import org.chocosolver.amtf.parser.XCSPParser;
-//import org.chocosolver.parser.xcsp.XCSPParser;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.strategy.Search;
@@ -37,12 +36,10 @@ public class testAllDiff {
 //                "F:\\chenj\\data\\XCSP3\\AllDiff\\LatinSquare-m1-gp\\qwh-o30-h374-04.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff\\LatinSquare-m1-gs\\qwh-o010-h100.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff/ColouredQueens-m1-s1/ColouredQueens-03.xml",
-//                "F:\\chenj\\data\\XCSP3\\AllDiff/ColouredQueens-m1-s1/ColouredQueens-05.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff/ColouredQueens-m1-s1/ColouredQueens-06.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff/ColouredQueens-m1-s1/ColouredQueens-07.xml",
 //                "G:/X3Benchmarks/alldiff/ColouredQueens/ColouredQueens-m1-s1/ColouredQueens-09.xml",
 //                "D:\\AllDiffBench\\DistinctVectors/DistinctVectors-30-010-02.xml",
-//                "F:\\chenj\\data\\XCSP3\\AllDiff\\SchurrLemma-mod-s1\\SchurrLemma-012-9-mod.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff\\SchurrLemma-mod-s1\\SchurrLemma-015-9-mod.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff\\SchurrLemma-mod-s1\\SchurrLemma-020-9-mod.xml",
 //                "F:\\chenj\\data\\XCSP3\\AllDiff\\SchurrLemma-mod-s1\\SchurrLemma-030-9-mod.xml",
@@ -54,7 +51,9 @@ public class testAllDiff {
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
 //                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
-                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
+//                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0015-m1.xml",
+                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-07.xml",
+//                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "D:\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "G:/AllDiffBench/LatinSquare/qwh-o30-h374-04.xml",
 //                "D:\\AllDiffBench\\NumberPartitioning\\NumberPartitioning-032.xml"
@@ -90,13 +89,16 @@ public class testAllDiff {
 //        };
         String[] algorithms = new String[]{
                 "ACFair",
+//                "ACChen",
+//                "ACChen20",
                 "Gent",
-                "ACZhang18",
-                "ACZhang20",
-                "Gent20BitIS",
-                "ACZhang20Bit",
-                "WordRam",
-                "ACNaive",
+//                "Gent20",
+//                "ACZhang18",
+//                "ACZhang20",
+//                "Gent20BitIS",
+//                "ACZhang20Bit",
+//                "WordRam",
+//                "ACNaive",
         };
         int runNum = 1;
 
@@ -121,13 +123,13 @@ public class testAllDiff {
                     Solver solver = model.getSolver();
 //                    solver.setSearch(Search.defaultSearch(model));
 //                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
 //                    solver.setSearch(Search.minDomLBSearch(decVars));
 //                    solver.setSearch(new ImpactBased(decVars, true));
 //                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
-//                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
 //                  solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
 //                  solver.setSearch(intVarSearch();

@@ -5,7 +5,10 @@ import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.Stack;
 
 public class StrongConnectivityFinderR {
     // input
@@ -41,14 +44,16 @@ public class StrongConnectivityFinderR {
     private int arity = 0;
     private int numValues = 0;
     private Iterator<IntTuple2> iter;
+    private int cid;
 
 //    private int index = 0;
 //    private BitSet visited;
 
 
-    public StrongConnectivityFinderR(DirectedGraph graph) {
+    public StrongConnectivityFinderR(DirectedGraph graph, int cid) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
+        this.cid = cid;
 
         stack = new int[n];
         inStack = new BitSet(n);
@@ -293,6 +298,9 @@ public class StrongConnectivityFinderR {
         while (stackIdx > 0) {
             curNode = levelNodes[curLevel];
 //            System.out.println(curNode + ", " + curLevel);
+//            if (cid == 34 && curLevel == 2 && curNode == 2) {
+////                System.out.println("xixi:" + graph.getSuccOf(curNode));
+//            }
             if (iters[curLevel].hasNext()) {
                 curNode = iters[curLevel].next();
                 levelNodes[++curLevel] = curNode;
@@ -315,20 +323,25 @@ public class StrongConnectivityFinderR {
             } else {
 //                hasSCCSplit = false;
 //                curNode = levelNodes[curLevel - 1];
-//                System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+                if (cid == 30)
+                    System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
                 if (lowLink[curNode] == DFSNum[curNode]) {
-//                    System.out.println(curLevel+", e");
+                    if (cid == 30)
+                        System.out.println(curLevel + ", e");
                     if (lowLink[curNode] > 0 || inStack.cardinality() > 0) {
                         hasSCCSplit = true;
                     }
                     if (hasSCCSplit) {
-//                        System.out.println(curLevel + ", f");
-//                        System.out.println("scc: " + DFSNum[curNode]);
+                        if (cid == 30) {
+                            System.out.println(curLevel + ", f");
+                            System.out.println("scc: " + DFSNum[curNode]);
+                        }
                         int stackNode = -1;
                         sccSize = 0;
                         while (stackNode != curNode) {
                             stackNode = popStack();
-//                            System.out.println("pop: " + stackNode + ", " + nbSCC);
+                            if (cid == 30)
+                                System.out.println("pop: " + stackNode + ", " + nbSCC);
                             nodeSCC[stackNode] = nbSCC;
                             sccSize++;
                         }
@@ -384,6 +397,7 @@ public class StrongConnectivityFinderR {
 //                    System.out.println(Arrays.toString(lowLink));
 
                     if (!unconnected) {
+                        System.out.println("addCycles: " + curNode + " " + lowLink[curNode] + " " + (maxDFS - 1));
                         addCycles(lowLink[curNode], maxDFS - 1);
                         while (!DE.empty() && inCycles(DE.peek())) {
                             DE.pop();

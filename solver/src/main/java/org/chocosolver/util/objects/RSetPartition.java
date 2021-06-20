@@ -120,6 +120,23 @@ public class RSetPartition {
         return !sccStart.get(startIterIdx);
     }
 
+//    public boolean greatThanTwo(int startIterIdx) {
+//        if (startIterIdx + 2 == size) {
+//            // 正好是未尾两个元素
+//            return !sccStart.get(startIterIdx + 1);
+//        }else if (startIterIdx + 2 < size){
+//            // 不是未尾两个元素
+//            return !sccStart.get(startIterIdx)
+//        }
+//        return
+//        else
+//        return
+//    }
+
+    public int partitionSize(int startIterIdx) {
+        return getSCCEndIndex(startIterIdx) - getSCCStartIndex(startIterIdx);
+    }
+
     public boolean isSingleton(int varID) {
         // 如果varID是0且它的后一个也是0 那么它是singleton的
         int index = sparse[varID];

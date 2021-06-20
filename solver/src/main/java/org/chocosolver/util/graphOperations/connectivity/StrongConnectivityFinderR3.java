@@ -6,7 +6,6 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.array.TLongArrayStack;
-import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.RSetPartition;
 import org.chocosolver.util.objects.SparseSet;
@@ -60,11 +59,7 @@ public class StrongConnectivityFinderR3 {
     private static int INT_SIZE = 32;
 
     private RSetPartition partition;
-
-
-//    private int index = 0;
-//    private BitSet visited;
-
+    private int cid;
 
     public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues) {
         this.graph = graph;
@@ -94,22 +89,18 @@ public class StrongConnectivityFinderR3 {
 
     }
 
-    public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues, RSetPartition p) {
+    public StrongConnectivityFinderR3(DirectedGraph graph, int arity, int numValues, RSetPartition p, int cid) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
+        this.cid = cid;
         partition = p;
-
         stack = new int[n];
         inStack = new BitSet(n);
-
         node2SCC = new int[n];
         nbSCC = 0;
-
         DFSNum = new int[n];
         lowLink = new int[n];
-
         unvisited = new BitSet(n);
-//        cycles = new ArrayList<>();
         cycles = new TLongArrayList(n);
         iters = new Iterator[n + 1];
         levelNodes = new int[n + 1];
@@ -118,7 +109,6 @@ public class StrongConnectivityFinderR3 {
         this.addArity = arity + 1;
         this.numValues = numValues;
         nodePair = new IntTuple2(-1, -1);
-//        DE = new TIntArrayStack(n);
         DE = new TLongArrayStack(n);
     }
 
@@ -155,35 +145,52 @@ public class StrongConnectivityFinderR3 {
     }
 
 
-    public void findAllSCC(BitSet exception) {
+    public void findAllSCC(BitSet restriction) {
+        unvisited.clear();
         ISet nodes = graph.getNodes();
-        for (int i = exception.nextClearBit(0); i >= 0 && i < n; i = exception.nextClearBit(i + 1)) {
+        for (int i = restriction.nextSetBit(0); i >= 0 && i < n; i = restriction.nextSetBit(i + 1)) {
             unvisited.set(i, nodes.contains(i));
         }
-        resetData();
-        findAllSCCOf(unvisited);
-    }
-
-    public boolean findAllSCC(TIntArrayList restriction) {
-        ISet nodes = graph.getNodes();
-        TIntIterator iter = restriction.iterator();
-        while (iter.hasNext()) {
-            int i = iter.next();
-            unvisited.set(i, nodes.contains(i));
+//        unvisited = restriction;
+        findSingletons(unvisited);
+//        unvisited = restriction;
+//        System.out.println("----------");
+//        System.out.println(restriction);
+//        resetData();
+//        int v = unvisited.nextSetBit(0);
+        for (int v = 0; v >= 0 && v < arity; v = unvisited.nextSetBit(v + 1)) {
+            strongConnect(v, restriction);
         }
-        resetData();
-        return findAllSCCOf_ED(unvisited);
+//        while (v >= 0 && v < arity) {
+////            System.out.println(v);
+////            strongConnectR(v);
+//
+//            v = unvisited.nextSetBit(v);
+//        }
+
+//        findAllSCCOf(unvisited);
     }
 
-    public void findAllSCC(INaiveBitSet vars) {
-        ISet nodes = graph.getNodes();
-        for (int i = vars.nextClearBit(0); i <= vars.lastSetIndex(); i = vars.nextClearBit(i + 1)) {
-            unvisited.set(i, nodes.contains(i));
-        }
-
-        resetData();
-        findAllSCCOf(unvisited);
-    }
+//    public boolean findAllSCC(TIntArrayList restriction) {
+//        ISet nodes = graph.getNodes();
+//        TIntIterator iter = restriction.iterator();
+//        while (iter.hasNext()) {
+//            int i = iter.next();
+//            unvisited.set(i, nodes.contains(i));
+//        }
+////        resetData();
+//        return findAllSCCOf_ED(unvisited);
+//    }
+//
+//    public void findAllSCC(INaiveBitSet vars) {
+//        ISet nodes = graph.getNodes();
+//        for (int i = vars.nextClearBit(0); i <= vars.lastSetIndex(); i = vars.nextClearBit(i + 1)) {
+//            unvisited.set(i, nodes.contains(i));
+//        }
+//
+////        resetData();
+//        findAllSCCOf(unvisited);
+//    }
 
     public void resetData() {
         // initialization
@@ -217,13 +224,14 @@ public class StrongConnectivityFinderR3 {
 
     private void findAllSCCOf(BitSet restriction) {
         findSingletons(restriction);
+//        unvisited = restriction;
 //        System.out.println("----------");
 //        System.out.println(restriction);
         int v = restriction.nextSetBit(0);
         while (v >= 0 && v < arity) {
 //            System.out.println(v);
 //            strongConnectR(v);
-            strongConnect(v);
+            strongConnect(v, restriction);
             v = restriction.nextSetBit(v);
         }
 
@@ -281,13 +289,13 @@ public class StrongConnectivityFinderR3 {
     private void findSingletons(BitSet restriction) {
         ISet nodes = graph.getNodes();
         for (int i = restriction.nextSetBit(0); i >= 0; i = restriction.nextSetBit(i + 1)) {
-            if (!partition.isSingleton(i) && nodes.contains(i) && graph.getPredOf(i).size() * graph.getSuccOf(i).size() == 0) {
+            if (!partition.isSingleton(i) && nodes.contains(i) && graph.getPredOf(i).size() == 0 && graph.getSuccOf(i).size() == 0) {
                 node2SCC[i] = nbSCC;
                 singleton.add(i);
 //                System.out.println("singleton add: " + i + ", " + partition);
                 partition.remove(i);
-                nbSCC++;
                 restriction.clear(i);
+                nbSCC++;
             }
 
         }
@@ -414,7 +422,7 @@ public class StrongConnectivityFinderR3 {
         return false;
     }
 
-    private void strongConnect(int curNode) {
+    private void strongConnect(int curNode, BitSet restriction) {
         curLevel = 0;
         pushStack(curNode);
         DFSNum[curNode] = maxDFS;
@@ -427,37 +435,48 @@ public class StrongConnectivityFinderR3 {
         while (stackIdx > 0) {
             curNode = levelNodes[curLevel];
 //            System.out.println(curNode + ", " + curLevel);
+//            if (cid == 12 && curLevel == 2 && curNode == 2) {
+////                System.out.println("xixi:" + graph.getSuccOf(curNode));
+//            }
             if (iters[curLevel].hasNext()) {
                 curNode = iters[curLevel].next();
-                levelNodes[++curLevel] = curNode;
+                //在本partition的限定范围内
+                if (restriction.get(curNode)) {
+                    levelNodes[++curLevel] = curNode;
+
 //                System.out.println(levelNodes[curLevel - 1] + ", " + curNode + ", " + unvisited.get(curNode));
-                if (unvisited.get(curNode)) {
-                    pushStack(curNode);
-                    DFSNum[curNode] = maxDFS;
-                    lowLink[curNode] = maxDFS;
-                    maxDFS++;
-                    unvisited.clear(curNode);
-                    iters[curLevel] = graph.getSuccOf(curNode).iterator();
-                } else if (inStack.get(curNode)) {
-                    lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], DFSNum[curNode]);
-                    curLevel--;
+                    if (unvisited.get(curNode)) {
+                        pushStack(curNode);
+                        DFSNum[curNode] = maxDFS;
+                        lowLink[curNode] = maxDFS;
+                        maxDFS++;
+                        unvisited.clear(curNode);
+                        iters[curLevel] = graph.getSuccOf(curNode).iterator();
+                    } else if (inStack.get(curNode)) {
+                        lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], DFSNum[curNode]);
+                        curLevel--;
 //                    System.out.println("back");
-                } else {
+                    } else {
 //                    System.out.println("back");
-                    curLevel--;
+                        curLevel--;
+                    }
                 }
             } else {
 //                hasSCCSplit = false;
 //                curNode = levelNodes[curLevel - 1];
-//                System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+                if (cid == 30)
+                    System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
                 if (lowLink[curNode] == DFSNum[curNode]) {
-//                    System.out.println(curLevel+", e");
+                    if (cid == 30)
+                        System.out.println(curLevel + ", e");
                     if (lowLink[curNode] > 0 || inStack.cardinality() > 0) {
                         hasSCCSplit = true;
                     }
                     if (hasSCCSplit) {
-//                        System.out.println(curLevel + ", f");
-//                        System.out.println("scc: " + DFSNum[curNode]);
+                        if (cid == 30) {
+                            System.out.println(curLevel + ", f");
+                            System.out.println("scc: " + DFSNum[curNode]);
+                        }
                         int stackNode = -1;
                         sccSize = 0;
 //                        System.out.println("before set limit: " + partition);
@@ -465,7 +484,8 @@ public class StrongConnectivityFinderR3 {
 //                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
                         while (stackNode != curNode) {
                             stackNode = popStack();
-//                            System.out.println("pop & add: " + stackNode + ", " + nbSCC);
+                            if (cid == 30)
+                                System.out.println("pop: " + stackNode + ", " + nbSCC);
 
                             partition.add(stackNode);
                             node2SCC[stackNode] = nbSCC;

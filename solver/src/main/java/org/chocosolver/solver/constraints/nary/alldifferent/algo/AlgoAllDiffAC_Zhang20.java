@@ -6,7 +6,6 @@ import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinder;
 import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR;
 import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.Measurer;
@@ -147,7 +146,7 @@ public class AlgoAllDiffAC_Zhang20 {
 
         graph = new DirectedGraph(numNodes, SetType.BITSET, false);
 //        SCCfinder = new StrongConnectivityNewFinder(graph);
-        SCCfinder = new StrongConnectivityFinderR(graph);
+        SCCfinder = new StrongConnectivityFinderR(graph, id);
 //        SCCfinder = new StrongConnectivityFinder(graph);
 
         //for early detection
@@ -413,7 +412,7 @@ public class AlgoAllDiffAC_Zhang20 {
         } else {
             if (SCCfinder.findAllSCC_ED(DE)) {
                 Measurer.enterSkip();
-//                System.out.println("xixi");
+                System.out.println("xixi");
                 return true;
             }
         }

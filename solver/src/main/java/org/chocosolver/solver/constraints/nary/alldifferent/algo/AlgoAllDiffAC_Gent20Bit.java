@@ -1119,7 +1119,7 @@ public class AlgoAllDiffAC_Gent20Bit {
             if (!sinkIsUnvisited) {
                 if (sinkIsInStack) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
-                    System.out.println("DETest sinkLowLink: " + sinkLowLink + ", node: sink, dfs: " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
+//                    System.out.println("DETest sinkLowLink: " + sinkLowLink + ", node: sink, dfs: " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
                     DETest(sinkLowLink, maxDFS - 1);
                 }
             } else {
@@ -1173,7 +1173,7 @@ public class AlgoAllDiffAC_Gent20Bit {
             if (!unVisitedValues.get(newNode)) {
                 if (valIsInStack.get(newNode)) {
                     sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-                    System.out.println("DETest valLowLink: " + valLowLink[newNode] + ", node: " + newNode + ", dfs: " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
+//                    System.out.println("DETest valLowLink: " + valLowLink[newNode] + ", node: " + newNode + ", dfs: " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
                     DETest(valLowLink[newNode], maxDFS - 1);
                 }
             } else {

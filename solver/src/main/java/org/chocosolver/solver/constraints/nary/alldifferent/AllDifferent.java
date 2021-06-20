@@ -40,6 +40,8 @@ public class AllDifferent extends Constraint {
 
     // 实验待测算法
     public static final String ACFair = "ACFair";
+    public static final String ACChen = "ACChen";
+    public static final String ACChen20 = "ACChen20";
     public static final String Gent = "Gent";
     public static final String WordRam = "WordRam";
     public static final String ACZhang18 = "ACZhang18";
@@ -79,11 +81,15 @@ public class AllDifferent extends Constraint {
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent(VARS)};
             case ACFair:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Fair(VARS)};
+            case ACChen:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Chen(VARS)};
+            case ACChen20:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Chen20(VARS)};
             case ACZhang18:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang18(VARS)};
             case ACZhang20:
-//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang20(VARS)};
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20(VARS)};
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang20(VARS)};
+//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20(VARS)};
             case ACZhang20Choco:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang20Choco(VARS)};
             case AC20:

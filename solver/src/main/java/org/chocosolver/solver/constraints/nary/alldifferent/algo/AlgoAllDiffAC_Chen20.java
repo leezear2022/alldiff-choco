@@ -1,32 +1,34 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
-//import org.chocosolver.amtf.Measurer;
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR;
+import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
+import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
-import org.chocosolver.util.objects.graphs.DirectedGraph;
-import org.chocosolver.util.objects.setDataStructures.SetType;
+import org.chocosolver.util.procedure.UnaryIntProcedure;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Stack;
 
 /**
  * Algorithm of Alldifferent with AC
  * <p>
- * Uses Zhang algorithm in the paper of IJCAI-18
- * "A Fast Algorithm for Generalized Arc Consistency of the Alldifferent Constraint"
- * <p>
- * We try to use the bit to speed up.
- * <p>
- * <p>
+ * Uses Regin algorithm
+ * Runs in O(m.n) worst case time for the initial propagation
+ * but has a good average behavior in practice
+ * <p/>
+ * Keeps track of previous matching for further calls
+ * <p/>
  *
- * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
+ * @author Jean-Guillaume Fages
  */
-public class AlgoAllDiffAC_Zhang18M {
+public class AlgoAllDiffAC_Chen20 {
 
     //***********************************************************************************
     // VARIABLES
@@ -65,35 +67,37 @@ public class AlgoAllDiffAC_Zhang18M {
 
     // 自由值集合
     private SparseSet freeNode;
-    // Xc-Γ(A)
-    private SparseSet notGamma;
-    // Dc-A
-    private SparseSet notA;
 
-    private int[] fifo;
+    // 新增一点（视为变量）
+    private int addArity;
 
     // SCC
-    private int n;
+    private int n, nbSCC, stackIdx, searchIdx;
     private int[] nodeSCC;
 
-    private DirectedGraph mergedDigragh;
-    private StrongConnectivityFinderR SCCfinder;
-//    private StrongConnectivityFinder SCCfinder;
+    // util
+    private int[] stack, p, inf, dfn;
+    private BitSet inStack, restriction;
 
-    //    // util
-//    private int[] stack, p, inf, dfn;
-    private BitSet distinction, restriction;
-    private SparseSet singleton;
+    // for early detection
+    protected IIntDeltaMonitor[] monitors;
+    private UnaryIntProcedure<Integer> onValRem;
+    private Stack<IntTuple2> DE;
+    private boolean initialProp = true;
+    private boolean unconnected = false;
+    private ArrayList<IntTuple2> cycles;
+    private IntTuple2 tt;
 
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_Zhang18M(IntVar[] variables, ICause cause) {
+    public AlgoAllDiffAC_Chen20(IntVar[] variables, ICause cause) {
         id = num++;
 
         this.vars = variables;
         aCause = cause;
         arity = vars.length;
+        addArity = arity + 1;
         val2Idx = new TIntIntHashMap();
         // 统计所有变量论域中不同值的个数
         for (int i = 0; i < arity; ++i) {
@@ -115,7 +119,7 @@ public class AlgoAllDiffAC_Zhang18M {
 
         valUnmatchedVar = new SparseSet[numValue];
         for (int i = 0; i < numValue; ++i) {
-            valUnmatchedVar[i] = new SparseSet(arity);
+            valUnmatchedVar[i] = new SparseSet(addArity);
         }
 
         // 记录访问过的变量
@@ -126,35 +130,59 @@ public class AlgoAllDiffAC_Zhang18M {
         value_visited_ = new BitSet(numValue);
 
         var2Val = new int[arity];
-        val2Var = new int[numValue];
         for (int i = 0; i < arity; ++i) {
             var2Val[i] = -1;
         }
+        val2Var = new int[numValue];
         for (int i = 0; i < numValue; ++i) {
             val2Var[i] = -1;
         }
 
-        // freeNode区分匹配点和非匹配点
+        // freeNode区分匹配点和非匹配点(正好是新增变量的取值范围）
         freeNode = new SparseSet(numValue);
-        notGamma = new SparseSet(arity);
-        notA = new SparseSet(numValue);
-
-        fifo = new int[arity];
 
         // SCC
-        n = arity + numValue;
+        n = addArity + numValue;
         nodeSCC = new int[n];
-        singleton = new SparseSet(n);
-//        stack = new int[n];
-//        p = new int[n];
-//        inf = new int[n];
-//        dfn = new int[n];
-//        inStack = new BitSet(n);
-        restriction = new BitSet(arity);
-        distinction = new BitSet(n);
-        mergedDigragh = new DirectedGraph(arity, SetType.BITSET, false);
-        SCCfinder = new StrongConnectivityFinderR(mergedDigragh,id);
-//        SCCfinder = new StrongConnectivityFinder(mergedDigragh);
+
+        stack = new int[n];
+        p = new int[n];
+        inf = new int[n];
+        dfn = new int[n];
+        inStack = new BitSet(n);
+        restriction = new BitSet(addArity);
+
+        //for early detection
+        // 存的是变量索引及原值
+        DE = new Stack<>();
+        cycles = new ArrayList<>();
+//        SCCfinder = new StrongConnectivityNewFinder(digraph, DE);
+
+        // for delta
+        monitors = new IIntDeltaMonitor[vars.length];
+        for (int i = 0; i < vars.length; i++) {
+            monitors[i] = vars[i].monitorDelta(cause);
+        }
+        onValRem = makeProcedure();
+    }
+
+    protected UnaryIntProcedure<Integer> makeProcedure() {
+        return new UnaryIntProcedure<Integer>() {
+            int var;
+
+            @Override
+            public UnaryIntProcedure set(Integer o) {
+                var = o;
+                return this;
+            }
+
+            @Override
+            public void execute(int i) throws ContradictionException {
+                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
+//                IntVar v = vars[var];
+//                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
+            }
+        };
     }
 
     //***********************************************************************************
@@ -163,7 +191,7 @@ public class AlgoAllDiffAC_Zhang18M {
 
     public boolean propagate() throws ContradictionException {
 //        System.out.println("----------------" + id + " propagate----------------");
-//        if (id == 2) {
+//        if (id == 0) {
 //            System.out.println("vars: ");
 //            for (IntVar v : vars) {
 //                System.out.println(v.toString());
@@ -171,11 +199,19 @@ public class AlgoAllDiffAC_Zhang18M {
 //        }
         Measurer.enterProp();
         long startTime = System.nanoTime();
+        DE.clear();
+        for (int i = 0; i < arity; ++i) {
+            monitors[i].freeze();
+            monitors[i].forEachRemVal(onValRem.set(i));
+        }
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
         startTime = System.nanoTime();
         boolean filter = filter();
+        for (int i = 0; i < vars.length; i++) {
+            monitors[i].unfreeze();
+        }
         Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
     }
@@ -262,6 +298,7 @@ public class AlgoAllDiffAC_Zhang18M {
     private void findMaximumMatching() throws ContradictionException {
         for (int i = 0; i < numValue; ++i) {
             valUnmatchedVar[i].clear();
+            valUnmatchedVar[i].add(arity);
         }
         freeNode.fill();
         // 增量检查
@@ -318,6 +355,11 @@ public class AlgoAllDiffAC_Zhang18M {
             }
             if (var2Val[varIdx] == -1) {
                 // No augmenting path exists.
+
+                for (int i = 0; i < vars.length; i++) {
+                    monitors[i].unfreeze();
+                }
+
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
         }
@@ -327,11 +369,11 @@ public class AlgoAllDiffAC_Zhang18M {
         }
 
 //        if (id == 2) {
-//            System.out.println("-----final matching-----");
-//            for (int i = 0; i < arity; i++) {
-//                System.out.println(vars[i].getName() + " match " + idx2Val[var2Val[i]]);
-//            }
-//            System.out.println("------------------");
+//        System.out.println("-----final matching-----");
+//        for (int i = 0; i < arity; i++) {
+//            System.out.println(vars[i].getName() + " match " + idx2Val[var2Val[i]]);
+//        }
+//        System.out.println("------------------");
 //        }
 //        System.out.println(Arrays.toString(var2Val));
 //        System.out.println(Arrays.toString(val2Var));
@@ -342,98 +384,228 @@ public class AlgoAllDiffAC_Zhang18M {
     // PRUNING
     //***********************************************************************************
 
-    private void distinguish() {
-        notGamma.fill();
-        notA.fill();
+    private boolean buildSCC() {
+        // 初始化
         // restriction记录寻找SCC的过程中未访问的变量
         restriction.clear();
-        restriction.flip(0, arity);
-        int valIdx, varIdx;
-        int indexFirst = 0, indexLast = 0;
+        restriction.flip(0, addArity);
+        // 除去自由值对新增变量的指向
         freeNode.iterateValid();
         while (freeNode.hasNextValid()) {
-            valIdx = freeNode.next();
-            notA.remove(valIdx);
-            // 首先把与自由值相连的变量入队列
+            int valIdx = freeNode.next();
+            valUnmatchedVar[valIdx].remove(arity);
             valUnmatchedVar[valIdx].iterateValid();
-            while (valUnmatchedVar[valIdx].hasNextValid()) {
-                varIdx = valUnmatchedVar[valIdx].next();
-                if (notGamma.contain(varIdx)) {
-                    fifo[indexLast++] = varIdx;
-                    notGamma.remove(varIdx);
-                    restriction.clear(varIdx);
-                }
+            nodeSCC[valIdx + addArity] = -1;
+        }
+        inStack.clear();
+        nbSCC = 0;
+        // 普通变量初始化
+        for (int varIdx = 0; varIdx < arity; varIdx++) {
+            nodeSCC[varIdx] = -1;
+            int valIdx = var2Val[varIdx];
+            nodeSCC[valIdx + addArity] = -1;
+            valUnmatchedVar[valIdx].iterateValid();
+        }
+        // 新增变量初始化
+        nodeSCC[arity] = -1;
+        freeNode.iterateValid();
+
+        //初始化early detect相关数据结构
+
+        cycles.clear();
+
+        if (initialProp) {
+            // 开始
+            int first = restriction.nextSetBit(0);
+            while (first >= 0) {
+                findSCC(first);
+                first = restriction.nextSetBit(first);
             }
-            // 然后，对队列中每个变量的匹配值，把与该值相连的非匹配变量入队
-            while (indexFirst != indexLast) {
-                varIdx = fifo[indexFirst++];
-                valIdx = var2Val[varIdx];
-                notA.remove(valIdx);
-                valUnmatchedVar[valIdx].iterateValid();
-                while (valUnmatchedVar[valIdx].hasNextValid()) {
-                    varIdx = valUnmatchedVar[valIdx].next();
-                    if (notGamma.contain(varIdx)) {
-                        fifo[indexLast++] = varIdx;
-                        notGamma.remove(varIdx);
-                        restriction.clear(varIdx);
+            initialProp = false;
+        } else {
+            int first = restriction.nextSetBit(0);
+            while (first >= 0) {
+                if (findSCC_ED(first)) {
+                    return true;
+                }
+                first = restriction.nextSetBit(first);
+            }
+        }
+        return false;
+    }
+
+    // TarjanRemoveValues
+    private void findSCC(int start) {
+        //initialization
+        stackIdx = 0;
+        // k是index
+        searchIdx = -1;
+        // i和j是点号，i是j的前驱
+        int i = start, j = i;
+        // 变量
+        stepForward(i, j);
+        // 变量的匹配值
+        j = var2Val[i] + addArity;
+        stepForward(i, j);
+        i = j;
+        // algo
+        while (stackIdx != 0) {
+            if (i >= addArity && valUnmatchedVar[i - addArity].hasNextValid()) { // i代表的是值
+                j = valUnmatchedVar[i - addArity].next();
+                if (restriction.get(j)) {
+                    if (!inStack.get(j)) {
+                        // 变量
+                        stepForward(i, j);
+                        i = j;
+                        if (i == arity) {// 新增变量
+                            continue;
+                        }
+                        j = var2Val[i] + addArity;
+                        stepForward(i, j);
+                        i = j;
+                    } else {
+                        inf[i] = Math.min(inf[i], dfn[j]);
                     }
                 }
+            } else if (i == arity && freeNode.hasNextValid()) {// i代表的是新增变量
+                // j是新增变量指向的自由值，必然不在栈中
+                j = freeNode.next() + addArity;
+                stepForward(i, j);
+                i = j;
+            } else {
+                if (inf[i] == dfn[i]) {
+                    int y;
+                    do {
+                        y = stack[--stackIdx];
+                        inStack.clear(y);
+                        restriction.clear(y);
+                        nodeSCC[y] = nbSCC;
+                    } while (y != i);
+                    nbSCC++;
+                }
+                inf[p[i]] = Math.min(inf[p[i]], inf[i]);
+                i = p[i];
             }
         }
     }
 
-    private void buildSCC() {
-        // 重新构造distinction
-        distinction.clear();
+    // Zhang20RemoveValues
+    private boolean findSCC_ED(int start) {
+//        unconnected = false;
+        //initialization
+        stackIdx = 0;
+        // k是index
+        searchIdx = -1;
+        // i和j是点号，i是j的前驱
+        int i = start, j = i;
+        // 变量
+        stepForward(i, j);
+        // 变量的匹配值
+        j = var2Val[i] + addArity;
+        stepForward(i, j);
+        i = j;
+        // algo
+        while (stackIdx != 0) {
+            if (i >= addArity && valUnmatchedVar[i - addArity].hasNextValid()) { // i代表的是值
+                j = valUnmatchedVar[i - addArity].next();
+                if (restriction.get(j)) {
+                    if (!inStack.get(j)) {
+                        // 变量
+                        stepForward(i, j);
+                        i = j;
+                        if (i == arity) {// 新增变量
+                            continue;
+                        }
+                        j = var2Val[i] + addArity;
+                        stepForward(i, j);
+                        i = j;
+                    } else {
+//                        System.out.println("addc:" + i + "," + j + ", " + inf[j] + ", " + searchIdx);
+                        inf[i] = Math.min(inf[i], dfn[j]);
 
-        int i;
-        notGamma.iterateInvalid();
-        while (notGamma.hasNextInvalid()) {
-            i = notGamma.next();
-            distinction.set(i);
-        }
+                        // for early detect
+                        if (!unconnected) {
+                            System.out.println("addCycles: " + j + " " + inf[j] + " " + (searchIdx - 1));
+                            addCycles(inf[j], searchIdx - 1);
+                            while (!DE.empty() && inCycles(DE.peek())) {
+                                DE.pop();
+                            }
+                        }
+                    }
+                }
+            } else if (i == arity && freeNode.hasNextValid()) {// i代表的是新增变量
+                // j是新增变量指向的自由值，必然不在栈中
+                j = freeNode.next() + addArity;
+                stepForward(i, j);
+                i = j;
+            } else {
+                if (inf[i] == dfn[i]) {
+                    int y;
+                    do {
+                        y = stack[--stackIdx];
+                        inStack.clear(y);
+                        restriction.clear(y);
+                        nodeSCC[y] = nbSCC;
+                    } while (y != i);
+                    nbSCC++;
+//                    unconnected = true;
+                }
+                inf[p[i]] = Math.min(inf[p[i]], inf[i]);
+                i = p[i];
 
-        notA.iterateInvalid();
-        while (notA.hasNextInvalid()) {
-            i = notA.next() + arity;
-            distinction.set(i);
-        }
-
-//        System.out.println(distinction.toString());
-        SCCfinder.findAllSCC(distinction);
-        nodeSCC = SCCfinder.getNodesSCC();
-        singleton = SCCfinder.getSingleton();
-//        System.out.println(Arrays.toString(nodeSCC));
-    }
-
-    private void mergeNodes() {
-        // 初始化
-        // 每次都重新建图
-        for (int i = 0; i < arity; i++) {
-            mergedDigragh.getSuccOf(i).clear();
-            mergedDigragh.getPredOf(i).clear();
-        }
-
-        for (int i = 0, j; i < arity; ++i) {
-            int matchedVal = var2Val[i];
-//            for (int j : digraph.getPredOf(matchedVal)) {
-////                System.out.println(i + "<-" + j);
-//                mergedDigragh.addArc(j, i);
-//            }
-            valUnmatchedVar[matchedVal].iterateValid();
-            while (valUnmatchedVar[matchedVal].hasNextValid()) {
-                j = valUnmatchedVar[matchedVal].next();
-                mergedDigragh.addArc(i, j);
+                if (!unconnected && DE.empty()) {
+                    System.out.println("xixi");
+                    return true;
+                }
             }
         }
+
+        return false;
+    }
+
+    private void stepForward(int pre, int sub) {
+        searchIdx++;
+        dfn[sub] = searchIdx;
+        inf[sub] = searchIdx;
+        p[sub] = pre;
+        stack[stackIdx++] = sub;
+        inStack.set(sub);
+    }
+
+    private void addCycles(int a, int b) {
+        var iter = cycles.iterator();
+        while (iter.hasNext()) {
+            tt = iter.next();
+            if (tt.overlap(a, b)) {
+                tt.a = Math.min(tt.a, a);
+                tt.b = Math.max(tt.b, b);
+                return;
+            }
+        }
+        cycles.add(new IntTuple2(a, b));
+    }
+
+    private boolean inCycles(IntTuple2 t) {
+//        IntTuple2 tt;
+//        System.out.println("inc:" + t.a + "," + t.b + "=" + DFSNum[t.a] + "," + DFSNum[t.b]);
+        if (dfn[t.a] == -1 || dfn[t.b] == -1) {
+            return false;
+        }
+        for (int i = 0, len = cycles.size(); i < len; ++i) {
+            tt = cycles.get(i);
+            if (tt.cover(dfn[t.a]) && tt.cover(dfn[t.b])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean filter() throws ContradictionException {
-        distinguish();
-        mergeNodes();
-        buildSCC();
-//        System.out.println(val2Idx);
-//        System.out.println(Arrays.toString(var2Val));
+        if (buildSCC()) {
+            Measurer.enterSkip();
+            return true;
+        }
+        System.out.println(Arrays.toString(nodeSCC));
         boolean filter = false;
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
@@ -441,33 +613,17 @@ public class AlgoAllDiffAC_Zhang18M {
                 int ub = v.getUB();
                 for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
                     int valIdx = val2Idx.get(k);
-                    if (!notGamma.contain(varIdx) && notA.contain(valIdx)) {
-                        ++Measurer.numDelValuesP1;
-                        Measurer.enterP1();
-                        filter |= v.removeValue(k, aCause);
-//                        System.out.println("first delete: " + v.getName() + ", " + k + ", " + filter + ", " + Measurer.numDelValuesP1);
-                    } else if (notGamma.contain(varIdx) && notA.contain(valIdx)) {
-                        int matchedVarIdx = val2Var[valIdx];
-//                        System.out.println(varIdx + ", " + valIdx + ", " + nodeSCC[varIdx] + ", " + nodeSCC[matchedVarIdx]);
-                        if (nodeSCC[varIdx] != nodeSCC[matchedVarIdx]) {
-                            Measurer.enterP2();
-                            if (valIdx == var2Val[varIdx]) {
-//                            if (singleton.contain(varIdx)) {
-                                int valNum = v.getDomainSize();
-                                Measurer.numDelValuesP2 += valNum - 1;
-//                                System.out.println("instantiate  : " + v.getName() + ", " + k + ", " + filter + ", " + Measurer.numDelValuesP2);
-                                filter |= v.instantiateTo(k, aCause);
-                            } else {
-                                ++Measurer.numDelValuesP2;
-//                                System.out.println("second delete: " + v.getName() + ", " + k + ", " + filter + ", " + Measurer.numDelValuesP2);
-                                filter |= v.removeValue(k, aCause);
-                            }
-                        } else if (singleton.contain(nodeSCC[varIdx])){
-                            Measurer.enterP2();
+                    if (nodeSCC[varIdx] != nodeSCC[valIdx + addArity]) {
+                        Measurer.enterP2();
+                        if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
-//                            System.out.println("instantiate  : " + v.getName() + ", " + k + ", " + filter + ", " + Measurer.numDelValuesP2);
                             filter |= v.instantiateTo(k, aCause);
+                            System.out.println("instantiate  : " + v.getName() + ", " + k);
+                        } else {
+                            ++Measurer.numDelValuesP2;
+                            filter |= v.removeValue(k, aCause);
+                            System.out.println("second delete: " + v.getName() + ", " + k);
                         }
                     }
                 }

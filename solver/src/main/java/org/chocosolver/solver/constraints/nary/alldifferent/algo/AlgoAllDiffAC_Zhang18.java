@@ -153,7 +153,7 @@ public class AlgoAllDiffAC_Zhang18 {
         distinction = new BitSet(n);
         graph = new DirectedGraph(n, SetType.BITSET, false);
 //        SCCfinder = new StrongConnectivityFinder(graph);
-        SCCfinder = new StrongConnectivityFinderR(graph);
+        SCCfinder = new StrongConnectivityFinderR(graph,id);
     }
 
     //***********************************************************************************
