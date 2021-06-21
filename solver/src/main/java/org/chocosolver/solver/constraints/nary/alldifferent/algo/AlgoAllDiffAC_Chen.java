@@ -427,7 +427,7 @@ public class AlgoAllDiffAC_Chen {
 
     private boolean filter() throws ContradictionException {
         buildSCC();
-        System.out.println(Arrays.toString(nodeSCC));
+//        System.out.println(Arrays.toString(nodeSCC));
         boolean filter = false;
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
@@ -441,11 +441,11 @@ public class AlgoAllDiffAC_Chen {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
                             filter |= v.instantiateTo(k, aCause);
-                            System.out.println("instantiate  : " + v.getName() + ", " + k);
+//                            System.out.println("instantiate  : " + v.getName() + ", " + k);
                         } else {
                             ++Measurer.numDelValuesP2;
                             filter |= v.removeValue(k, aCause);
-                            System.out.println("second delete: " + v.getName() + ", " + k);
+//                            System.out.println("second delete: " + v.getName() + ", " + k);
                         }
                     }
                 }

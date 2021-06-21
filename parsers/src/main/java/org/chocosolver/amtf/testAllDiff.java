@@ -50,7 +50,7 @@ public class testAllDiff {
 //                "/Users/lizhe/allDiff_Series/Queens/Queens-0008-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
-//                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
+//                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0004-m1.xml",
 //                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0015-m1.xml",
                 "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-07.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
@@ -61,7 +61,7 @@ public class testAllDiff {
         XCSPParser parser = new XCSPParser();
 //        String[] algorithms = new String[]{
 ////                "AC_REGIN",
-////                "ACFair",
+//                "ACFair",
 ////                "Gent",
 ////                "AC_ZHANG",
 ////                "AC20",
@@ -88,16 +88,22 @@ public class testAllDiff {
 ////                "AC_ZHANG",
 //        };
         String[] algorithms = new String[]{
-                "ACFair",
+//                "ACFair",
+//                "ACFair",
 //                "ACChen",
+//                "ACZhang20",
 //                "ACChen20",
-                "Gent",
+//                "Gent",
+//                "Gent",
+//                "ACFair",
 //                "Gent20",
 //                "ACZhang18",
 //                "ACZhang20",
 //                "Gent20BitIS",
 //                "ACZhang20Bit",
-//                "WordRam",
+                "WordRam",
+                "WordRam",
+                "WordRamRegin",
 //                "ACNaive",
         };
         int runNum = 1;

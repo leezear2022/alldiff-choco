@@ -78,6 +78,7 @@ public class AlgoAllDiffAC_Fair {
     private DirectedGraph graph;
     private int[] nodeSCC;
     private StrongConnectivityFinderR SCCfinder;
+    private long startTime;
 
     //for debug
     private long numCall = -1;
@@ -158,24 +159,21 @@ public class AlgoAllDiffAC_Fair {
 
     public boolean propagate() throws ContradictionException {
         numCall++;
-        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
-//        if (id == 7) {
+//        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
+//        if (id == 30 && numCall == 68) {
 //            printDoms();
 //        }
-        if (id == 30 && numCall == 68) {
-            printDoms();
-        }
 
         Measurer.enterProp();
-        if (id == 30 && numCall == 68) {
-            System.out.println("before repair: " + Arrays.toString(var2Val));
-            System.out.println(Arrays.toString(nodeSCC));
-        }
-        long startTime = System.nanoTime();
+//        if (id == 30 && numCall == 68) {
+//            System.out.println("before repair: " + Arrays.toString(var2Val));
+//            System.out.println(Arrays.toString(nodeSCC));
+//        }
+        startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
-        if (id == 30 && numCall == 68)
-            System.out.println("after repair: " + Arrays.toString(var2Val));
+//        if (id == 30 && numCall == 68)
+//            System.out.println("after repair: " + Arrays.toString(var2Val));
 ////        System.out.println("-----final matching-----");
 //        for (int i = 0; i < arity; i++) {
 //            System.out.println(vars[i].getName() + " match " + idx2Val[var2Val[i]]);
@@ -339,6 +337,7 @@ public class AlgoAllDiffAC_Fair {
             if (var2Val[varIdx] == -1) {
                 // No augmenting path exists.
 //                System.out.println("match fail");
+                Measurer.matchingTime += System.nanoTime() - startTime;
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
         }
@@ -393,19 +392,19 @@ public class AlgoAllDiffAC_Fair {
                 graph.addArc(k, j + addArity);
             }
         }
-        if (id == 30 && numCall == 68){
-            System.out.println("xixi");
-        }
+//        if (id == 30 && numCall == 68){
+//            System.out.println("xixi");
+//        }
 
         SCCfinder.findAllSCC();
         nodeSCC = SCCfinder.getNodesSCC();
 
-        if (id == 30 && numCall == 68) {
-            printDoms();
-            System.out.println(Arrays.toString(var2Val));
-            System.out.println(graph);
-            System.out.println(Arrays.toString(nodeSCC));
-        }
+//        if (id == 30 && numCall == 68) {
+//            printDoms();
+//            System.out.println(Arrays.toString(var2Val));
+//            System.out.println(graph);
+//            System.out.println(Arrays.toString(nodeSCC));
+//        }
 //        System.out.println(Arrays.toString(nodeSCC));
     }
 
@@ -423,13 +422,13 @@ public class AlgoAllDiffAC_Fair {
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
-                            if (id == 30 && numCall == 68)
-                                System.out.println("instantiate  : " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            if (id == 30 && numCall == 68)
+//                                System.out.println("instantiate  : " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
-                            if (id == 30 && numCall == 68)
-                                System.out.println("second delete: " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            if (id == 30 && numCall == 68)
+//                                System.out.println("second delete: " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.removeValue(k, aCause);
                         }
                     }
@@ -437,10 +436,10 @@ public class AlgoAllDiffAC_Fair {
             }
         }
 
-        if (id == 30 && numCall == 68){
-            printDoms();
-            System.out.println("final: " + filter);
-        }
+//        if (id == 30 && numCall == 68){
+//            printDoms();
+//            System.out.println("final: " + filter);
+//        }
         return filter;
     }
 }

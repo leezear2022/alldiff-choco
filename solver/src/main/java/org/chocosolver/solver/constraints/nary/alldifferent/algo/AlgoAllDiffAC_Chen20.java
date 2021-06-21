@@ -12,7 +12,6 @@ import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Stack;
 
@@ -77,7 +76,7 @@ public class AlgoAllDiffAC_Chen20 {
 
     // util
     private int[] stack, p, inf, dfn;
-    private BitSet inStack, restriction;
+    private BitSet inStack, unvisited;
 
     // for early detection
     protected IIntDeltaMonitor[] monitors;
@@ -150,7 +149,7 @@ public class AlgoAllDiffAC_Chen20 {
         inf = new int[n];
         dfn = new int[n];
         inStack = new BitSet(n);
-        restriction = new BitSet(addArity);
+        unvisited = new BitSet(addArity);
 
         //for early detection
         // 存的是变量索引及原值
@@ -204,6 +203,7 @@ public class AlgoAllDiffAC_Chen20 {
             monitors[i].freeze();
             monitors[i].forEachRemVal(onValRem.set(i));
         }
+//        System.out.println("DE: " + DE);
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
 
@@ -387,8 +387,9 @@ public class AlgoAllDiffAC_Chen20 {
     private boolean buildSCC() {
         // 初始化
         // restriction记录寻找SCC的过程中未访问的变量
-        restriction.clear();
-        restriction.flip(0, addArity);
+//        restriction.clear();
+//        restriction.flip(0, addArity);
+        unvisited.set(0, addArity);
         // 除去自由值对新增变量的指向
         freeNode.iterateValid();
         while (freeNode.hasNextValid()) {
@@ -416,19 +417,19 @@ public class AlgoAllDiffAC_Chen20 {
 
         if (initialProp) {
             // 开始
-            int first = restriction.nextSetBit(0);
+            int first = unvisited.nextSetBit(0);
             while (first >= 0) {
                 findSCC(first);
-                first = restriction.nextSetBit(first);
+                first = unvisited.nextSetBit(first);
             }
             initialProp = false;
         } else {
-            int first = restriction.nextSetBit(0);
+            int first = unvisited.nextSetBit(0);
             while (first >= 0) {
                 if (findSCC_ED(first)) {
                     return true;
                 }
-                first = restriction.nextSetBit(first);
+                first = unvisited.nextSetBit(first);
             }
         }
         return false;
@@ -452,7 +453,7 @@ public class AlgoAllDiffAC_Chen20 {
         while (stackIdx != 0) {
             if (i >= addArity && valUnmatchedVar[i - addArity].hasNextValid()) { // i代表的是值
                 j = valUnmatchedVar[i - addArity].next();
-                if (restriction.get(j)) {
+                if (unvisited.get(j)) {
                     if (!inStack.get(j)) {
                         // 变量
                         stepForward(i, j);
@@ -478,7 +479,7 @@ public class AlgoAllDiffAC_Chen20 {
                     do {
                         y = stack[--stackIdx];
                         inStack.clear(y);
-                        restriction.clear(y);
+                        unvisited.clear(y);
                         nodeSCC[y] = nbSCC;
                     } while (y != i);
                     nbSCC++;
@@ -508,8 +509,10 @@ public class AlgoAllDiffAC_Chen20 {
         while (stackIdx != 0) {
             if (i >= addArity && valUnmatchedVar[i - addArity].hasNextValid()) { // i代表的是值
                 j = valUnmatchedVar[i - addArity].next();
-                if (restriction.get(j)) {
+                if (unvisited.get(j)) {
+//                    unvisited.clear(j);
                     if (!inStack.get(j)) {
+
                         // 变量
                         stepForward(i, j);
                         i = j;
@@ -520,12 +523,13 @@ public class AlgoAllDiffAC_Chen20 {
                         stepForward(i, j);
                         i = j;
                     } else {
-//                        System.out.println("addc:" + i + "," + j + ", " + inf[j] + ", " + searchIdx);
+//                        System.out.println("curNode: " + j);
+                        System.out.println("addc: i: " + i + ", j: " + j + ", infi: " + inf[i] + ", dfnj: " + dfn[j] + ", maxdfs: " + searchIdx);
                         inf[i] = Math.min(inf[i], dfn[j]);
 
                         // for early detect
                         if (!unconnected) {
-                            System.out.println("addCycles: " + j + " " + inf[j] + " " + (searchIdx - 1));
+                            System.out.println("addCycles: " + j + " " + inf[j] + " " + searchIdx);
                             addCycles(inf[j], searchIdx - 1);
                             while (!DE.empty() && inCycles(DE.peek())) {
                                 DE.pop();
@@ -544,8 +548,9 @@ public class AlgoAllDiffAC_Chen20 {
                     do {
                         y = stack[--stackIdx];
                         inStack.clear(y);
-                        restriction.clear(y);
+                        unvisited.clear(y);
                         nodeSCC[y] = nbSCC;
+//                        System.out.println("pop: " + y + ", " + nbSCC);
                     } while (y != i);
                     nbSCC++;
 //                    unconnected = true;
@@ -554,7 +559,7 @@ public class AlgoAllDiffAC_Chen20 {
                 i = p[i];
 
                 if (!unconnected && DE.empty()) {
-                    System.out.println("xixi");
+//                    System.out.println("xixi");
                     return true;
                 }
             }
@@ -605,7 +610,7 @@ public class AlgoAllDiffAC_Chen20 {
             Measurer.enterSkip();
             return true;
         }
-        System.out.println(Arrays.toString(nodeSCC));
+//        System.out.println(Arrays.toString(nodeSCC));
         boolean filter = false;
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
@@ -619,11 +624,11 @@ public class AlgoAllDiffAC_Chen20 {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
                             filter |= v.instantiateTo(k, aCause);
-                            System.out.println("instantiate  : " + v.getName() + ", " + k);
+//                            System.out.println("instantiate  : " + v.getName() + ", " + k);
                         } else {
                             ++Measurer.numDelValuesP2;
                             filter |= v.removeValue(k, aCause);
-                            System.out.println("second delete: " + v.getName() + ", " + k);
+//                            System.out.println("second delete: " + v.getName() + ", " + k);
                         }
                     }
                 }

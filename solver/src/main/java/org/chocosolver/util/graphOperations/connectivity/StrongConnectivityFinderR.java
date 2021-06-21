@@ -323,25 +323,25 @@ public class StrongConnectivityFinderR {
             } else {
 //                hasSCCSplit = false;
 //                curNode = levelNodes[curLevel - 1];
-                if (cid == 30)
-                    System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+//                if (cid == 30)
+//                    System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
                 if (lowLink[curNode] == DFSNum[curNode]) {
-                    if (cid == 30)
-                        System.out.println(curLevel + ", e");
+//                    if (cid == 30)
+//                        System.out.println(curLevel + ", e");
                     if (lowLink[curNode] > 0 || inStack.cardinality() > 0) {
                         hasSCCSplit = true;
                     }
                     if (hasSCCSplit) {
-                        if (cid == 30) {
-                            System.out.println(curLevel + ", f");
-                            System.out.println("scc: " + DFSNum[curNode]);
-                        }
+//                        if (cid == 30) {
+//                            System.out.println(curLevel + ", f");
+//                            System.out.println("scc: " + DFSNum[curNode]);
+//                        }
                         int stackNode = -1;
                         sccSize = 0;
                         while (stackNode != curNode) {
                             stackNode = popStack();
-                            if (cid == 30)
-                                System.out.println("pop: " + stackNode + ", " + nbSCC);
+//                            if (cid == 30)
+//                                System.out.println("pop: " + stackNode + ", " + nbSCC);
                             nodeSCC[stackNode] = nbSCC;
                             sccSize++;
                         }
@@ -389,7 +389,8 @@ public class StrongConnectivityFinderR {
                     unvisited.clear(curNode);
                     iters[curLevel] = graph.getSuccOf(curNode).iterator();
                 } else if (inStack.get(curNode)) {
-//                    System.out.println("addc:" + levelNodes[curLevel - 1] + ", " + curNode + ", " + lowLink[curNode] + ", " + (maxDFS - 1));
+//                    System.out.println(curNode + ", " + curLevel);
+                    System.out.println("addc: i: " + levelNodes[curLevel - 1] + ", j: " + curNode + ", infi: " + lowLink[levelNodes[curLevel - 1]] + ", dfnj: " + DFSNum[curNode] + ", maxdfs: " + maxDFS);
                     lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], DFSNum[curNode]);
                     curLevel--;
 

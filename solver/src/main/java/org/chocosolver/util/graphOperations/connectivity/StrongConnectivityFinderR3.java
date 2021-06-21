@@ -145,12 +145,13 @@ public class StrongConnectivityFinderR3 {
     }
 
 
-    public void findAllSCC(BitSet restriction) {
-        unvisited.clear();
-        ISet nodes = graph.getNodes();
-        for (int i = restriction.nextSetBit(0); i >= 0 && i < n; i = restriction.nextSetBit(i + 1)) {
-            unvisited.set(i, nodes.contains(i));
-        }
+    public void findAllSCC(BitSet restriction, BitSet unvisited) {
+        this.unvisited = unvisited;
+//        ISet nodes = graph.getNodes();
+//        for (int i = restriction.nextSetBit(0); i >= 0 && i < n; i = restriction.nextSetBit(i + 1)) {
+//            unvisited.set(i, nodes.contains(i));
+//        }
+//        unvisited = restriction;
 //        unvisited = restriction;
         findSingletons(unvisited);
 //        unvisited = restriction;
@@ -464,19 +465,19 @@ public class StrongConnectivityFinderR3 {
             } else {
 //                hasSCCSplit = false;
 //                curNode = levelNodes[curLevel - 1];
-                if (cid == 30)
-                    System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+//                if (cid == 30)
+//                    System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
                 if (lowLink[curNode] == DFSNum[curNode]) {
-                    if (cid == 30)
-                        System.out.println(curLevel + ", e");
+//                    if (cid == 30)
+//                        System.out.println(curLevel + ", e");
                     if (lowLink[curNode] > 0 || inStack.cardinality() > 0) {
                         hasSCCSplit = true;
                     }
                     if (hasSCCSplit) {
-                        if (cid == 30) {
-                            System.out.println(curLevel + ", f");
-                            System.out.println("scc: " + DFSNum[curNode]);
-                        }
+//                        if (cid == 30) {
+//                            System.out.println(curLevel + ", f");
+//                            System.out.println("scc: " + DFSNum[curNode]);
+//                        }
                         int stackNode = -1;
                         sccSize = 0;
 //                        System.out.println("before set limit: " + partition);
@@ -484,8 +485,8 @@ public class StrongConnectivityFinderR3 {
 //                        System.out.println("set limit: " + limit + ", curNode: " + curNode + ", " + partition);
                         while (stackNode != curNode) {
                             stackNode = popStack();
-                            if (cid == 30)
-                                System.out.println("pop: " + stackNode + ", " + nbSCC);
+//                            if (cid == 30)
+//                                System.out.println("pop: " + stackNode + ", " + nbSCC);
 
                             partition.add(stackNode);
                             node2SCC[stackNode] = nbSCC;

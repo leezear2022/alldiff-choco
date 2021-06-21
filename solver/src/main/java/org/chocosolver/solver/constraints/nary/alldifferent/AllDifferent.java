@@ -35,7 +35,8 @@ public class AllDifferent extends Constraint {
     public static final String ACZhang20Choco = "ACZhang20Choco";
     public static final String ACZhang18M = "ACZhang18M";
     public static final String ACNaiveR = "ACNaiveR";
-    public static final String WordRam2 = "WordRam2";
+    public static final String WordRamGent = "WordRamGent";
+    public static final String WordRamRegin= "WordRamRegin";
     public static final String ACNaiveNew = "ACNaiveNew";
 
     // 实验待测算法
@@ -110,10 +111,10 @@ public class AllDifferent extends Constraint {
             case ACNaiveNew:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveBitSetNew(VARS)};
             case WordRam:
-//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRam(VARS)};
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_GentBit(VARS)};
-            case WordRam2:
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_GentBit(VARS)};
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRam(VARS)};
+//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_GentBit(VARS)};
+            case WordRamRegin:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamRegin(VARS)};
 //                case ACNaiveNew:
 //                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
 

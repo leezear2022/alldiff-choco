@@ -190,6 +190,7 @@ public class AlgoAllDiffAC_Zhang20 {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
+//        System.out.println("----------------" + id + " propagate----------------");
         Measurer.enterProp();
         long startTime = System.nanoTime();
         DE.clear();
@@ -412,7 +413,7 @@ public class AlgoAllDiffAC_Zhang20 {
         } else {
             if (SCCfinder.findAllSCC_ED(DE)) {
                 Measurer.enterSkip();
-                System.out.println("xixi");
+//                System.out.println("xixi");
                 return true;
             }
         }

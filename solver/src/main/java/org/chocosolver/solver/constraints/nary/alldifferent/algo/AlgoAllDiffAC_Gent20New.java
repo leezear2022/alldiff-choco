@@ -19,6 +19,7 @@ import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -33,7 +34,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages
  */
-public class AlgoAllDiffAC_Gent {
+public class AlgoAllDiffAC_Gent20New {
 
     //***********************************************************************************
     // VARIABLES
@@ -103,7 +104,6 @@ public class AlgoAllDiffAC_Gent {
     private SparseSet repairVals;
     private long numCall = -1;
     private BitSet restriction;
-    private BitSet unvisited;
 
     //    //    //用于回溯
 //    private IStateBitSet[] RDbit, RBbit;
@@ -125,7 +125,7 @@ public class AlgoAllDiffAC_Gent {
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_Gent(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_Gent20New(IntVar[] variables, ICause cause, Model model) {
         id = num++;
         env = model.getEnvironment();
 
@@ -221,7 +221,6 @@ public class AlgoAllDiffAC_Gent {
         repairVars = new SparseSet(arity);
         repairVals = new SparseSet(numNodes);
         restriction = new BitSet(numNodes);
-        unvisited = new BitSet(numNodes);
 //        // 两种记录已删除的值
 //        delValues1 = new ArrayList<>();
 //        delValues2 = new ArrayList<>();
@@ -315,14 +314,14 @@ public class AlgoAllDiffAC_Gent {
 
     public boolean propagate() throws ContradictionException {
         numCall++;
-//        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
+        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
 //        if (id == 7 && numCall == 43) {
 //            printDoms();
 //        }
 
-//        if (id == 30 && numCall == 68) {
-//            printDoms();
-//        }
+        if (id == 30 && numCall == 68) {
+            printDoms();
+        }
 
         boolean filter = false;
         triggeringVars.clear();
@@ -360,11 +359,11 @@ public class AlgoAllDiffAC_Gent {
 //            System.out.println(partition);
             //matching
             startTime = System.nanoTime();
-//            if (id == 30 && numCall == 68) {
-//                System.out.println("triggeringVars: " + triggeringVars);
-//                System.out.println("before repair: " + Arrays.toString(var2Val));
-//                System.out.println("partition: " + partition);
-//            }
+            if (id == 30 && numCall == 68) {
+                System.out.println("triggeringVars: " + triggeringVars);
+                System.out.println("before repair: " + Arrays.toString(var2Val));
+                System.out.println("partition: " + partition);
+            }
 //            }
 //            if (id == 7) {
 //                System.out.println("before repair: " + Arrays.toString(var2Val));
@@ -377,8 +376,8 @@ public class AlgoAllDiffAC_Gent {
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
 
-//            if (id == 30 && numCall == 68)
-//                System.out.println("after repair: " + Arrays.toString(var2Val));
+            if (id == 30 && numCall == 68)
+                System.out.println("after repair: " + Arrays.toString(var2Val));
 
             //build Graph
 //            buildGraph();
@@ -479,12 +478,12 @@ public class AlgoAllDiffAC_Gent {
         SCCfinder.resetData();
         var iter = changedSCCStartIndex.iterator();
         while (iter.hasNext()) {
-            buildGraph(iter.next(), restriction, unvisited, repairVars, repairVals);
-//            if (id == 30 && numCall == 68)
-//                System.out.println(partition);
-            SCCfinder.findAllSCC(restriction, unvisited);
-//            if (id == 30 && numCall == 68)
-//                System.out.println(partition);
+            buildGraph(iter.next(), restriction, repairVars, repairVals);
+            if (id == 30 && numCall == 68)
+                System.out.println(partition);
+            SCCfinder.findAllSCC(restriction, restriction);
+            if (id == 30 && numCall == 68)
+                System.out.println(partition);
             filter |= filterDomains(restriction);
         }
 //        if (id == 30 && numCall == 68)
@@ -582,47 +581,45 @@ public class AlgoAllDiffAC_Gent {
 //        while (triggeringVars.hasNextValid()) {
 //            int varIdx = triggeringVars.next();
             IntVar v = vars[varIdx];
-//            if (!v.isInstantiated()) {
-                if (v.getDomainSize() == 1) {
-                    // 取出变量的唯一值
-                    int valIdx = val2Idx.get(v.getValue());
+            if (v.getDomainSize() == 1) {
+                // 取出变量的唯一值
+                int valIdx = val2Idx.get(v.getValue());
 //                valUnmatchedVar[valIdx].add(varIdx);
 //                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
 
-                    int oldValIdx = var2Val[varIdx];
-                    int oldVarIdx = val2Var[valIdx];
+                int oldValIdx = var2Val[varIdx];
+                int oldVarIdx = val2Var[valIdx];
 
-                    if (oldValIdx != -1 && oldValIdx != valIdx) {
-                        val2Var[oldValIdx] = -1;
-                    }
-                    if (oldVarIdx != -1 && oldVarIdx != varIdx) {
-                        var2Val[oldVarIdx] = -1;
-                    }
+                if (oldValIdx != -1 && oldValIdx != valIdx) {
+                    val2Var[oldValIdx] = -1;
+                }
+                if (oldVarIdx != -1 && oldVarIdx != varIdx) {
+                    var2Val[oldVarIdx] = -1;
+                }
 
-                    val2Var[valIdx] = varIdx;
-                    var2Val[varIdx] = valIdx;
+                val2Var[valIdx] = varIdx;
+                var2Val[varIdx] = valIdx;
 //                freeNode.remove(valIdx);
-                } else {
-                    // 检查原匹配是否失效
-                    int oldMatchingIndex = var2Val[varIdx];
-                    if (oldMatchingIndex != -1) {
-                        // 如果oldMatchingValue无效
-                        if (!v.contains(idx2Val[oldMatchingIndex])) {
-                            val2Var[oldMatchingIndex] = -1;
-                            var2Val[varIdx] = -1;
-                            repairVars.add(varIdx);
+            } else {
+                // 检查原匹配是否失效
+                int oldMatchingIndex = var2Val[varIdx];
+                if (oldMatchingIndex != -1) {
+                    // 如果oldMatchingValue无效
+                    if (!v.contains(idx2Val[oldMatchingIndex])) {
+                        val2Var[oldMatchingIndex] = -1;
+                        var2Val[varIdx] = -1;
+                        repairVars.add(varIdx);
 //                        System.out.println("add var1: " + varIdx + ", " + oldMatchingIndex);
-                        }
+                    }
 //                    else {
 ////                        freeNode.remove(oldMatchingIndex);
 ////                    System.out.println(oldMatchingIndex + " is free");
 //                    }
-                    } else {
-                        repairVars.add(varIdx);
+                } else {
+                    repairVars.add(varIdx);
 //                    System.out.println("add var2: " + varIdx + ", " + oldMatchingIndex);
-                    }
                 }
-//            }
+            }
         }
     }
 
@@ -698,19 +695,18 @@ public class AlgoAllDiffAC_Gent {
 //        }
     }
 
-    private void buildGraph(int sccStartIndex, BitSet restriction, BitSet unvisited, SparseSet repairedVars, SparseSet repairedVals) {
+    private void buildGraph(int sccStartIndex, BitSet restriction, SparseSet repairedVars, SparseSet repairedVals) {
 //        System.out.println("--build graph--");
 //        System.out.println(restriction);
         boolean hasSinkNode = false;
         repairedVars.clear();
         repairedVals.clear();
         restriction.clear();
-        unvisited.clear();
 
-//        for (int i = 0; i < numNodes; i++) {
-//            graph.getSuccOf(i).clear();
-//            graph.getPredOf(i).clear();
-//        }
+        for (int i = 0; i < numNodes; i++) {
+            graph.getSuccOf(i).clear();
+            graph.getPredOf(i).clear();
+        }
 
         partition.setIteratorIndex(sccStartIndex);
         do {
@@ -718,7 +714,6 @@ public class AlgoAllDiffAC_Gent {
             graph.getSuccOf(i).clear();
             graph.getPredOf(i).clear();
             restriction.set(i);
-            unvisited.set(i);
             if (i < arity) {
                 repairedVars.add(i);
             } else if (i > arity) {
@@ -794,14 +789,14 @@ public class AlgoAllDiffAC_Gent {
 //            }
 //        }
 
-//
-//        if (id == 30 && numCall == 68) {
-//            printDoms();
-//            System.out.println(Arrays.toString(var2Val));
-//            System.out.println(graph);
-//            System.out.println(restriction);
-//            System.out.println(partition);
-//        }
+
+        if (id == 30 && numCall == 68) {
+            printDoms();
+            System.out.println(Arrays.toString(var2Val));
+            System.out.println(graph);
+            System.out.println(restriction);
+            System.out.println(partition);
+        }
 //        System.out.println("----------");
     }
 
@@ -811,10 +806,10 @@ public class AlgoAllDiffAC_Gent {
 //        var iter = changedSCCStartIndex.iterator();
 //        int sccStartIdx =  partition.get
 //        while (iter.hasNext()) {
-        buildGraph(0, restriction, unvisited, repairVars, repairVals);
+        buildGraph(0, restriction, repairVars, repairVals);
 //        if (id == 30 && numCall == 68)
 //            System.out.println(partition);
-        SCCfinder.findAllSCC(restriction, unvisited);
+        SCCfinder.findAllSCC(restriction, restriction);
 //        if (id == 30 && numCall == 68)
 //            System.out.println(partition);
         filter |= filterDomains(restriction);
@@ -840,8 +835,8 @@ public class AlgoAllDiffAC_Gent {
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
-//                            if (id == 30 && numCall == 68)
-//                                System.out.println("instantiate  : " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+                            if (id == 30 && numCall == 68)
+                                System.out.println("instantiate  : " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
 //                            RDbit[varIdx].clear();
 //                            RDbit[varIdx].set(valIdx);
 //                            Dbit[varIdx].clear();
@@ -849,8 +844,8 @@ public class AlgoAllDiffAC_Gent {
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
-//                            if (id == 30 && numCall == 68)
-//                                System.out.println("second delete: " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+                            if (id == 30 && numCall == 68)
+                                System.out.println("second delete: " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
 //                            RDbit[varIdx].clear(valIdx);
 //                            Dbit[varIdx].clear(valIdx);
                             filter |= v.removeValue(k, aCause);
@@ -859,10 +854,10 @@ public class AlgoAllDiffAC_Gent {
                 }
             }
         }
-//        if (id == 30 && numCall == 68) {
-//            printDoms();
-//            System.out.println("final: " + filter);
-//        }
+        if (id == 30 && numCall == 68) {
+            printDoms();
+            System.out.println("final: " + filter);
+        }
         return filter;
     }
 

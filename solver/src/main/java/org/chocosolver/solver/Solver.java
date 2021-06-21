@@ -314,9 +314,9 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
         boolean solution = false;
         boolean left = true;
         Thread th = Thread.currentThread();
-        int numIter = 0;
+//        int numIter = 0;
         while (!stop) {
-            System.out.println("*****" + (numIter++) + "*****");
+//            System.out.println("*****" + (numIter++) + "*****");
             stop = isStopCriterionMet();
             if (stop || th.isInterrupted()) {
                 if (stop) {
