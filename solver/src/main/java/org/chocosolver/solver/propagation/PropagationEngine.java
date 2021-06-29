@@ -190,6 +190,7 @@ public class PropagationEngine {
                     }
                 } else if (lastProp.isActive()) { // need to be checked due to views
                     lastProp.propagate(PropagatorEventType.FULL_PROPAGATION.getMask());
+//                    System.out.println(var_queue.size());
                 }
                 if (hybrid < 0b01) {
                     manageModifications();
@@ -200,6 +201,7 @@ public class PropagationEngine {
 
     /**
      * Checks if some propagators were added or have to be propagated on backtrack
+     *
      * @throws ContradictionException if a propagation fails
      */
     private void activatePropagators() throws ContradictionException {

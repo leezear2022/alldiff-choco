@@ -218,6 +218,7 @@ public class StrongConnectivityFinderR {
         int v = restriction.nextSetBit(0);
         while (v >= 0) {
 //            if (strongConnect_EDR(v)) {
+//            System.out.printf("out: %d\n", v);
             if (strongConnect_ED(v)) {
                 return true;
             }
@@ -390,7 +391,7 @@ public class StrongConnectivityFinderR {
                     iters[curLevel] = graph.getSuccOf(curNode).iterator();
                 } else if (inStack.get(curNode)) {
 //                    System.out.println(curNode + ", " + curLevel);
-                    System.out.println("addc: i: " + levelNodes[curLevel - 1] + ", j: " + curNode + ", infi: " + lowLink[levelNodes[curLevel - 1]] + ", dfnj: " + DFSNum[curNode] + ", maxdfs: " + maxDFS);
+//                    System.out.println("addc: i: " + levelNodes[curLevel - 1] + ", j: " + curNode + ", infi: " + lowLink[levelNodes[curLevel - 1]] + ", dfnj: " + DFSNum[curNode] + ", maxdfs: " + maxDFS);
                     lowLink[levelNodes[curLevel - 1]] = Math.min(lowLink[levelNodes[curLevel - 1]], DFSNum[curNode]);
                     curLevel--;
 
@@ -398,7 +399,8 @@ public class StrongConnectivityFinderR {
 //                    System.out.println(Arrays.toString(lowLink));
 
                     if (!unconnected) {
-                        System.out.println("addCycles: " + curNode + " " + lowLink[curNode] + " " + (maxDFS - 1));
+                        System.out.println("DETest: " + lowLink[curNode] + ", " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
+//                        System.out.println("addCycles: " + curNode + " " + lowLink[curNode] + " " + (maxDFS - 1));
                         addCycles(lowLink[curNode], maxDFS - 1);
                         while (!DE.empty() && inCycles(DE.peek())) {
                             DE.pop();

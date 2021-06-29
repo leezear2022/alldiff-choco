@@ -267,7 +267,7 @@ public class AlgoAllDiffAC_Gent20BitIS {
 
             public void execute(int i) throws ContradictionException {
 //                DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
-                if (!triggeringVars.contain(var)) {
+                if (!triggeringVars.contains(var)) {
                     triggeringVars.add(var);
                     deletedValues[var].clear();
                 }
@@ -462,7 +462,7 @@ public class AlgoAllDiffAC_Gent20BitIS {
             do {
                 int varIdx = partition.getValue();
 //                System.out.println("varIdx: " + varIdx + ", " + (varIdx < arity && triggeringVars.contain(varIdx)));
-                if (varIdx < arity && triggeringVars.contain(varIdx)) {
+                if (varIdx < arity && triggeringVars.contains(varIdx)) {
                     var valIter = deletedValues[varIdx].iterator();
                     while ((valIter.hasNext())) {
                         int j = valIter.next();
@@ -689,7 +689,7 @@ public class AlgoAllDiffAC_Gent20BitIS {
 
         // 添加非匹配边 val<--var; val<--t
         for (int j = 0; j < numValues; ++j) {
-            if (freeNode.contain(j)) {
+            if (freeNode.contains(j)) {
                 // free node: val->t
                 graph.addArc(j + addArity, arity);
             } else {

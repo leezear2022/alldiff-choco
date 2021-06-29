@@ -288,7 +288,7 @@ public class AlgoAllDiffAC_Gent20New {
             @Override
             public void execute(int i) throws ContradictionException {
 //                DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
-                if (!triggeringVars.contain(var)) {
+                if (!triggeringVars.contains(var)) {
 //                    System.out.printf("add: ( %d)\n", var);
                     triggeringVars.add(var);
 //                    isNotTrigger = false;

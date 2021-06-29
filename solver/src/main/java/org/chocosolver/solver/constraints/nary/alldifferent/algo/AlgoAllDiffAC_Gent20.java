@@ -265,7 +265,7 @@ public class AlgoAllDiffAC_Gent20 {
             @Override
 
             public void execute(int i) throws ContradictionException {
-                if (!triggeringVars.contain(var)) {
+                if (!triggeringVars.contains(var)) {
                     triggeringVars.add(var);
                     deletedValues[var].clear();
                 }
@@ -423,7 +423,7 @@ public class AlgoAllDiffAC_Gent20 {
             partition.setIteratorIndex(sccStartIndex);
             do {
                 int varIdx = partition.getValue();
-                if (varIdx < arity && triggeringVars.contain(varIdx)) {
+                if (varIdx < arity && triggeringVars.contains(varIdx)) {
                     var valIter = deletedValues[varIdx].iterator();
                     while ((valIter.hasNext())) {
                         DE.push(SCCfinder.getIntTuple2Long(varIdx, valIter.next()));

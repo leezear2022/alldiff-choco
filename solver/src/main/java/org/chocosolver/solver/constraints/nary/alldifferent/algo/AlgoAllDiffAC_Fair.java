@@ -13,7 +13,6 @@ import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 
-import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -379,7 +378,7 @@ public class AlgoAllDiffAC_Fair {
 
         // 添加非匹配边 val<--var; val<--t
         for (int j = 0, k = 0; j < numValues; ++j) {
-            if (freeNode.contain(j)) {
+            if (freeNode.contains(j)) {
                 // free node: val->t
                 graph.addArc(j + addArity, arity);
             } else {

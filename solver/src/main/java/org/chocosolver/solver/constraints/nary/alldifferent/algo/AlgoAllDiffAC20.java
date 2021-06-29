@@ -2,17 +2,12 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.stack.TIntStack;
-import gnu.trove.stack.array.TIntArrayStack;
 import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinder;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR;
 import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR2;
-import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
@@ -20,7 +15,6 @@ import org.chocosolver.util.objects.setDataStructures.SetType;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
 import java.util.BitSet;
-import java.util.Stack;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -401,7 +395,7 @@ public class AlgoAllDiffAC20 {
 
         // 添加非匹配边 val->var; val->t
         for (int j = 0, k = 0; j < numValues; ++j) {
-            if (freeNode.contain(j)) {
+            if (freeNode.contains(j)) {
                 graph.addArc(arity, j + addArity);
             }
             valUnmatchedVar[j].iterateValid();

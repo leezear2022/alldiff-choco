@@ -10,7 +10,6 @@ import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinder;
 import org.chocosolver.util.graphOperations.connectivity.StrongConnectivityFinderR2;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
@@ -202,7 +201,7 @@ public class AlgoAllDiffAC_Zhang20Choco {
             public void execute(int i) throws ContradictionException {
                 DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
 //                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
-                if (isNotTrigger && triggeringVars.contain(var)) {
+                if (isNotTrigger && triggeringVars.contains(var)) {
                     triggeringVars.add(var);
                     isNotTrigger = false;
                 }
@@ -500,7 +499,7 @@ public class AlgoAllDiffAC_Zhang20Choco {
 
         // 添加非匹配边 val->var; val->t
         for (int j = 0, k = 0; j < numValues; ++j) {
-            if (freeNode.contain(j)) {
+            if (freeNode.contains(j)) {
                 graph.addArc(arity, j + addArity);
             }
             valUnmatchedVar[j].iterateValid();

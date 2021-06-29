@@ -41,7 +41,7 @@ public class AlgoAllDiffAC_Gent20Bit {
 
     // 约束的编号
     private int id;
-    private long xixi = 0;
+    protected long numCall = -1;
 
     private int arity;
     private IntVar[] vars;
@@ -279,7 +279,7 @@ public class AlgoAllDiffAC_Gent20Bit {
             @Override
             public void execute(int i) throws ContradictionException {
 //                DE.push(getIntTuple2Long(var, val2Idx.get(i) + addArity));
-                if (!triggeringVars.contain(var)) {
+                if (!triggeringVars.contains(var)) {
                     triggeringVars.add(var);
                     deletedValues[var].clear();
                 }
@@ -296,6 +296,11 @@ public class AlgoAllDiffAC_Gent20Bit {
     public boolean propagate() throws ContradictionException {
 //        System.out.println("---------------");
 //        System.out.println("propagate cid: " + id);
+        numCall++;
+//        if (numCall<20) {
+        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
+//            printDoms();
+//        }
         Measurer.enterProp();
         boolean filter = false;
         startTime = System.nanoTime();
@@ -656,7 +661,7 @@ public class AlgoAllDiffAC_Gent20Bit {
             do {
                 int varIdx = partition.getValue();
 //                System.out.println("varIdx: " + varIdx + ", " + (varIdx < arity && triggeringVars.contain(varIdx)));
-                if (varIdx < arity && triggeringVars.contain(varIdx)) {
+                if (varIdx < arity && triggeringVars.contains(varIdx)) {
                     var valIter = deletedValues[varIdx].iterator();
                     while ((valIter.hasNext())) {
                         DE.push(getIntTuple2Long(varIdx, valIter.next()));
@@ -672,6 +677,7 @@ public class AlgoAllDiffAC_Gent20Bit {
 //            System.out.println();
 
 //            System.out.println("startIndex: " + startIdx);
+            System.out.println("valDFSNum: " + Arrays.toString(valDFSNum)+", "+restriction+","+partition);
             boolean res = findAllSCC(sccStartIndex);
             isSkip = res && isSkip;
         }
@@ -1035,6 +1041,7 @@ public class AlgoAllDiffAC_Gent20Bit {
     }
 
     private boolean strongConnectVar(int curNode) {
+        System.out.println("scvr: " + curNode + ", " + maxDFS);
         pushVarStack(curNode);
         varDFSNum[curNode] = maxDFS;
         varLowLink[curNode] = maxDFS;
@@ -1058,13 +1065,13 @@ public class AlgoAllDiffAC_Gent20Bit {
                 varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
                 ////// DE
 //                System.out.println("DETest valLowLink: " + valLowLink[newNode] + ", node: " + newNode + ", dfs: " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
-                DETest(valLowLink[newNode], maxDFS - 1);
+                if (numCall != 0) DETest(valLowLink[newNode], maxDFS - 1);
             }
 
             values = D[curNode].getWord(iWord) & unVisitedValues.getWord(iWord);
             for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
-                if(strongConnectVal(newNode)){
+                if (strongConnectVal(newNode)) {
                     return true;
                 }
                 varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
@@ -1090,6 +1097,7 @@ public class AlgoAllDiffAC_Gent20Bit {
     }
 
     private boolean strongConnectVal(int curNode) {
+        System.out.println("scvl: " + curNode + ", " + maxDFS);
         pushValStack(curNode);
         valDFSNum[curNode] = maxDFS;
         valLowLink[curNode] = maxDFS;
@@ -1104,10 +1112,10 @@ public class AlgoAllDiffAC_Gent20Bit {
                 if (varIsInStack.get(matchedVar)) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
 //                    System.out.println("DETest varLowLink: " + varLowLink[matchedVar] + ", node: " + matchedVar + ", dfs: " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
-                    DETest(varLowLink[matchedVar], maxDFS - 1);
+                    if (numCall != 0) DETest(varLowLink[matchedVar], maxDFS - 1);
                 }
             } else {
-                if(strongConnectVar(matchedVar)){
+                if (strongConnectVar(matchedVar)) {
                     return true;
                 }
                 valLowLink[curNode] = Math.min(valLowLink[curNode], varLowLink[matchedVar]);
@@ -1120,10 +1128,10 @@ public class AlgoAllDiffAC_Gent20Bit {
                 if (sinkIsInStack) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
 //                    System.out.println("DETest sinkLowLink: " + sinkLowLink + ", node: sink, dfs: " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
-                    DETest(sinkLowLink, maxDFS - 1);
+                    if (numCall != 0) DETest(sinkLowLink, maxDFS - 1);
                 }
             } else {
-                if(strongConnectSink()){
+                if (strongConnectSink()) {
                     return true;
                 }
                 valLowLink[curNode] = Math.min(valLowLink[curNode], sinkLowLink);
@@ -1148,6 +1156,7 @@ public class AlgoAllDiffAC_Gent20Bit {
     }
 
     private boolean strongConnectSink() {
+        System.out.println("scs: " + ", " + maxDFS);
         sinkIsInStack = true;
         sinkDFSNum = maxDFS;
         sinkLowLink = maxDFS;
@@ -1174,7 +1183,7 @@ public class AlgoAllDiffAC_Gent20Bit {
                 if (valIsInStack.get(newNode)) {
                     sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
 //                    System.out.println("DETest valLowLink: " + valLowLink[newNode] + ", node: " + newNode + ", dfs: " + (maxDFS - 1) + " unconnected: " + unconnected + " DE Size: " + DE.size());
-                    DETest(valLowLink[newNode], maxDFS - 1);
+                    if (numCall != 0) DETest(valLowLink[newNode], maxDFS - 1);
                 }
             } else {
                 strongConnectVal(newNode);
@@ -1364,7 +1373,7 @@ public class AlgoAllDiffAC_Gent20Bit {
     }
 
     private void DETest(int lowLinkNewNode, int dfs) {
-//        System.out.println("DETest: " + lowLinkNewNode + ", " + dfs + " unconnected: " + unconnected + " DE Size: " + DE.size());
+        System.out.println("DETest: " + lowLinkNewNode + ", " + dfs + " unconnected: " + unconnected + " DE Size: " + DE.size());
         if (!unconnected) {
             cycles.add(lowLinkNewNode, dfs);
 
@@ -1377,7 +1386,12 @@ public class AlgoAllDiffAC_Gent20Bit {
     private boolean inCycles(long f) {
 //        IntTuple2 tt;
         getIntTuple2(nodePair, f);
-//        System.out.println("inc:" + nodePair.a + "," + nodePair.b + "=" + DFSNum[nodePair.a] + "," + DFSNum[nodePair.b);
+        System.out.println("inc:" + nodePair.a + "," + nodePair.b + "=" + varDFSNum[nodePair.a] + "," + valDFSNum[nodePair.b]);
+        // 小的存入a大的存入b
+        if (varDFSNum[nodePair.a] == Integer.MAX_VALUE || valDFSNum[nodePair.b] == Integer.MAX_VALUE) {
+            return false;
+        }
+
         int a, b;
         if (varDFSNum[nodePair.a] <= valDFSNum[nodePair.b]) {
             a = varDFSNum[nodePair.a];
@@ -1386,9 +1400,6 @@ public class AlgoAllDiffAC_Gent20Bit {
             a = valDFSNum[nodePair.b];
             b = varDFSNum[nodePair.a];
         }
-        if (a == Integer.MAX_VALUE || b == Integer.MAX_VALUE) {
-            return false;
-        }
 
         if (cycles.contains(a, b)) {
             return true;
@@ -1396,6 +1407,29 @@ public class AlgoAllDiffAC_Gent20Bit {
 
         return false;
     }
+
+//    private boolean inCycles(long f) {
+////        IntTuple2 tt;
+//        getIntTuple2(nodePair, f);
+//        System.out.println("inc:" + nodePair.a + "," + nodePair.b + "=" + varDFSNum[nodePair.a] + "," + valDFSNum[nodePair.b]);
+//        int a, b;
+//        if (varDFSNum[nodePair.a] <= valDFSNum[nodePair.b]) {
+//            a = varDFSNum[nodePair.a];
+//            b = valDFSNum[nodePair.b];
+//        } else {
+//            a = valDFSNum[nodePair.b];
+//            b = varDFSNum[nodePair.a];
+//        }
+//        if (a == Integer.MAX_VALUE || b == Integer.MAX_VALUE) {
+//            return false;
+//        }
+//
+//        if (cycles.contains(a, b)) {
+//            return true;
+//        }
+//
+//        return false;
+//    }
 
 
 }

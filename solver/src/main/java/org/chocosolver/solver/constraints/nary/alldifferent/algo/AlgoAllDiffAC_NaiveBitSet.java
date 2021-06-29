@@ -11,8 +11,6 @@ import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.NaiveBitSetOld;
 import org.chocosolver.util.objects.SparseSet;
 
-import java.util.Arrays;
-
 /**
  * Algorithm of Alldifferent with AC
  * <p>
@@ -394,12 +392,12 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                 int ub = v.getUB();
                 for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
                     int valIdx = val2Idx.get(k);
-                    if (!notGamma.contain(varIdx) && notA.contain(valIdx)) {
+                    if (!notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         ++Measurer.numDelValuesP1;
                         Measurer.enterP1();
                         filter |= v.removeValue(k, aCause);
                         //                System.out.println("first delete: " + v.getName() + ", " + k);
-                    } else if (notGamma.contain(varIdx) && notA.contain(valIdx)) {
+                    } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         if (!graphLinkedMatrix[varIdx].get(val2Var[valIdx]) && !checkSCC(varIdx, valIdx)) {
                             Measurer.enterP2();
                             if (valIdx == var2Val[varIdx]) {

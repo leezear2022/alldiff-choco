@@ -38,6 +38,7 @@ public class AlgoAllDiffAC_Zhang20 {
     static public int num = 0;
     // 约束的编号
     private int id;
+    private int numCall = -1;
 
     private int arity;
     private IntVar[] vars;
@@ -190,13 +191,14 @@ public class AlgoAllDiffAC_Zhang20 {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-//        System.out.println("----------------" + id + " propagate----------------");
+        System.out.println("----------------" + id + " propagate: " + ++numCall + "----------------");
         Measurer.enterProp();
         long startTime = System.nanoTime();
         DE.clear();
         for (int i = 0; i < arity; ++i) {
             monitors[i].freeze();
             monitors[i].forEachRemVal(onValRem.set(i));
+            monitors[i].unfreeze();
         }
 //        System.out.println("DE: " + DE);
         findMaximumMatching();
@@ -205,9 +207,9 @@ public class AlgoAllDiffAC_Zhang20 {
         startTime = System.nanoTime();
         boolean filter = filter();
 
-        for (int i = 0; i < vars.length; i++) {
-            monitors[i].unfreeze();
-        }
+//        for (int i = 0; i < vars.length; i++) {
+//            monitors[i].unfreeze();
+//        }
 
         Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
@@ -353,9 +355,9 @@ public class AlgoAllDiffAC_Zhang20 {
             if (var2Val[varIdx] == -1) {
                 // No augmenting path exists.
 
-                for (int i = 0; i < vars.length; i++) {
-                    monitors[i].unfreeze();
-                }
+//                for (int i = 0; i < vars.length; i++) {
+//                    monitors[i].unfreeze();
+//                }
 
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
@@ -397,7 +399,7 @@ public class AlgoAllDiffAC_Zhang20 {
 
         // 添加非匹配边 val->var; val->t
         for (int j = 0, k = 0; j < numValues; ++j) {
-            if (freeNode.contain(j)) {
+            if (freeNode.contains(j)) {
                 graph.addArc(arity, j + addArity);
             }
             valUnmatchedVar[j].iterateValid();

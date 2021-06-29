@@ -35,8 +35,6 @@ public class AllDifferent extends Constraint {
     public static final String ACZhang20Choco = "ACZhang20Choco";
     public static final String ACZhang18M = "ACZhang18M";
     public static final String ACNaiveR = "ACNaiveR";
-    public static final String WordRamGent = "WordRamGent";
-    public static final String WordRamRegin= "WordRamRegin";
     public static final String ACNaiveNew = "ACNaiveNew";
 
     // 实验待测算法
@@ -45,6 +43,13 @@ public class AllDifferent extends Constraint {
     public static final String ACChen20 = "ACChen20";
     public static final String Gent = "Gent";
     public static final String WordRam = "WordRam";
+    public static final String WordRamRegin = "WordRamRegin";
+    public static final String WordRamGent = "WordRamGent";
+    public static final String WordRamWordRam = "WordRamWordRam";
+    public static final String WordRamZhang20 = "WordRamZhang20";
+    public static final String WordRamZhang20BIS = "WordRamZhang20BIS";
+    public static final String WordRamZhang20IS = "WordRamZhang20IS";
+    public static final String WordRamZhang20BitBIS = "WordRamZhang20BitBIS";
     public static final String ACZhang18 = "ACZhang18";
     public static final String ACZhang20 = "ACZhang20";
     public static final String ACZhang20Bit = "ACZhang20Bit";
@@ -115,9 +120,20 @@ public class AllDifferent extends Constraint {
 //                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_GentBit(VARS)};
             case WordRamRegin:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamRegin(VARS)};
+            case WordRamGent:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamGent(VARS)};
 //                case ACNaiveNew:
 //                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
-
+            case WordRamWordRam:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamWordRam(VARS)};
+            case WordRamZhang20:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20(VARS)};
+            case WordRamZhang20BIS:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20BIS(VARS)};
+            case WordRamZhang20IS:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20IS(VARS)};
+            case WordRamZhang20BitBIS:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20BitBIS(VARS)};
             case DEFAULT:
             default: {
                 // adds a Probabilistic AC (only if at least some variables have an enumerated domain)

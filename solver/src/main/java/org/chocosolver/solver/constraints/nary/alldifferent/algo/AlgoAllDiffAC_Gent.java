@@ -289,7 +289,7 @@ public class AlgoAllDiffAC_Gent {
             @Override
             public void execute(int i) throws ContradictionException {
 //                DE.push(SCCfinder.getIntTuple2Long(var, val2Idx.get(i) + addArity));
-                if (!triggeringVars.contain(var)) {
+                if (!triggeringVars.contains(var)) {
 //                    System.out.printf("add: ( %d)\n", var);
                     triggeringVars.add(var);
 //                    isNotTrigger = false;
@@ -316,13 +316,15 @@ public class AlgoAllDiffAC_Gent {
     public boolean propagate() throws ContradictionException {
         numCall++;
 //        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
-//        if (id == 7 && numCall == 43) {
+//        if (numCall<20) {
+//            System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
 //            printDoms();
 //        }
+//
 
-//        if (id == 30 && numCall == 68) {
+//        if (id == 30 && numCall == 13)
 //            printDoms();
-//        }
+
 
         boolean filter = false;
         triggeringVars.clear();
@@ -339,10 +341,12 @@ public class AlgoAllDiffAC_Gent {
             startTime = System.nanoTime();
             prepareForMatching();
             findMaximumMatching();
+//            System.out.println(Arrays.toString(var2Val));
             Measurer.matchingTime += System.nanoTime() - startTime;
             // filtering
             startTime = System.nanoTime();
             filter = filter();
+//            System.out.println(partition);
             Measurer.filterTime += System.nanoTime() - startTime;
         } else {
 //            DE.clear();
@@ -352,12 +356,14 @@ public class AlgoAllDiffAC_Gent {
                 monitors[i].freeze();
                 monitors[i].forEachRemVal(onValRem.set(i));
             }
-
+//            System.out.println("trig: " + triggeringVars);
 //            SCCfinder.getAllSCCStartIndices(SCCStartIndex);
-//            if (id == 7) {
+//            if (id == 30 && numCall == 13)
 //                System.out.println("triggeringVars: " + triggeringVars);
-//            }
-//            System.out.println(partition);
+//            if (id == 30 && numCall == 13)
+//                System.out.println("before repair: " + Arrays.toString(var2Val));
+//            if (id == 30 && numCall == 13)
+//                System.out.println("before repair: " + partition);
             //matching
             startTime = System.nanoTime();
 //            if (id == 30 && numCall == 68) {
@@ -367,7 +373,7 @@ public class AlgoAllDiffAC_Gent {
 //            }
 //            }
 //            if (id == 7) {
-//                System.out.println("before repair: " + Arrays.toString(var2Val));
+//                System.out.println(Arrays.toString(var2Val));
 //                System.out.println(partition);
 //            }
 //            prepareForMatching();
@@ -376,9 +382,11 @@ public class AlgoAllDiffAC_Gent {
 //            }
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
-
-//            if (id == 30 && numCall == 68)
+//            System.out.println(Arrays.toString(var2Val));
+//            if (id == 30 && numCall == 13)
 //                System.out.println("after repair: " + Arrays.toString(var2Val));
+//            if (id == 30 && numCall == 13)
+//                System.out.println("after repair: " + partition);
 
             //build Graph
 //            buildGraph();
@@ -386,7 +394,8 @@ public class AlgoAllDiffAC_Gent {
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
             Measurer.filterTime += System.nanoTime() - startTime;
-
+//            if (id == 30 && numCall == 13)
+//                System.out.println("final: " + partition);
             for (int i = 0; i < vars.length; i++) {
                 monitors[i].unfreeze();
             }
@@ -583,45 +592,45 @@ public class AlgoAllDiffAC_Gent {
 //            int varIdx = triggeringVars.next();
             IntVar v = vars[varIdx];
 //            if (!v.isInstantiated()) {
-                if (v.getDomainSize() == 1) {
-                    // 取出变量的唯一值
-                    int valIdx = val2Idx.get(v.getValue());
+            if (v.getDomainSize() == 1) {
+                // 取出变量的唯一值
+                int valIdx = val2Idx.get(v.getValue());
 //                valUnmatchedVar[valIdx].add(varIdx);
 //                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
 
-                    int oldValIdx = var2Val[varIdx];
-                    int oldVarIdx = val2Var[valIdx];
+                int oldValIdx = var2Val[varIdx];
+                int oldVarIdx = val2Var[valIdx];
 
-                    if (oldValIdx != -1 && oldValIdx != valIdx) {
-                        val2Var[oldValIdx] = -1;
-                    }
-                    if (oldVarIdx != -1 && oldVarIdx != varIdx) {
-                        var2Val[oldVarIdx] = -1;
-                    }
+                if (oldValIdx != -1 && oldValIdx != valIdx) {
+                    val2Var[oldValIdx] = -1;
+                }
+                if (oldVarIdx != -1 && oldVarIdx != varIdx) {
+                    var2Val[oldVarIdx] = -1;
+                }
 
-                    val2Var[valIdx] = varIdx;
-                    var2Val[varIdx] = valIdx;
+                val2Var[valIdx] = varIdx;
+                var2Val[varIdx] = valIdx;
 //                freeNode.remove(valIdx);
-                } else {
-                    // 检查原匹配是否失效
-                    int oldMatchingIndex = var2Val[varIdx];
-                    if (oldMatchingIndex != -1) {
-                        // 如果oldMatchingValue无效
-                        if (!v.contains(idx2Val[oldMatchingIndex])) {
-                            val2Var[oldMatchingIndex] = -1;
-                            var2Val[varIdx] = -1;
-                            repairVars.add(varIdx);
+            } else {
+                // 检查原匹配是否失效
+                int oldMatchingIndex = var2Val[varIdx];
+                if (oldMatchingIndex != -1) {
+                    // 如果oldMatchingValue无效
+                    if (!v.contains(idx2Val[oldMatchingIndex])) {
+                        val2Var[oldMatchingIndex] = -1;
+                        var2Val[varIdx] = -1;
+                        repairVars.add(varIdx);
 //                        System.out.println("add var1: " + varIdx + ", " + oldMatchingIndex);
-                        }
+                    }
 //                    else {
 ////                        freeNode.remove(oldMatchingIndex);
 ////                    System.out.println(oldMatchingIndex + " is free");
 //                    }
-                    } else {
-                        repairVars.add(varIdx);
+                } else {
+                    repairVars.add(varIdx);
 //                    System.out.println("add var2: " + varIdx + ", " + oldMatchingIndex);
-                    }
                 }
+            }
 //            }
         }
     }
@@ -812,6 +821,9 @@ public class AlgoAllDiffAC_Gent {
 //        int sccStartIdx =  partition.get
 //        while (iter.hasNext()) {
         buildGraph(0, restriction, unvisited, repairVars, repairVals);
+//        if (id == 30 && numCall == 13){
+//            System.out.println();
+//        }
 //        if (id == 30 && numCall == 68)
 //            System.out.println(partition);
         SCCfinder.findAllSCC(restriction, unvisited);
@@ -830,10 +842,14 @@ public class AlgoAllDiffAC_Gent {
 //            int varIdx = filterVars.next();
         for (int varIdx = filterVars.nextSetBit(0); varIdx >= 0 && varIdx < arity; varIdx = filterVars.nextSetBit(varIdx + 1)) {
             IntVar v = vars[varIdx];
+//            if (id == 30 && numCall == 13)
+//                System.out.println("filter var:" + v.getId());
             if (!v.isInstantiated()) {
                 int ub = v.getUB();
                 for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
                     int valIdx = val2Idx.get(k);
+//                    if (id == 30 && numCall == 13)
+//                        System.out.println("filter val:" + k);
 //                    if (node2SCC[varIdx] != node2SCC[valIdx + addArity]) {
                     if (!partition.inSameSCC(varIdx, valIdx + addArity)) {
                         Measurer.enterP2();
@@ -841,7 +857,7 @@ public class AlgoAllDiffAC_Gent {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
 //                            if (id == 30 && numCall == 68)
-//                                System.out.println("instantiate  : " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            System.out.println("instantiate  : " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
 //                            RDbit[varIdx].clear();
 //                            RDbit[varIdx].set(valIdx);
 //                            Dbit[varIdx].clear();
@@ -850,7 +866,8 @@ public class AlgoAllDiffAC_Gent {
                         } else {
                             ++Measurer.numDelValuesP2;
 //                            if (id == 30 && numCall == 68)
-//                                System.out.println("second delete: " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            if (id == 30 && numCall == 13)
+//                                System.out.println("propagate id: " + id + ", numcall:" + numCall + ", second delete: " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
 //                            RDbit[varIdx].clear(valIdx);
 //                            Dbit[varIdx].clear(valIdx);
                             filter |= v.removeValue(k, aCause);

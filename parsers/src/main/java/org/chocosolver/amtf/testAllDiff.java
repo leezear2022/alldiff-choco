@@ -50,8 +50,8 @@ public class testAllDiff {
 //                "/Users/lizhe/allDiff_Series/Queens/Queens-0008-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
-//                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0004-m1.xml",
-//                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0015-m1.xml",
+//                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
+//                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0020-m1.xml",
                 "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-07.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "D:\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
@@ -91,7 +91,7 @@ public class testAllDiff {
 //                "ACFair",
 //                "ACFair",
 //                "ACChen",
-//                "ACZhang20",
+//                "ACZhang20Bit",
 //                "ACChen20",
 //                "Gent",
 //                "Gent",
@@ -101,10 +101,15 @@ public class testAllDiff {
 //                "ACZhang20",
 //                "Gent20BitIS",
 //                "ACZhang20Bit",
-                "WordRam",
-                "WordRam",
+//                "WordRam",
                 "WordRamRegin",
-//                "ACNaive",
+                "WordRamGent",
+                "WordRamWordRam",
+                "WordRamZhang20",
+                "WordRamZhang20BIS",
+                "WordRamZhang20IS",
+                "WordRamZhang20BitBIS",
+                "ACNaive",
         };
         int runNum = 1;
 

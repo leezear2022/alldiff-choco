@@ -448,13 +448,13 @@ public class AlgoAllDiffAC_Our {
                 for (int valIdx = D[varIdx].firstSetBit(); valIdx != D[varIdx].end(); valIdx = D[varIdx].nextSetBit(valIdx + 1)) {
                     int k = idx2Val[valIdx];
 //                    System.out.println(valIdx);
-                    if (!notGamma.contain(varIdx) && notA.contain(valIdx)) {
+                    if (!notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         ++Measurer.numDelValuesP1;
                         Measurer.enterP1();
                         D[varIdx].clear(valIdx);
                         filter |= v.removeValue(k, aCause);
                         //                System.out.println("first delete: " + v.getName() + ", " + k);
-                    } else if (notGamma.contain(varIdx) && notA.contain(valIdx)) {
+                    } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         if (!graphLinkedMatrix[varIdx].get(val2Var[valIdx]) && !checkSCC(varIdx, valIdx)) {
                             Measurer.enterP2();
                             if (valIdx == var2Val[varIdx]) {

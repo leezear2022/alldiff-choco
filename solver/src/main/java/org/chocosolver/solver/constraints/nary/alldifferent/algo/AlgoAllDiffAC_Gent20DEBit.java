@@ -276,7 +276,7 @@ public class AlgoAllDiffAC_Gent20DEBit {
             public void execute(int i) throws ContradictionException {
                 DE.push(SCCfinder.getIntTuple2Long(var, valIdx2ValNodeIdx(val2Idx.get(i))));
                 bitDE[var].set(val2Idx.get(i));
-                if (!triggeringVars.contain(var)) {
+                if (!triggeringVars.contains(var)) {
                     triggeringVars.add(var);
                 }
             }
@@ -644,7 +644,7 @@ public class AlgoAllDiffAC_Gent20DEBit {
 
         // 添加非匹配边 val<--var; val<--t
         for (int j = 0; j < numValues; ++j) {
-            if (freeNode.contain(j)) {
+            if (freeNode.contains(j)) {
                 // free node: val->t
                 graph.addArc(valIdx2ValNodeIdx(j), arity);
             } else {

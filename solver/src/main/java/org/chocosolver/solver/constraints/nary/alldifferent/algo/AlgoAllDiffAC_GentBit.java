@@ -19,8 +19,6 @@ import org.chocosolver.util.objects.RSetPartition;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
-import java.util.Arrays;
-
 /**
  * Algorithm of Alldifferent with AC
  * <p>
@@ -267,7 +265,7 @@ public class AlgoAllDiffAC_GentBit {
             @Override
             public void execute(int i) throws ContradictionException {
                 DE.push(getIntTuple2Long(var, val2Idx.get(i) + addArity));
-                if (!triggeringVars.contain(var)) {
+                if (!triggeringVars.contains(var)) {
                     triggeringVars.add(var);
                 }
             }

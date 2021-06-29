@@ -357,6 +357,7 @@ public class StrongConnectivityFinderR3 {
         int v = restriction.nextSetBit(0);
         while (v >= 0) {
 //            if (strongConnect_EDR(v)) {
+//            System.out.printf("out: %d\n", v);
             if (strongConnect_ED(v)) {
                 return true;
             }
@@ -486,7 +487,7 @@ public class StrongConnectivityFinderR3 {
                         while (stackNode != curNode) {
                             stackNode = popStack();
 //                            if (cid == 30)
-//                                System.out.println("pop: " + stackNode + ", " + nbSCC);
+//                            System.out.println("pop: " + stackNode + ", " + nbSCC);
 
                             partition.add(stackNode);
                             node2SCC[stackNode] = nbSCC;

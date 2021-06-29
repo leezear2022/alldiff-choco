@@ -1,5 +1,7 @@
 package org.chocosolver.util.objects;
 
+import java.util.BitSet;
+
 /**
  * Implementation based on "2013_TRICS_Sparse-Sets for Domain Implementation".
  * <p/>
@@ -56,7 +58,7 @@ public class SparseSet {
         limit = -1;
     }
 
-    public boolean contain(int e) {
+    public boolean contains(int e) {
         return sparse[e] <= limit;
     }
 
@@ -199,11 +201,39 @@ public class SparseSet {
         return s.toString();
     }
 
-    int[] toArray() {
+//    int[] toArray() {
+//        int[] arr = new int[limit + 1];
+//        for (int i = 0; i <= limit; i++) {
+//            arr[i] = dense[i];
+//        }
+//        return arr;
+//    }
+
+    public int[] toArray() {
         int[] arr = new int[limit + 1];
         for (int i = 0; i <= limit; i++) {
             arr[i] = dense[i];
         }
         return arr;
+    }
+
+    public int validSize() {
+        return limit + 1;
+    }
+
+    public int last() {
+        return dense[limit];
+    }
+
+    public int popLast() {
+        return dense[limit--];
+    }
+
+    public void toBitSet(BitSet a) {
+        a.clear();
+//        int[] arr = new int[limit + 1];
+        for (int i = 0; i <= limit; i++) {
+            a.set(dense[i]);
+        }
     }
 }

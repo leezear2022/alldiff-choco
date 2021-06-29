@@ -5,6 +5,7 @@ import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.memory.IStateBitSet;
 
 import java.util.Arrays;
+import java.util.BitSet;
 
 public class RSetPartition {
     int[] dense;
@@ -97,7 +98,7 @@ public class RSetPartition {
     }
 
     private int getSCCEndIndex(int index) {
-        return index == size ? size : sccStart.nextClearBit(index + 1) - 1;
+        return index < lastPos ? sccStart.nextClearBit(index + 1) - 1 : lastPos;
     }
 
     private int getSCCStartIndex(int index) {
@@ -151,6 +152,53 @@ public class RSetPartition {
         indices.clear();
         for (int i = sccStart.nextClearBit(0); i < size; i = sccStart.nextClearBit(i + 1)) {
             indices.add(i);
+        }
+    }
+
+    public void getPartitionBitSetMask(int sccStartIndex, BitSet restriction) {
+        restriction.clear();
+        for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i < end; i++) {
+            restriction.set(dense[i]);
+        }
+    }
+
+    public void getPartitionBitSetMaskAndVars(int sccStartIndex, BitSet restriction, SparseSet vars, SparseSet vals, int arity, int numValue) {
+        restriction.clear();
+        vars.clear();
+        vals.clear();
+        int addArity = arity + 1;
+        for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
+            int valIdx = dense[i];
+            restriction.set(valIdx);
+        }
+
+        for (int i = restriction.nextSetBit(0); i != -1 && i < arity; i = restriction.nextSetBit(i + 1)) {
+            vars.add(i);
+        }
+
+        for (int i = restriction.nextSetBit(addArity), ub = addArity + numValue; i != -1 && i < ub; i = restriction.nextSetBit(i + 1)) {
+            vals.add(i - addArity);
+        }
+    }
+
+    public void getPartitionBitSetMaskAndVars(int sccStartIndex, BitSet restriction, SparseSet vars, SparseSet vars2, SparseSet vals, int arity, int numValue) {
+        restriction.clear();
+        vars.clear();
+        vars2.clear();
+        vals.clear();
+        int addArity = arity + 1;
+        for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
+            int valIdx = dense[i];
+            restriction.set(valIdx);
+        }
+
+        for (int i = restriction.nextSetBit(0); i != -1 && i < arity; i = restriction.nextSetBit(i + 1)) {
+            vars.add(i);
+            vars2.add(i);
+        }
+
+        for (int i = restriction.nextSetBit(addArity), ub = addArity + numValue; i != -1 && i < ub; i = restriction.nextSetBit(i + 1)) {
+            vals.add(i - addArity);
         }
     }
 

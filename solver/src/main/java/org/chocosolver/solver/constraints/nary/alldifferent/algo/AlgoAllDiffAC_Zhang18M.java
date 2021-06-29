@@ -358,7 +358,7 @@ public class AlgoAllDiffAC_Zhang18M {
             valUnmatchedVar[valIdx].iterateValid();
             while (valUnmatchedVar[valIdx].hasNextValid()) {
                 varIdx = valUnmatchedVar[valIdx].next();
-                if (notGamma.contain(varIdx)) {
+                if (notGamma.contains(varIdx)) {
                     fifo[indexLast++] = varIdx;
                     notGamma.remove(varIdx);
                     restriction.clear(varIdx);
@@ -372,7 +372,7 @@ public class AlgoAllDiffAC_Zhang18M {
                 valUnmatchedVar[valIdx].iterateValid();
                 while (valUnmatchedVar[valIdx].hasNextValid()) {
                     varIdx = valUnmatchedVar[valIdx].next();
-                    if (notGamma.contain(varIdx)) {
+                    if (notGamma.contains(varIdx)) {
                         fifo[indexLast++] = varIdx;
                         notGamma.remove(varIdx);
                         restriction.clear(varIdx);
@@ -441,12 +441,12 @@ public class AlgoAllDiffAC_Zhang18M {
                 int ub = v.getUB();
                 for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
                     int valIdx = val2Idx.get(k);
-                    if (!notGamma.contain(varIdx) && notA.contain(valIdx)) {
+                    if (!notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         ++Measurer.numDelValuesP1;
                         Measurer.enterP1();
                         filter |= v.removeValue(k, aCause);
 //                        System.out.println("first delete: " + v.getName() + ", " + k + ", " + filter + ", " + Measurer.numDelValuesP1);
-                    } else if (notGamma.contain(varIdx) && notA.contain(valIdx)) {
+                    } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         int matchedVarIdx = val2Var[valIdx];
 //                        System.out.println(varIdx + ", " + valIdx + ", " + nodeSCC[varIdx] + ", " + nodeSCC[matchedVarIdx]);
                         if (nodeSCC[varIdx] != nodeSCC[matchedVarIdx]) {
@@ -462,7 +462,7 @@ public class AlgoAllDiffAC_Zhang18M {
 //                                System.out.println("second delete: " + v.getName() + ", " + k + ", " + filter + ", " + Measurer.numDelValuesP2);
                                 filter |= v.removeValue(k, aCause);
                             }
-                        } else if (singleton.contain(nodeSCC[varIdx])){
+                        } else if (singleton.contains(nodeSCC[varIdx])){
                             Measurer.enterP2();
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
