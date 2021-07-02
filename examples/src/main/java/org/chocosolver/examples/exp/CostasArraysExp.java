@@ -129,7 +129,7 @@ public class CostasArraysExp {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 14; i <= 25; i += 2) {
+        for (int i = 14; i <= 17; i ++) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);

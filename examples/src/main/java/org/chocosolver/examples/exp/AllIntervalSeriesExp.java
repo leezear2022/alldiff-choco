@@ -79,8 +79,8 @@ public class AllIntervalSeriesExp {
             }
         }
 
-        model.allDifferent(vars, "BC").post();
-        model.allDifferent(dist, "BC").post();
+        model.allDifferent(vars, algo).post();
+        model.allDifferent(dist, algo).post();
 
         // break symetries
         model.arithm(vars[1], ">", vars[0]).post();
@@ -141,7 +141,7 @@ public class AllIntervalSeriesExp {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 20; i <= 200; i += 5) {
+        for (int i = 4; i <= 30; i += 2) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);

@@ -147,9 +147,9 @@ public class LangfordExp {
 //        int[] ks = {20, 100};
         // number in set
 //        int[] ns = {17, 25, 30, 37, 45};
-        for (int i = 3; i <= 5; i++) {
+        for (int i = 2; i <= 3; i++) {
 //            int kk = ks[i];
-            for (int j = 20; j <= 100; j += 5) {
+            for (int j = 2; j <= 20; j += 2) {
 //                int nn = ns[j];
                 // instance name
                 String insName = name + "-" + i + "-" + j;

@@ -202,7 +202,7 @@ public class PartitionExp {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 64; i <= 512; i += 32) {
+        for (int i = 64; i <= 512; i += 16) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);

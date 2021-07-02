@@ -106,12 +106,13 @@ public class GolombRulerExp {
 //                "AC_REGIN",
                 "ACFair",
                 "ACZhang18",
-                "ACZhang18M",
+//                "ACZhang18M",
 //                "ACZhang20",
                 "AC20",
                 "WordRam",
+//                "ACNaive",
                 "ACNaiveNew",
-                "BC",
+//                "BC",
         };
 
         //get local time
@@ -134,7 +135,7 @@ public class GolombRulerExp {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 50; i <= 80; i++) {
+        for (int i = 12; i < 15; i++) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);
