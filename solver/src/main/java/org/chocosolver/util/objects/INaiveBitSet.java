@@ -47,6 +47,7 @@ public interface INaiveBitSet {
 
     void setAfterMinus(INaiveBitSet a, INaiveBitSet b);
 
+
     void setAfterAnd(INaiveBitSet a, INaiveBitSet b);
 
     int nextSetBit(int fromIndex);

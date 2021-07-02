@@ -23,8 +23,9 @@ import org.kohsuke.args4j.Option;
 public abstract class AbstractNQueen extends AbstractProblem {
 
     @Option(name = "-q", usage = "Number of queens.", required = false)
+    protected
     int n = 4;
-    IntVar[] vars;
+    protected IntVar[] vars;
 
     @Override
     public void configureSearch() {

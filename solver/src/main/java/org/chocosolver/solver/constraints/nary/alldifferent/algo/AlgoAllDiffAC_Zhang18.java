@@ -437,6 +437,7 @@ public class AlgoAllDiffAC_Zhang18 {
                 int ub = v.getUB();
                 for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
                     int valIdx = val2Idx.get(k);
+//                    System.out.println(varIdx + ", " + valIdx + ", " + notGamma.contains(varIdx) + ", " + notA.contains(valIdx));
                     if (!notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         ++Measurer.numDelValuesP1;
                         Measurer.enterP1();

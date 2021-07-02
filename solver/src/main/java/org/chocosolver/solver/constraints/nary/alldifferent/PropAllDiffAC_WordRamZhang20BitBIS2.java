@@ -11,8 +11,8 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_WordRamZhang20BIS;
-//import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_WordRamZhang20BIS2;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_WordRamZhang20BitBIS;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_WordRamZhang20BitBIS2;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
@@ -34,13 +34,13 @@ import org.chocosolver.util.ESat;
  * @author Jia'nan Chen
  */
 
-public class PropAllDiffAC_WordRamZhang20BIS extends Propagator<IntVar> {
+public class PropAllDiffAC_WordRamZhang20BitBIS2 extends Propagator<IntVar> {
 
     //***********************************************************************************0
     // VARIABLES
     //***********************************************************************************
 
-    protected AlgoAllDiffAC_WordRamZhang20BIS filter;
+    protected AlgoAllDiffAC_WordRamZhang20BitBIS2 filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -52,9 +52,9 @@ public class PropAllDiffAC_WordRamZhang20BIS extends Propagator<IntVar> {
      *
      * @param variables array of integer variables
      */
-    public PropAllDiffAC_WordRamZhang20BIS(IntVar[] variables) {
+    public PropAllDiffAC_WordRamZhang20BitBIS2(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-        filter = new AlgoAllDiffAC_WordRamZhang20BIS(variables, this, this.getModel());
+        filter = new AlgoAllDiffAC_WordRamZhang20BitBIS2(variables, this, this.getModel());
     }
 
     //***********************************************************************************

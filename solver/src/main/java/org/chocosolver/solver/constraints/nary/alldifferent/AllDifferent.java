@@ -50,6 +50,7 @@ public class AllDifferent extends Constraint {
     public static final String WordRamZhang20BIS = "WordRamZhang20BIS";
     public static final String WordRamZhang20IS = "WordRamZhang20IS";
     public static final String WordRamZhang20BitBIS = "WordRamZhang20BitBIS";
+    public static final String WordRamZhang20BitBIS2 = "WordRamZhang20BitBIS2";
     public static final String ACZhang18 = "ACZhang18";
     public static final String ACZhang20 = "ACZhang20";
     public static final String ACZhang20Bit = "ACZhang20Bit";
@@ -134,6 +135,8 @@ public class AllDifferent extends Constraint {
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20IS(VARS)};
             case WordRamZhang20BitBIS:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20BitBIS(VARS)};
+            case WordRamZhang20BitBIS2:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20BitBIS2(VARS)};
             case DEFAULT:
             default: {
                 // adds a Probabilistic AC (only if at least some variables have an enumerated domain)

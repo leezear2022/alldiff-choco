@@ -181,15 +181,15 @@ public class RSetPartition {
         }
     }
 
-    public void getPartitionBitSetMaskAndVars(int sccStartIndex, BitSet restriction, SparseSet vars, SparseSet vars2, SparseSet vals, int arity, int numValue) {
+    public void getPartitionBitSetMaskAndVars(int sccStartIndex, BitSet restriction, SparseSet vars, SparseSet vars2, SparseSet vals, SparseSet vals2, int arity, int numValue) {
         restriction.clear();
         vars.clear();
         vars2.clear();
         vals.clear();
+        vals2.clear();
         int addArity = arity + 1;
         for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
-            int valIdx = dense[i];
-            restriction.set(valIdx);
+            restriction.set(dense[i]);
         }
 
         for (int i = restriction.nextSetBit(0); i != -1 && i < arity; i = restriction.nextSetBit(i + 1)) {
@@ -199,6 +199,32 @@ public class RSetPartition {
 
         for (int i = restriction.nextSetBit(addArity), ub = addArity + numValue; i != -1 && i < ub; i = restriction.nextSetBit(i + 1)) {
             vals.add(i - addArity);
+            vals2.add(i - addArity);
+        }
+    }
+
+    public void getPartitionBitSetMaskAndVars(int sccStartIndex, BitSet restriction, SparseSet vars, SparseSet vars2, SparseSet vals, SparseSet vals2, SparseSet vals3, int arity, int numValue) {
+        restriction.clear();
+        vars.clear();
+        vars2.clear();
+        vals.clear();
+        vals2.clear();
+        vals3.clear();
+        int addArity = arity + 1;
+        for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
+            restriction.set(dense[i]);
+        }
+
+        for (int i = restriction.nextSetBit(0); i != -1 && i < arity; i = restriction.nextSetBit(i + 1)) {
+            vars.add(i);
+            vars2.add(i);
+        }
+
+        for (int i = restriction.nextSetBit(addArity), ub = addArity + numValue; i != -1 && i < ub; i = restriction.nextSetBit(i + 1)) {
+            int a = i - addArity;
+            vals.add(a);
+            vals2.add(a);
+            vals3.add(a);
         }
     }
 
