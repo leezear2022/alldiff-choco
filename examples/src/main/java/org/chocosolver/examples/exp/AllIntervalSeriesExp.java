@@ -9,7 +9,6 @@
  */
 package org.chocosolver.examples.exp;
 
-import org.chocosolver.examples.AbstractProblem;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.strategy.Search;
@@ -109,17 +108,7 @@ public class AllIntervalSeriesExp {
     public static void main(String[] args) throws IOException {
         String name = "AllInterval";
         // algorithms
-        String[] algorithms = new String[]{
-//                "AC_REGIN",
-                "ACFair",
-                "ACZhang18",
-//                "ACZhang18M",
-//                "ACZhang20",
-                "AC20",
-                "WordRam",
-                "ACNaiveNew",
-//                "BC",
-        };
+        String[] algorithms = ExpConfig.algorithms;
 
         //get local time
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd_HH_mm_ss");

@@ -68,17 +68,7 @@ public class NQueenGlobal extends AbstractNQueen {
     public static void main(String[] args) throws IOException {
         String name = "NQueen";
         // algorithms
-        String[] algorithms = new String[]{
-//                "AC_REGIN",
-                "ACFair",
-                "ACZhang18",
-                "ACZhang18M",
-//                "ACZhang20",
-                "AC20",
-                "WordRam",
-                "ACNaiveNew",
-                "BC",
-        };
+        String[] algorithms = ExpConfig.algorithms;
 
         //get local time
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd_HH_mm_ss");
@@ -100,7 +90,7 @@ public class NQueenGlobal extends AbstractNQueen {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 4; i <= 200; i+=5) {
+        for (int i = 5; i <= 500; i+=5) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);

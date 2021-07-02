@@ -9,7 +9,6 @@
  */
 package org.chocosolver.examples.exp;
 
-import org.chocosolver.examples.AbstractProblem;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.search.strategy.Search;
@@ -97,17 +96,7 @@ public class CostasArraysExp {
     public static void main(String[] args) throws IOException {
         String name = "CostasArrays";
         // algorithms
-        String[] algorithms = new String[]{
-//                "AC_REGIN",
-                "ACFair",
-                "ACZhang18",
-//                "ACZhang18M",
-//                "ACZhang20",
-                "AC20",
-                "WordRam",
-                "ACNaiveNew",
-//                "BC",
-        };
+        String[] algorithms = ExpConfig.algorithms;
 
         //get local time
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd_HH_mm_ss");
@@ -129,7 +118,7 @@ public class CostasArraysExp {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 14; i <= 17; i ++) {
+        for (int i = 14; i <= 17; i++) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);

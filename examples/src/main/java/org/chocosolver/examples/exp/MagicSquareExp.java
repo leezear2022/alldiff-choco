@@ -104,17 +104,7 @@ public class MagicSquareExp {
     public static void main(String[] args) throws IOException {
         String name = "MagicSquare";
         // algorithms
-        String[] algorithms = new String[]{
-//                "AC_REGIN",
-                "ACFair",
-                "ACZhang18",
-                "ACZhang18M",
-//                "ACZhang20",
-                "AC20",
-                "WordRam",
-                "ACNaiveNew",
-                "BC",
-        };
+        String[] algorithms = ExpConfig.algorithms;
 
         //get local time
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd_HH_mm_ss");

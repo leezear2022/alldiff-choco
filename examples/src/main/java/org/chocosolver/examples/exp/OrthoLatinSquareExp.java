@@ -12,95 +12,147 @@ package org.chocosolver.examples.exp;
 import org.chocosolver.examples.AbstractProblem;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
+import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.search.strategy.Search;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.tools.StringUtils;
 import org.kohsuke.args4j.Option;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
+import static java.lang.System.arraycopy;
 import static java.lang.System.out;
-import static org.chocosolver.solver.search.strategy.Search.inputOrderLBSearch;
+
 
 /**
- * <a href="http://en.wikipedia.org/wiki/Latin_square">wikipedia</a>:<br/>
- * "A Latin square is an n x n array filled with n different Latin letters,
- * each occurring exactly once in each row and exactly once in each column"
+ * Orthogonal latin square
  * <br/>
  *
  * @author Charles Prud'homme
  * @since 15/06/11
  */
-public class LatinSquareExp {
+public class OrthoLatinSquareExp extends AbstractProblem {
 
-    @Option(name = "-n", usage = "Latin square size.", required = false)
-    int m = 20;
-    IntVar[] vars;
-
+    @Option(name = "-n", usage = "Ortho latin square size.", required = false)
+    int m = 5;
+    IntVar[] square1, square2, vars;
+    Constraint[] ALLDIFFS;
     String algo;
     Model model;
 
-    public LatinSquareExp(Model model, int n, String algo) {
+    public OrthoLatinSquareExp(Model model, int n, String algo) {
         this.model = model;
         this.m = n;
         this.algo = algo;
     }
 
+    @Override
     public void buildModel() {
-//        model = new Model("Latin square");
-        vars = new IntVar[m * m];
+        model = new Model();
+        int mm = m * m;
+        square1 = model.intVarArray("s1", mm, 1, m, true);
+        square2 = model.intVarArray("s2", mm, 1, m, true);
+        vars = model.intVarArray("vars", mm, 0, mm - 1, false);
+
+        List<Constraint> ADS = new ArrayList<>();
+
+        Constraint cc = model.allDifferent(vars, algo);
+        cc.post();
+        ADS.add(cc);
+
+        int[] mod = new int[mm];
+        int[] div = new int[mm];
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < m; j++) {
-                vars[i * m + j] = model.intVar("C" + i + "_" + j, 0, m - 1, false);
+                mod[i * m + j] = j + 1;
+                div[i * m + j] = i + 1;
             }
         }
-        // Constraints
+        for (int i = 0; i < mm; i++) {
+            model.element(square1[i], mod, vars[i], 0).post();
+            model.element(square2[i], div, vars[i], 0).post();
+        }
+
+        // Rows
         for (int i = 0; i < m; i++) {
-            IntVar[] row = new IntVar[m];
-            IntVar[] col = new IntVar[m];
-            for (int x = 0; x < m; x++) {
-                row[x] = vars[i * m + x];
-                col[x] = vars[x * m + i];
+            IntVar[] ry = new IntVar[m];
+            arraycopy(square1, i * m, ry, 0, m);
+            cc = model.allDifferent(ry, algo);
+            cc.post();
+            ADS.add(cc);
+            ry = new IntVar[m];
+            arraycopy(square2, i * m, ry, 0, m);
+            cc = model.allDifferent(ry, algo);
+            cc.post();
+            ADS.add(cc);
+        }
+        for (int j = 0; j < m; j++) {
+            IntVar[] cy = new IntVar[m];
+            for (int i = 0; i < m; i++) {
+                cy[i] = square1[i * m + j];
             }
-            model.allDifferent(col, algo).post();
-            model.allDifferent(row, algo).post();
+            cc = model.allDifferent(cy, algo);
+            cc.post();
+            ADS.add(cc);
+            cy = new IntVar[m];
+            for (int i = 0; i < m; i++) {
+                cy[i] = square2[i * m + j];
+            }
+            cc = model.allDifferent(cy, algo);
+            cc.post();
+            ADS.add(cc);
+        }
+        ALLDIFFS = new Constraint[ADS.size()];
+        ADS.toArray(ALLDIFFS);
+        //TODO: ajouter LEX
+        for (int i = 1; i < m; i++) {
+            IntVar[] ry1 = new IntVar[m];
+            IntVar[] ry2 = new IntVar[m];
+            for (int j = 0; j < m; j++) {
+                ry1[j] = square1[(i - 1) * m + j];
+                ry2[j] = square2[i * m + j];
+            }
+            model.lexLess(ry1, ry2).post();
         }
     }
 
+    @Override
     public void configureSearch() {
-        model.getSolver().setSearch(inputOrderLBSearch(vars));
     }
 
+    @Override
     public void solve() {
         model.getSolver().solve();
 
+        System.out.println(String.format("Ortho latin square(%s)", m));
         StringBuilder st = new StringBuilder();
-        String line = "+";
+        st.append("\t");
         for (int i = 0; i < m; i++) {
-            line += "----+";
-        }
-        line += "\n";
-        st.append(line);
-        for (int i = 0; i < m; i++) {
-            st.append("|");
             for (int j = 0; j < m; j++) {
-                st.append(StringUtils.pad((char) (vars[i * m + j].getValue() + 97) + "", -3, " ")).append(" |");
+                st.append(String.format("%d ", square1[i * m + j].getValue()));
             }
-            st.append(MessageFormat.format("\n{0}", line));
+            st.append("\n\t");
         }
-        st.append("\n\n\n");
+        st.append("\n\t");
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < m; j++) {
+                st.append(String.format("%d ", square2[i * m + j].getValue()));
+            }
+            st.append("\n\t");
+        }
         System.out.println(st.toString());
     }
 
+
     public static void main(String[] args) throws IOException {
-        String name = "LantinSquare";
+        String name = "OrthoLatinSquare";
         // algorithms
         String[] algorithms = ExpConfig.algorithms;
 
@@ -124,7 +176,7 @@ public class LatinSquareExp {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 20; i <= 50; i++) {
+        for (int i = 2; i <= 10; i++) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);
