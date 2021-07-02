@@ -202,7 +202,7 @@ public class OrthoLatinSquareExp extends AbstractProblem {
                 Measurer.initial();
                 Measurer.maxAllDiffArity = 0l;
                 Model model = new Model();
-                LatinSquareExp instances = new LatinSquareExp(model, i, algorithm);
+                OrthoLatinSquareExp instances = new OrthoLatinSquareExp(model, i, algorithm);
                 instances.buildModel();
 
                 Solver solver = model.getSolver();
