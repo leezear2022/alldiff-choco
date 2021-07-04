@@ -52,11 +52,11 @@ public class testAllDiff {
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
 //                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
 //                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0015-m1.xml",
-                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-07.xml",
+//                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-07.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
-//                "G:/AllDiffBench/LatinSquare/qwh-o30-h374-04.xml",
-//                "D:\\AllDiffBench\\NumberPartitioning\\NumberPartitioning-032.xml"
+//                "C:/exp/AllDiffBench/GolombRuler/GolombRuler-05-a3.xml",
+                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml"
         };
         XCSPParser parser = new XCSPParser();
 //        String[] algorithms = new String[]{
@@ -88,7 +88,7 @@ public class testAllDiff {
 ////                "AC_ZHANG",
 //        };
         String[] algorithms = new String[]{
-//                "ACFair",
+                "AC",
 //                "ACFair",
 //                "ACChen",
 //                "ACZhang20Bit",
@@ -110,7 +110,7 @@ public class testAllDiff {
                 "ACZhang18",
                 "WordRamZhang20BitBIS",
                 "WordRamZhang20BitBIS2",
-//                "ACNaive",
+                "ACNaive",
         };
         int runNum = 1;
 

@@ -12,11 +12,6 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
-import org.chocosolver.util.objects.setDataStructures.ISet;
-
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Iterator;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -39,52 +34,51 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     static public int num = 0;
 
     // 约束的编号
-    protected int id;
-    protected long numCall = 0;
+    private int id;
+    private long xixi = 0;
 
-    protected int arity;
-    protected IntVar[] vars;
-    protected ICause aCause;
+    private int arity;
+    private IntVar[] vars;
+    private ICause aCause;
 
     // 新增一点（视为变量）
-    protected int addArity;
+    private int addArity;
 
     // 自由值集合
-    protected SparseSet freeNode;
+    private SparseSet freeNode;
 
     // 以下是bit版本所需数据结构========================
     // numValue是二部图中取值编号的个数，numBit是二部图的最大边数
-    protected int numValues;
-    protected int numNodes;
+    private int numValues;
     // 值到索引
-    protected int[] idx2Val;
+    private int[] idx2Val;
     // 索引到值
-    protected TIntIntHashMap val2Idx;
+    private TIntIntHashMap val2Idx;
 
     // 与值相连的变量
-    protected INaiveBitSet[] B;
-    protected INaiveBitSet[] D;
+    private INaiveBitSet[] B;
+    private INaiveBitSet[] D;
 
     // 已访问过的变量和值
-//    protected INaiveBitSet visitedVariables;
-    protected INaiveBitSet unVisitedVariables;
-    //    protected INaiveBitSet value_visited_;
-    protected INaiveBitSet unVisitedValues;
-    protected INaiveBitSet needVisitValues;
-    //    protected INaiveBitSet unMatchedValues;
-    protected INaiveBitSet matchedValues;
-//    protected INaiveBitSet matchedMasks;
+//    private INaiveBitSet visitedVariables;
+    private INaiveBitSet unVisitedVariables;
+    //    private INaiveBitSet value_visited_;
+    private INaiveBitSet unVisitedValues;
+    private INaiveBitSet needVisitValues;
+    //    private INaiveBitSet unMatchedValues;
+    private INaiveBitSet matchedValues;
+//    private INaiveBitSet matchedMasks;
 
-    //    protected INaiveBitSet varSingletonMask;
-//    protected INaiveBitSet valSingletonMask;
-//    protected INaiveBitSet varTmpMask;
+    //    private INaiveBitSet varSingletonMask;
+//    private INaiveBitSet valSingletonMask;
+//    private INaiveBitSet varTmpMask;
     // matching
-    protected int[] val2Var;
-    protected int[] var2Val;
+    private int[] val2Var;
+    private int[] var2Val;
 
     // 记录队列
-    protected int[] visiting_;
-    protected int[] variable_visited_from_;
+    private int[] visiting_;
+    private int[] variable_visited_from_;
 
     long startTime;
     //
@@ -93,34 +87,34 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     // for bit DFS Tarjan
 
     //栈
-    protected int[] varStack;
-    protected int[] valStack;
-    protected INaiveBitSet varIsInStack;
-    protected INaiveBitSet valIsInStack;
+    private int[] varStack;
+    private int[] valStack;
+    private INaiveBitSet varIsInStack;
+    private INaiveBitSet valIsInStack;
     int varStackIdx;
     int valStackIdx;
 
     // 标记SCC
-    protected int nbSCC;
-    protected int[] varSCC;
-    protected int[] valSCC;
+    private int nbSCC;
+    private int[] varSCC;
+    private int[] valSCC;
 
-    protected int maxDFS = 1;
-    protected int[] varDFSNum;
-    protected int[] valDFSNum;
-    protected int[] varLowLink;
-    protected int[] valLowLink;
-    protected boolean hasSCCSplit = false;
-    protected int sccSize = 0;
+    private int maxDFS = 1;
+    private int[] varDFSNum;
+    private int[] valDFSNum;
+    private int[] varLowLink;
+    private int[] valLowLink;
+    private boolean hasSCCSplit = false;
+    private int sccSize = 0;
 
     int sinkDFSNum;
     int sinkLowLink;
     boolean sinkIsInStack;
 
-    protected INaiveBitSet singleton;
-    protected boolean sinkIsUnvisited;
+    private INaiveBitSet singleton;
+    private boolean sinkIsUnvisited;
 
-    protected int endBitIndex = 64;
+    private int endBitIndex = 64;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -225,8 +219,6 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-//        System.out.println("---------------");
-//        System.out.println("propagate cid: " + id);
         Measurer.enterProp();
         startTime = System.nanoTime();
         fillBandD();
@@ -244,7 +236,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     // Initialization
     //***********************************************************************************
 
-    protected void printDomains() {
+    private void printDomains() {
         System.out.println("-----print domain-------");
         for (int i = 0; i < numValues; ++i) {
             System.out.println("val " + "i: " + B[i]);
@@ -259,16 +251,16 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         }
     }
 
-    protected void fillBandD() {
+    private void fillBandD() {
         for (int i = 0; i < numValues; ++i) {
             B[i].clear();
         }
 
-//        IntVar v;
+        IntVar v;
         // 填充B和D
         for (int i = 0; i < arity; ++i) {
             D[i].clear();
-            IntVar v = vars[i];
+            v = vars[i];
             for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
                 int valIdx = val2Idx.get(j);
                 D[i].set(valIdx);
@@ -277,7 +269,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         }
     }
 
-    protected void MakeAugmentingPath(int start) {
+    private void MakeAugmentingPath(int start) {
         // Do a BFS and use visiting_ as a queue, with num_visited pointing
         // at its begin() and num_to_visit its end().
         // To switch to the augmenting path once a nonmatched value was found,
@@ -421,7 +413,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         }
     }
 
-    protected void findMaximumMatching() throws ContradictionException {
+    private void findMaximumMatching() throws ContradictionException {
 //        // !! 可做增量
 //        for (int i = 0; i < numValues; ++i) {
 //            B[i].clear();
@@ -515,7 +507,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
     // PRUNING
     //***********************************************************************************
 //
-//    protected void distinguish() {
+//    private void distinguish() {
 //        notGamma.fill();
 //        notA.fill();
 //        gammaMask.clear();
@@ -546,7 +538,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //
 //    }
 //
-//    protected void initiateMatrix() {
+//    private void initiateMatrix() {
 //        // 重置两个矩阵
 //        // 只重置notGamma的变量
 //        notGamma.iterateValid();
@@ -564,7 +556,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        }
 //    }
 //
-//    protected boolean filter() throws ContradictionException {
+//    private boolean filter() throws ContradictionException {
 //        distinguish();
 //        initiateMatrix();
 //        // 这里判断一下，如果notGamma为空则不用进行如下步骤
@@ -608,7 +600,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        return filter;
 //    }
 //
-//    protected boolean checkSCC(int varIdx, int valIdx) {
+//    private boolean checkSCC(int varIdx, int valIdx) {
 ////        System.out.println("check:" + varIdx + ", " + valIdx);
 //        // 若没有 就需要BFS一下Frontier没有，就表示不用扩展了
 //        // 注意一下return退出时frontier正确
@@ -625,11 +617,9 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        return false;
 //    }
 
-    protected boolean filter() throws ContradictionException {
+    private boolean filter() throws ContradictionException {
         boolean filter = false;
         findAllSCC();
-//        System.out.println(Arrays.toString(varSCC));
-//        System.out.println(Arrays.toString(valSCC));
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
@@ -654,7 +644,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         return filter;
     }
 
-    protected void findAllSCC() {
+    private void findAllSCC() {
         // initialization
         clearVarStack();
         clearValStack();
@@ -686,11 +676,9 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         singleton.flip();
 //        System.out.println("----------");
 //        System.out.println("singleton:" + singleton);
-//        System.out.println("singleton: " + singleton);
         for (int varIdx = singleton.firstSetBit(); varIdx != singleton.end(); varIdx = singleton.nextSetBit(varIdx + 1)) {
 //            if (unVisitedVariables.get(varIdx)) {
 //                System.out.println(varIdx);
-//            System.out.printf("out: %d\n", varIdx);
             strongConnectVar(varIdx);
 //            }
         }
@@ -699,7 +687,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        System.out.println(Arrays.toString(valSCC));
     }
 
-    protected void findSingletons() {
+    private void findSingletons() {
         singleton.clear();
         for (int i = 0; i < arity; i++) {
             // 变量只有一个值，即只有匹配值
@@ -730,7 +718,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        singleton.flip();
     }
 
-    protected void strongConnectVar(int curNode) {
+    private void strongConnectVar(int curNode) {
         pushVarStack(curNode);
         varDFSNum[curNode] = maxDFS;
         varLowLink[curNode] = maxDFS;
@@ -758,7 +746,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        int matchedVal = var2Val[curNode];
 //        for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
 //            values = D[curNode].getWord(iWord);
-//            iBase = iWord * 63;
+//            iBase = iWord * 64;
 //            for (int i = nextSetBit(values, 0); i != 64; values &= ~(1L << i),i = nextSetBit(values, 0)) {
 //                newNode = iBase + i;
 ////                System.out.println(newNode);
@@ -787,7 +775,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         int i = 0;
         for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
             values = D[curNode].getWord(iWord) & valIsInStack.getWord(iWord);
-            iBase = iWord * 63;
+            iBase = iWord * 64;
 //            System.out.println(D[curNode]);
 //            System.out.println(curNode + ": " + Long.toBinaryString(D[curNode].getWord(iWord)) + ": " + Long.toBinaryString(valIsInStack.getWord(iWord)) + ": " + Long.toBinaryString(values));
 
@@ -800,6 +788,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
             values = D[curNode].getWord(iWord) & unVisitedValues.getWord(iWord);
             for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
+//                System.out.println("var -> val: " + curNode + ", " + newNode);
                 strongConnectVal(newNode);
                 varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
                 values &= unVisitedValues.getWord(iWord);
@@ -817,7 +806,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        System.out.println("back");
     }
 
-    protected void strongConnectVal(int curNode) {
+    private void strongConnectVal(int curNode) {
         pushValStack(curNode);
         valDFSNum[curNode] = maxDFS;
         valLowLink[curNode] = maxDFS;
@@ -833,6 +822,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
                 }
             } else {
+//                System.out.println("val -> var: " + curNode + ", " + matchedVar);
                 strongConnectVar(matchedVar);
                 valLowLink[curNode] = Math.min(valLowLink[curNode], varLowLink[matchedVar]);
             }
@@ -845,6 +835,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
                 }
             } else {
+//                System.out.println("val -> sink");
                 strongConnectSink();
                 valLowLink[curNode] = Math.min(valLowLink[curNode], sinkLowLink);
             }
@@ -891,7 +882,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        System.out.println("back");
     }
 
-    protected void strongConnectSink() {
+    private void strongConnectSink() {
         sinkIsInStack = true;
         sinkDFSNum = maxDFS;
         sinkLowLink = maxDFS;
@@ -919,6 +910,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
 //                }
 //            } else {
+//                System.out.println("sink -> val: " + newNode);
 //                strongConnectVal(newNode);
 //                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
 //            }
@@ -927,9 +919,9 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         long values = 0;
         int newNode = 0, iBase = 0;
         int i = 0;
-        for (int iWord = matchedValues.firstSetIndex(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
+        for (int iWord = matchedValues.firstSetBit(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
             values = matchedValues.getWord(iWord) & ~unVisitedValues.getWord(iWord) & valIsInStack.getWord(iWord);
-            iBase = iWord * 63;
+            iBase = iWord * 64;
             for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
                 sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
@@ -946,6 +938,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
             values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
             for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
+//                System.out.println("sink -> val: " + newNode);
                 strongConnectVal(newNode);
                 sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
                 values &= unVisitedValues.getWord(iWord);
@@ -976,7 +969,7 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
 //        System.out.println("back");
     }
 
-    protected void processSCC(int rootNum) {
+    private void processSCC(int rootNum) {
 //        for (int valIdx = valIsInStack.firstSetBit(); valIdx !=INaiveBitSet.INDEX_OVERFLOW; valIdx=valIsInStack.++) {
 //
 //        }
@@ -1011,33 +1004,33 @@ public class AlgoAllDiffAC_WordRam extends AlgoAllDiffAC_Naive {
         nbSCC++;
     }
 
-    protected void pushVarStack(int v) {
+    private void pushVarStack(int v) {
         varStack[varStackIdx++] = v;
         varIsInStack.set(v);
     }
 
-    protected void clearVarStack() {
+    private void clearVarStack() {
         varIsInStack.clear();
         varStackIdx = 0;
     }
 
-    protected int popVarStack() {
+    private int popVarStack() {
         int x = varStack[--varStackIdx];
         varIsInStack.clear(x);
         return x;
     }
 
-    protected void pushValStack(int v) {
+    private void pushValStack(int v) {
         valStack[valStackIdx++] = v;
         valIsInStack.set(v);
     }
 
-    protected void clearValStack() {
+    private void clearValStack() {
         valIsInStack.clear();
         valStackIdx = 0;
     }
 
-    protected int popValStack() {
+    private int popValStack() {
         int x = valStack[--valStackIdx];
         valIsInStack.clear(x);
         return x;

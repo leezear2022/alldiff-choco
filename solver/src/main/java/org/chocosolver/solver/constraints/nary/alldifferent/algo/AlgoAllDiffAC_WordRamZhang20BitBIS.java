@@ -981,7 +981,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         int i = 0;
         for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
             values = D[curNode].getWord(iWord) & valIsInStack.getWord(iWord);
-            iBase = iWord * 63;
+            iBase = iWord * 64;
 //            System.out.println(D[curNode]);
 //            System.out.println(curNode + ": " + Long.toBinaryString(D[curNode].getWord(iWord)) + ": " + Long.toBinaryString(valIsInStack.getWord(iWord)) + ": " + Long.toBinaryString(values));
 
@@ -1097,7 +1097,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         int i = 0;
         for (int iWord = matchedValues.firstSetIndex(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
             values = matchedValues.getWord(iWord) & ~unVisitedValues.getWord(iWord) & valIsInStack.getWord(iWord);
-            iBase = iWord * 63;
+            iBase = iWord * 64;
             for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
                 sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);

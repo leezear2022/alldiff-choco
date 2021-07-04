@@ -826,9 +826,9 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS2 {
         }
 //        gammaMask.and(restriction);
         gammaFrontier.set(gammaMask);
-        for (varIdx = gammaFrontier.firstSetBit();
+        for (varIdx = gammaFrontier.nextSetBit(0);
              varIdx != gammaFrontier.end();
-             varIdx = gammaFrontier.firstSetBit()) {
+             varIdx = gammaFrontier.nextSetBit(0)) {
             // !! 这里可以将Extended改成Frontier，只记录前沿，记录方法是三个BitSet比较，
             // frontier 扩展，从valMask中去掉gammaMask已记录的变量
             valIdx = var2Val[varIdx];
@@ -1098,7 +1098,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS2 {
         int i = 0;
         for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
             values = D[curNode].getWord(iWord) & valIsInStack.getWord(iWord);
-            iBase = iWord * 63;
+            iBase = iWord * 64;
 //            System.out.println(D[curNode]);
 //            System.out.println(curNode + ": " + Long.toBinaryString(D[curNode].getWord(iWord)) + ": " + Long.toBinaryString(valIsInStack.getWord(iWord)) + ": " + Long.toBinaryString(values));
 
@@ -1215,7 +1215,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS2 {
         int i = 0;
         for (int iWord = matchedValues.firstSetIndex(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
             values = matchedValues.getWord(iWord) & ~unVisitedValues.getWord(iWord) & valIsInStack.getWord(iWord);
-            iBase = iWord * 63;
+            iBase = iWord * 64;
             for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
                 sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
