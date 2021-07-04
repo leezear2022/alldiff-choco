@@ -176,7 +176,7 @@ public class OrthoLatinSquareExp extends AbstractProblem {
         float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
         float IN_SEC = 1000 * 1000 * 1000f;
 
-        for (int i = 2; i <= 10; i++) {
+        for (int i = 2; i <= 50; i++) {
             // instance name
             String insName = name + "-" + i;
             bw.write(insName);
