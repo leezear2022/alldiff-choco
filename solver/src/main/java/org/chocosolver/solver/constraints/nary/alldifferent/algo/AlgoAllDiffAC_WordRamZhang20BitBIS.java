@@ -783,10 +783,11 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             if (v.getDomainSize() == 1 && !partition.isSingleton(i)) {
 //                varSCC[i] = nbSCC;
 //                singleton.set(i);
+                int totalIdx = valIndex2TotalIndex(var2Val[i]);
                 restri.clear(i);
-                restri.clear(var2Val[i]);
+                restri.clear(totalIdx);
                 partition.remove(i);
-                partition.remove(var2Val[i]);
+                partition.remove(totalIdx);
 //                nbSCC++;
             }
         }

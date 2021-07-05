@@ -56,7 +56,9 @@ public class testAllDiff {
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "C:/exp/AllDiffBench/GolombRuler/GolombRuler-05-a3.xml",
-                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml"
+//                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
+                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
+
         };
         XCSPParser parser = new XCSPParser();
 //        String[] algorithms = new String[]{
@@ -88,7 +90,7 @@ public class testAllDiff {
 ////                "AC_ZHANG",
 //        };
         String[] algorithms = new String[]{
-                "AC",
+//                "AC",
 //                "ACFair",
 //                "ACChen",
 //                "ACZhang20Bit",
@@ -101,7 +103,7 @@ public class testAllDiff {
 //                "ACZhang20",
 //                "Gent20BitIS",
 //                "ACZhang20Bit",
-                "WordRam",
+//                "WordRam",
 //                "WordRamRegin",
 //                "WordRamGent",
                 "WordRamWordRam",
