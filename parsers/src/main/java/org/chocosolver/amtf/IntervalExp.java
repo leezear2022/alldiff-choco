@@ -24,6 +24,7 @@ public class IntervalExp {
         int queryBatch = Integer.parseInt(args[1]);
         int stepFactor = Integer.parseInt(args[2]);
         boolean sorted = Integer.parseInt(args[3]) == 0 ? false : true;
+        System.out.println(",IS,BIS,Zhang20,accurate,redundancy");
         for (; maxSize < 1000000; maxSize *= 2) {
             Random rand = new Random();
             int total = 0;
@@ -112,10 +113,10 @@ public class IntervalExp {
 
                 for (j = i * queryBatch; j < numQuery; j++) {
                     res = bbis.contains(queries[j].a, queries[j].b);
-                    if (res != ress[j]) {
-//                        correct++;
-                        System.out.println("xixi");
-                    }
+//                    if (res != ress[j]) {
+////                        correct++;
+//                        System.out.println("xixi");
+//                    }
                 }
 
             }
