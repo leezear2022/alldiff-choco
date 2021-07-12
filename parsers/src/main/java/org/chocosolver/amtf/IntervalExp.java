@@ -124,7 +124,8 @@ public class IntervalExp {
 
 //            System.out.println("bbis: " + time);
             String sortStr = sorted ? "-S" : "";
-            System.out.println(numInsert + "-" + numQuery + "-" + insertBatch + "-" + queryBatch + "-" + stepFactor + sortStr + "," + time[0] + "," + time[1] + "," + time[2] + "," + ((float) correct / total) + "," + (float) cycles.size() / is.numIntervals());
+//            System.out.println(numInsert + "-" + numQuery + "-" + insertBatch + "-" + queryBatch + "-" + stepFactor + sortStr + "," + time[0] + "," + time[1] + "," + time[2] + "," + ((float) correct / total) + "," + (float) cycles.size() / is.numIntervals());
+            System.out.printf("%s,%.3f,%.3f,%.3f,%.2f,%.2f\n", numInsert + "-" + numQuery + "-" + insertBatch + "-" + queryBatch + "-" + stepFactor + sortStr, time[0], time[1], time[2], ((double) correct / total), (double) cycles.size() / is.numIntervals());
 //            System.out.println(insertRound + "-" + queryRound + "-" + insertBatch + "-" + queryBatch + "-" + stepFactor + "-" + sorted + "," + time[0] + "," + time[1] + "," + time[2] + "," + ((float) correct / total) + "," + cycles.size() + "," + bbis.size() + "," + is.numIntervals());
         }
     }
