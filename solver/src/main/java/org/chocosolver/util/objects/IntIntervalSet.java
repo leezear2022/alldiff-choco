@@ -60,6 +60,10 @@ public class IntIntervalSet implements IntSet {
         }
     }
 
+    public long numIntervals() {
+        return intervals.size();
+    }
+
     /**
      * Create a set with a single element, el.
      */

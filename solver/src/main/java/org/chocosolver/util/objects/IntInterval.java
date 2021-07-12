@@ -164,8 +164,17 @@ public class IntInterval implements Comparable<IntInterval> {
         return a + ".." + b;
     }
 
+    //    @Override
+//    public int compareTo(IntInterval o) {
+//        return this.a - this.b;
+//    }
     @Override
     public int compareTo(IntInterval o) {
-        return this.a - this.b;
+        if (this.b > o.b) {
+            return 1;
+        } else if (this.b < o.b) {
+            return -1;
+        }
+        return 0;
     }
 }

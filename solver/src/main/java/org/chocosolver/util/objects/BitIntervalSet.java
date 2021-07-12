@@ -5,10 +5,11 @@ import java.util.BitSet;
 public class BitIntervalSet implements IntervalSet {
     private BitSet lbs;
     private BitSet ubs;
-    private int size;
+    private int capacity;
+    int ap = -1, bp = -1, an = -1, bn = -1, newStart = -1, newEnd = -1, lbsClearStart = -1, lbsClearEnd = -1, ubsClearStart = -1, ubsClearEnd = -1;
 
     public BitIntervalSet(int maxSize) {
-        size = maxSize;
+        capacity = maxSize;
         lbs = new BitSet(maxSize);
         ubs = new BitSet(maxSize);
     }
@@ -102,37 +103,94 @@ public class BitIntervalSet implements IntervalSet {
 //
 //    }
 
-    public void add(int start, int end) {
-        int newStart, newEnd, startPrev, endNext;
-        int endPrev = ubs.nextSetBit(start);
-        int startNext = lbs.previousSetBit(end);
+//    public void add(int start, int end) {
+//        int newStart, newEnd, startPrev, endNext;
+//        int endPrev = ubs.nextSetBit(start);
+//        int startNext = lbs.previousSetBit(end);
+//
+//        if (endPrev == -1 || startNext == -1) {
+//            lbs.set(start);
+//            ubs.set(end);
+//        } else {
+//            startPrev = lbs.previousSetBit(endPrev);
+//            endNext = ubs.nextSetBit(startNext);
+//            if (endNext <= startPrev) {
+//                lbs.set(start);
+//                ubs.set(end);
+//            } else {
+//                newStart = Math.min(startPrev, start);
+//                newEnd = Math.max(endNext, end);
+////            if (newLb <= c + 1)
+////                System.out.println(start + " " + end + " " + a + " " + b + " " + c + " " + d + " " + newLb + " " + newUb);
+//                lbs.clear(newStart, startNext + 1);
+////            if (b <= newUb + 1)
+//                ubs.clear(endPrev, newEnd + 1);
+//                lbs.set(newStart);
+//                ubs.set(newEnd);
+//            }
+//        }
+//    }
 
-        if (endPrev == -1 || startNext == -1) {
-            lbs.set(start);
-            ubs.set(end);
+//    public void add(int start, int end) {
+//        a = lbs.previousSetBit(start);
+//        b = -1;
+//        c = -1;
+//        d = ubs.nextSetBit(end);
+//
+//        if (a != -1)
+//            b = ubs.nextSetBit(a);
+//
+//        if (d != -1)
+//            c = lbs.previousSetBit(d);
+//
+//        if (a==-1){}
+//
+//
+//        lbs.clear(newStart, newEnd);
+//        ubs.clear(newStart, newEnd);
+//        lbs.set(newStart);
+//        ubs.set(newEnd);
+//    }
+
+    public void add(int a, int b) {
+        ap = lbs.previousSetBit(a);
+        bn = ubs.nextSetBit(b);
+
+        if (ap == -1) {
+            newStart = a;
         } else {
-            startPrev = lbs.previousSetBit(endPrev);
-            endNext = ubs.nextSetBit(startNext);
-            if (endNext <= startPrev) {
-                lbs.set(start);
-                ubs.set(end);
-            } else {
-                newStart = Math.min(startPrev, start);
-                newEnd = Math.max(endNext, end);
-//            if (newLb <= c + 1)
-//                System.out.println(start + " " + end + " " + a + " " + b + " " + c + " " + d + " " + newLb + " " + newUb);
-                lbs.clear(newStart, startNext + 1);
-//            if (b <= newUb + 1)
-                ubs.clear(endPrev, newEnd + 1);
-                lbs.set(newStart);
-                ubs.set(newEnd);
-            }
+            bp = ubs.nextSetBit(ap);
+            newStart = (bp < a) ? a : ap;
+//            if (bp < a) {
+//                newStart = a;
+//            } else {
+//                newStart = ap;
+//            }
         }
+
+        if (bn == -1) {
+            newEnd = b;
+        } else {
+            an = lbs.previousSetBit(bn);
+            newEnd = b < an ? b : bn;
+//            if (b < an) {
+//                newEnd = b;
+//            } else {
+//                newEnd = bn;
+//            }
+        }
+
+//        if((ap==-1&&bn==-1)||bp<a&&)
+
+        lbs.clear(newStart, newEnd);
+        ubs.clear(newStart, newEnd);
+        lbs.set(newStart);
+        ubs.set(newEnd);
     }
 
-    private boolean disjoint(int a, int b, int c, int d) {
-        return a > d || c > b;
-    }
+//    private boolean disjoint(int a, int b, int c, int d) {
+//        return a > d || c > b;
+//    }
 
     @Override
     public void clear() {
@@ -142,13 +200,13 @@ public class BitIntervalSet implements IntervalSet {
 
     @Override
     public boolean contains(int lb, int ub) {
-        int a = lbs.previousSetBit(lb);
+        ap = lbs.previousSetBit(lb);
 //        int c = lbs.previousSetBit(ub);
-        if (a == -1) {
+        if (ap == -1) {
             return false;
         } else {
-            int b = ubs.nextSetBit(a);
-            if (b >= ub) {
+            bp = ubs.nextSetBit(ap);
+            if (bp >= ub) {
                 return true;
             } else {
                 return false;
@@ -159,9 +217,26 @@ public class BitIntervalSet implements IntervalSet {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        int len = 0;
+        sb.append("{");
         for (int i = lbs.nextSetBit(0); i != -1; i = lbs.nextSetBit(i + 1)) {
-            sb.append("[").append(i).append(", ").append(ubs.nextSetBit(i)).append("], ");
+            int j = ubs.nextSetBit(i);
+            sb.append(i).append("..").append(j).append(", ");
+            len++;
+        }
+        if (len != 0) {
+            sb.replace(sb.length() - 1, sb.length(), "}");
         }
         return sb.toString();
     }
+
+//    public long size() {
+//        return lbs.cardinality();
+//    }
+//    public boolean equalTo(IntIntervalSet s) {
+//        for (int i = 0, ub = s.size(); i < ub; i++) {
+//            var t = s.get(i);
+//
+//        }
+//    }
 }
