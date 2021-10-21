@@ -20,6 +20,7 @@ public class Single64NaiveBitSet implements INaiveBitSet {
 
     public Single64NaiveBitSet(int nbits, boolean initValue) {
         lastMask = WORD_MASK >>> (BITS_PER_WORD - nbits);
+        bitSize = nbits;
         if (initValue) {
             words = lastMask;
         }
@@ -83,6 +84,11 @@ public class Single64NaiveBitSet implements INaiveBitSet {
     }
 
     @Override
+    public int bitCapacity() {
+        return bitSize;
+    }
+
+    @Override
     public int int64Size() {
         return 1;
     }
@@ -115,6 +121,11 @@ public class Single64NaiveBitSet implements INaiveBitSet {
     @Override
     public void or(INaiveBitSet a, INaiveBitSet b, INaiveBitSet c) {
         words |= a.getWord(0) | b.getWord(0) | c.getWord(0);
+    }
+
+    @Override
+    public void minus(INaiveBitSet a) {
+        words &= ~a.getWord(0);
     }
 
     @Override
@@ -166,6 +177,11 @@ public class Single64NaiveBitSet implements INaiveBitSet {
     @Override
     public boolean isEmpty() {
         return words == 0L;
+    }
+
+    @Override
+    public boolean nonEmpty() {
+        return words != 0L;
     }
 
     @Override

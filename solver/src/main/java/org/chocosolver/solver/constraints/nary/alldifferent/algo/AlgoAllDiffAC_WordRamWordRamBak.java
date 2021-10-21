@@ -3,16 +3,17 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 //import org.chocosolver.amtf.Measurer;
 
 import gnu.trove.iterator.TIntIntIterator;
-import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.objects.*;
+import org.chocosolver.util.objects.INaiveBitSet;
+import org.chocosolver.util.objects.Measurer;
+import org.chocosolver.util.objects.RSetPartition;
+import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
 import java.util.BitSet;
@@ -29,7 +30,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_WordRamZhang20BIS {
+public class AlgoAllDiffAC_WordRamWordRamBak {
 
     //***********************************************************************************
     // VARIABLES
@@ -119,20 +120,22 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
     protected SparseSet valsTmp;
 
 //    protected boolean initialPropagation = true;
+//    private TIntArrayList[] deletedValues;
+//    private TLongArrayStack DE;
+//    private BitIntervalSet cycles;
+//    protected boolean unconnected = false;
+//    private IntTuple2 nodePair;
+//    private static int INT_SIZE = 32;
+//    protected boolean isSkiped = false;
 
-
-    private TIntArrayList[] deletedValues;
-    private TLongArrayStack DE;
-    private BitIntervalSet cycles;
-    protected boolean unconnected = false;
-    private IntTuple2 nodePair;
-    private static int INT_SIZE = 32;
-    protected boolean isSkiped = false;
+    //for bit
+    protected INaiveBitSet[] B, D;
+    protected INaiveBitSet needVisitValues;
 
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_WordRamZhang20BIS(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_WordRamWordRamBak(IntVar[] variables, ICause cause, Model model) {
         id = num++;
         env = model.getEnvironment();
         this.vars = variables;
@@ -206,14 +209,28 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
             monitors[i] = vars[i].monitorDelta(cause);
         }
         onValRem = makeProcedure();
-        // for zhang20
-        DE = new TLongArrayStack();
-        deletedValues = new TIntArrayList[arity];
-        for (int i = 0; i < arity; i++) {
-            deletedValues[i] = new TIntArrayList(numValues);
+
+        // for bit
+        B = new INaiveBitSet[numValues];
+        for (int i = 0; i < numValues; ++i) {
+            B[i] = INaiveBitSet.makeBitSet(arity, false);
         }
-        cycles = new BitIntervalSet(numNodes + 10);
-        nodePair = new IntTuple2(-1, -1);
+
+        D = new INaiveBitSet[arity];
+        for (int i = 0; i < arity; ++i) {
+            D[i] = INaiveBitSet.makeBitSet(numValues, false);
+        }
+
+        needVisitValues = INaiveBitSet.makeBitSet(numValues, true);
+
+//        // for zhang20
+//        DE = new TLongArrayStack();
+//        deletedValues = new TIntArrayList[arity];
+//        for (int i = 0; i < arity; i++) {
+//            deletedValues[i] = new TIntArrayList(numValues);
+//        }
+//        cycles = new BitIntervalSet(numNodes + 10);
+//        nodePair = new IntTuple2(-1, -1);
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -233,11 +250,42 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
             public void execute(int i) {
                 if (!triggeringVars.contains(var)) {
                     triggeringVars.add(var);
-                    deletedValues[var].clear();
+//                    deletedValues[var].clear();
                 }
-                deletedValues[var].add(val2Idx.get(i));
+//                deletedValues[var].add(val2Idx.get(i));
             }
         };
+    }
+
+    protected void fillD() {
+//        IntVar v;
+        // 填充B和D
+        for (int i = 0; i < arity; ++i) {
+            D[i].clear();
+            IntVar v = vars[i];
+            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+                int valIdx = val2Idx.get(j);
+                D[i].set(valIdx);
+            }
+        }
+    }
+
+    protected void fillBandD() {
+        for (int i = 0; i < numValues; ++i) {
+            B[i].clear();
+        }
+
+//        IntVar v;
+        // 填充B和D
+        for (int i = 0; i < arity; ++i) {
+            D[i].clear();
+            IntVar v = vars[i];
+            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+                int valIdx = val2Idx.get(j);
+                D[i].set(valIdx);
+                B[valIdx].set(i);
+            }
+        }
     }
 
     void printDoms() {
@@ -255,7 +303,7 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-        isSkiped = false;
+//        isSkiped = false;
         numCall++;
 //        if (numCall<20) {
 //        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
@@ -264,6 +312,7 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
         boolean filter = false;
         Measurer.enterProp();
         long startTime;
+        fillD();
 
         if (numCall == 0) {
             // initial
@@ -295,15 +344,17 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
             startTime = System.nanoTime();
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
+//            System.out.println(Arrays.toString(var2Val));
             //filtering
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
+//            System.out.println(partition);
             Measurer.filterTime += System.nanoTime() - startTime;
         }
 
-        if (isSkiped) {
-            Measurer.enterSkip();
-        }
+//        if (isSkiped) {
+//            Measurer.enterSkip();
+//        }
         return filter;
     }
 
@@ -345,7 +396,7 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
                         if (y.contains(xVal)) {
 //                            System.out.println("remove: " + yIdx + ", " + xVal);
                             res |= y.removeValue(xVal, aCause);
-//                            Dbit[yIdx].clear(val2Idx.get(xVal));
+                            D[yIdx].clear(val2Idx.get(xVal));
                         }
                     }
                 } while (partition.goToNextValid());
@@ -367,8 +418,8 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
     protected boolean propagate_SCC_filter() throws ContradictionException {
         boolean filter = false;
         maxDFS = 0;
-        unconnected = false;
-        cycles.clear();
+//        unconnected = false;
+//        cycles.clear();
         changedSCCStartIndex.iterateValid();
         while (changedSCCStartIndex.hasNextValid()) {
             int sccStartIndex = changedSCCStartIndex.next();
@@ -639,15 +690,19 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
 //                int ub = v.getUB();
 //                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
 //                    int valIdx = val2Idx.get(k);
+//                    System.out.println(varIdx+", "+valIdx);
                     if (!partition.inSameSCC(varIdx, valIdx + addArity)) {
                         Measurer.enterP2();
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
                             filter |= v.instantiateTo(k, aCause);
+//                            System.out.println("instantiate: " + varIdx + ", " + k);
                         } else {
                             ++Measurer.numDelValuesP2;
                             filter |= v.removeValue(k, aCause);
+//                            D[varIdx].clear(valIdx);
+//                            System.out.println("second delete: " + varIdx + ", " + k);
                         }
                     }
                 }
@@ -659,7 +714,7 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
     protected void resetData(SparseSet resetVars, SparseSet resetVals, boolean containsSink) {
 //        maxDFS = 0;
 //        cycles.clear();
-        DE.clear();
+//        DE.clear();
         hasSCCSplit = false;
 
         resetVals.iterateValid();
@@ -676,14 +731,14 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
 //            System.out.println("resetVar: " + i);
             varLowLink[i] = Integer.MAX_VALUE;
             varDFSNum[i] = Integer.MAX_VALUE;
-            if (triggeringVars.contains(i)) {
-                var iter = deletedValues[i].iterator();
-                while (iter.hasNext()) {
-                    int valIdx = iter.next();
-                    if (resetVals.contains(valIdx))
-                        DE.push(getIntTuple2Long(i, valIdx));
-                }
-            }
+//            if (triggeringVars.contains(i)) {
+//                var iter = deletedValues[i].iterator();
+//                while (iter.hasNext()) {
+//                    int valIdx = iter.next();
+//                    if (resetVals.contains(valIdx))
+//                        DE.push(getIntTuple2Long(i, valIdx));
+//                }
+//            }
         }
 
         if (containsSink) {
@@ -735,30 +790,213 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
             }
         }
     }
+//
+//    protected void strongConnectVar(int curNode) {
+////        System.out.println("scvr: " + curNode + ", " + maxDFS);
+//        pushVarStack(curNode);
+//        varDFSNum[curNode] = maxDFS;
+//        varLowLink[curNode] = maxDFS;
+//        maxDFS++;
+//        unVisitedVariables.clear(curNode);
+//
+//        int matchedVal = var2Val[curNode];
+//        IntVar v = vars[curNode];
+//        for (int a = v.getLB(), ub = v.getUB(); a <= ub; a = v.nextValue(a)) {
+//            int newNode = val2Idx.get(a);
+//            if (newNode == matchedVal) continue;
+////            System.out.println("scVartoVal: " + curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+////            System.out.println(curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+//            if (!unVisitedValues.get(newNode)) {
+//                if (valIsInStack.get(newNode)) {
+//                    varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
+//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
+//                }
+//            } else {
+//                strongConnectVal(newNode);
+//                varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
+//            }
+//        }
+//
+//        if (varLowLink[curNode] == varDFSNum[curNode]) {
+//            if (varLowLink[curNode] > 0 || valIsInStack.size() + varIsInStack.size() > 0) {
+//                hasSCCSplit = true;
+//            }
+//            if (hasSCCSplit) {
+//                processSCC(varDFSNum[curNode]);
+//            }
+//        }
+//
+//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+////            System.out.println("xixi");
+//            isSkiped = true;
+//            return;
+//        }
+//    }
+//
+//    protected void strongConnectVal(int curNode) {
+////        System.out.println("scvl: " + curNode + ", " + maxDFS);
+//        pushValStack(curNode);
+//        valDFSNum[curNode] = maxDFS;
+//        valLowLink[curNode] = maxDFS;
+//        maxDFS++;
+//        unVisitedValues.clear(curNode);
+//        int matchedVar = val2Var[curNode];
+//        if (matchedVar != -1) {
+//            //have matched variable
+////            System.out.println("scValtoVar: " + (addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
+////            System.out.println((addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
+//            if (!unVisitedVariables.get(matchedVar)) {
+//                if (varIsInStack.get(matchedVar)) {
+//                    valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
+//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(varLowLink[matchedVar], maxDFS - 1);
+//                }
+//            } else {
+//                strongConnectVar(matchedVar);
+//                valLowLink[curNode] = Math.min(valLowLink[curNode], varLowLink[matchedVar]);
+//            }
+//        } else {
+//            //free node successor node is sink node
+////            System.out.println("scValtoSink: " + (addArity + curNode) + ", " + arity + ", " + sinkIsUnvisited);
+////            System.out.println((addArity + curNode) + ", " + arity + ", " + sinkIsUnvisited);
+//            if (!sinkIsUnvisited) {
+//                if (sinkIsInStack) {
+//                    valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
+//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(sinkLowLink, maxDFS - 1);
+//                }
+//            } else {
+//                strongConnectSink();
+//                valLowLink[curNode] = Math.min(valLowLink[curNode], sinkLowLink);
+//            }
+//        }
+////        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+//        if (valLowLink[curNode] == valDFSNum[curNode]) {
+//            if (valLowLink[curNode] > 0 || valIsInStack.size() + varIsInStack.size() > 0) {
+//                hasSCCSplit = true;
+//            }
+//            if (hasSCCSplit) {
+//                processSCC(valDFSNum[curNode]);
+//            }
+//        }
+//
+//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+////            System.out.println("xixi");
+//            isSkiped = true;
+//            return;
+//        }
+//    }
+//
+//    protected void strongConnectSink() {
+////        System.out.println("scs: " + ", " + maxDFS);
+//        sinkIsInStack = true;
+//        sinkDFSNum = maxDFS;
+//        sinkLowLink = maxDFS;
+//        maxDFS++;
+//        sinkIsUnvisited = false;
+////        Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
+////        while (iterator.hasNext()) {
+////            int newNode = iterator.next();
+//////            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
+////            if (!unvisited.get(newNode)) {
+////                if (inStack.get(newNode)) {
+////                    lowLink[curNode] = Math.min(lowLink[curNode], DFSNum[newNode]);
+////                }
+////            } else {
+////                strongConnectR(newNode);
+////                lowLink[curNode] = Math.min(lowLink[curNode], lowLink[newNode]);
+////            }
+////        }
+//
+//        for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
+////            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+////            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
+//            if (!unVisitedValues.get(newNode)) {
+//                if (valIsInStack.get(newNode)) {
+//                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
+//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
+//                }
+//            } else {
+//                strongConnectVal(newNode);
+//                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+//            }
+//        }
+//
+////        long values = 0;
+////        int newNode = 0, iBase = 0;
+////        int i = 0;
+////        for (int iWord = matchedValues.firstSetBit(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
+////            values = matchedValues.getWord(iWord) & ~unVisitedValues.getWord(iWord) & valIsInStack.getWord(iWord);
+////            iBase = iWord * 64;
+////            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+////                newNode = iBase + i;
+////                sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
+////            }
+////
+//////            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
+//////            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+//////                newNode = iBase + i;
+//////                strongConnectVal(newNode);
+//////                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+//////                values &= unVisitedValues.getWord(iWord);
+//////            }
+////
+////            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
+////            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+////                newNode = iBase + i;
+////                strongConnectVal(newNode);
+////                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+////                values &= unVisitedValues.getWord(iWord);
+////            }
+////        }
+//
+////        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
+//        if (sinkLowLink == sinkDFSNum) {
+//            if (sinkLowLink > 0 || sinkIsInStack || valIsInStack.size() + varIsInStack.size() > 0) {
+//                hasSCCSplit = true;
+//            }
+//            if (hasSCCSplit) {
+//                processSCC(sinkDFSNum);
+//            }
+//        }
+//
+//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+////            System.out.println("xixi");
+//            isSkiped = true;
+//            return;
+//        }
+////        System.out.println("back");
+//    }
 
     protected void strongConnectVar(int curNode) {
-//        System.out.println("scvr: " + curNode + ", " + maxDFS);
         pushVarStack(curNode);
         varDFSNum[curNode] = maxDFS;
         varLowLink[curNode] = maxDFS;
         maxDFS++;
         unVisitedVariables.clear(curNode);
 
+//         p2
+        long values = 0;
+        int newNode = 0, iBase = 0;
         int matchedVal = var2Val[curNode];
-        IntVar v = vars[curNode];
-        for (int a = v.getLB(), ub = v.getUB(); a <= ub; a = v.nextValue(a)) {
-            int newNode = val2Idx.get(a);
-            if (newNode == matchedVal) continue;
-//            System.out.println("scVartoVal: " + curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-//            System.out.println(curNode + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-            if (!unVisitedValues.get(newNode)) {
-                if (valIsInStack.get(newNode)) {
-                    varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
-                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
-                }
-            } else {
+        int i = 0;
+        for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
+            values = D[curNode].getWord(iWord) & valIsInStack.getWord(iWord);
+            iBase = iWord * 64;
+//            System.out.println(D[curNode]);
+//            System.out.println(curNode + ": " + Long.toBinaryString(D[curNode].getWord(iWord)) + ": " + Long.toBinaryString(valIsInStack.getWord(iWord)) + ": " + Long.toBinaryString(values));
+
+            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+                newNode = iBase + i;
+                if (newNode == matchedVal) continue;
+                varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
+//                if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
+            }
+
+            values = D[curNode].getWord(iWord) & unVisitedValues.getWord(iWord);
+            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+                newNode = iBase + i;
                 strongConnectVal(newNode);
                 varLowLink[curNode] = Math.min(varLowLink[curNode], valLowLink[newNode]);
+                values &= unVisitedValues.getWord(iWord);
             }
         }
 
@@ -770,16 +1008,15 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
                 processSCC(varDFSNum[curNode]);
             }
         }
-
-        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
-//            System.out.println("xixi");
-            isSkiped = true;
-            return;
-        }
+////        System.out.println("back");
+//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+////            System.out.println("xixi");
+//            isSkiped = true;
+//            return;
+//        }
     }
 
     protected void strongConnectVal(int curNode) {
-//        System.out.println("scvl: " + curNode + ", " + maxDFS);
         pushValStack(curNode);
         valDFSNum[curNode] = maxDFS;
         valLowLink[curNode] = maxDFS;
@@ -793,7 +1030,7 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
             if (!unVisitedVariables.get(matchedVar)) {
                 if (varIsInStack.get(matchedVar)) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
-                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(varLowLink[matchedVar], maxDFS - 1);
+//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(varLowLink[matchedVar], maxDFS - 1);
                 }
             } else {
                 strongConnectVar(matchedVar);
@@ -806,13 +1043,29 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
             if (!sinkIsUnvisited) {
                 if (sinkIsInStack) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
-                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(sinkLowLink, maxDFS - 1);
+//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(sinkLowLink, maxDFS - 1);
                 }
             } else {
                 strongConnectSink();
                 valLowLink[curNode] = Math.min(valLowLink[curNode], sinkLowLink);
             }
         }
+//        Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
+//        //B[]
+//        while (iterator.hasNext()) {
+//            int newNode = iterator.next();
+////            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
+//            if (!unVisitedVariables.get(newNode)) {
+//                if (valIsInStack.get(newNode)) {
+//                    valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[newNode]);
+//                }
+//            } else {
+//                // 判断一下sink节点
+//                strongConnectR(newNode);
+//                lowLink[curNode] = Math.min(lowLink[curNode], lowLink[newNode]);
+//            }
+//        }
+
 //        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
         if (valLowLink[curNode] == valDFSNum[curNode]) {
             if (valLowLink[curNode] > 0 || valIsInStack.size() + varIsInStack.size() > 0) {
@@ -823,67 +1076,33 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
             }
         }
 
-        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
-//            System.out.println("xixi");
-            isSkiped = true;
-            return;
-        }
+//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+////            System.out.println("xixi");
+//            isSkiped = true;
+//            return;
+//        }
+//        System.out.println("back");
     }
 
     protected void strongConnectSink() {
-//        System.out.println("scs: " + ", " + maxDFS);
         sinkIsInStack = true;
         sinkDFSNum = maxDFS;
         sinkLowLink = maxDFS;
         maxDFS++;
         sinkIsUnvisited = false;
-//        Iterator<Integer> iterator = graph.getSuccOf(curNode).iterator();
-//        while (iterator.hasNext()) {
-//            int newNode = iterator.next();
-////            System.out.println(curNode + ", " + newNode + ", " + unvisited.get(newNode));
-//            if (!unvisited.get(newNode)) {
-//                if (inStack.get(newNode)) {
-//                    lowLink[curNode] = Math.min(lowLink[curNode], DFSNum[newNode]);
-//                }
-//            } else {
-//                strongConnectR(newNode);
-//                lowLink[curNode] = Math.min(lowLink[curNode], lowLink[newNode]);
-//            }
-//        }
 
-        for (int newNode = matchedValues.firstSetBit(); newNode != matchedValues.end(); newNode = matchedValues.nextSetBit(newNode + 1)) {
-//            System.out.println("scSinktoVal: " + arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-//            System.out.println(arity + ", " + (addArity + newNode) + ", " + unVisitedValues.get(newNode));
-            if (!unVisitedValues.get(newNode)) {
-                if (valIsInStack.get(newNode)) {
-                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
-                }
-            } else {
-                strongConnectVal(newNode);
-                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+        long values = 0;
+        int newNode = 0, iBase = 0;
+        int i = 0;
+        for (int iWord = matchedValues.firstSetIndex(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
+            values = matchedValues.getWord(iWord) & ~unVisitedValues.getWord(iWord) & valIsInStack.getWord(iWord);
+            iBase = iWord * 64;
+            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+                newNode = iBase + i;
+                sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
+//                if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
             }
-        }
 
-//        long values = 0;
-//        int newNode = 0, iBase = 0;
-//        int i = 0;
-//        for (int iWord = matchedValues.firstSetBit(); iWord <= matchedValues.lastSetIndex(); ++iWord) {
-//            values = matchedValues.getWord(iWord) & ~unVisitedValues.getWord(iWord) & valIsInStack.getWord(iWord);
-//            iBase = iWord * 64;
-//            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
-//                newNode = iBase + i;
-//                sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-//            }
-//
-////            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
-////            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
-////                newNode = iBase + i;
-////                strongConnectVal(newNode);
-////                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
-////                values &= unVisitedValues.getWord(iWord);
-////            }
-//
 //            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
 //            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
 //                newNode = iBase + i;
@@ -891,7 +1110,15 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
 //                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
 //                values &= unVisitedValues.getWord(iWord);
 //            }
-//        }
+
+            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
+            for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
+                newNode = iBase + i;
+                strongConnectVal(newNode);
+                sinkLowLink = Math.min(sinkLowLink, valLowLink[newNode]);
+                values &= unVisitedValues.getWord(iWord);
+            }
+        }
 
 //        System.out.println(curNode + " has no nei " + lowLink[curNode] + ", " + DFSNum[curNode]);
         if (sinkLowLink == sinkDFSNum) {
@@ -903,11 +1130,11 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
             }
         }
 
-        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
-//            System.out.println("xixi");
-            isSkiped = true;
-            return;
-        }
+//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+////            System.out.println("xixi");
+//            isSkiped = true;
+//            return;
+//        }
 //        System.out.println("back");
     }
 
@@ -957,7 +1184,7 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
         }
 
         partition.setSplit();
-        unconnected = true;
+//        unconnected = true;
 //        System.out.println("partition: " + partition);
 //        nbSCC++;
     }
@@ -1013,96 +1240,96 @@ public class AlgoAllDiffAC_WordRamZhang20BIS {
     int valIndex2TotalIndex(int valIndex) {
         return valIndex + addArity;
     }
-
-    private void DETest(int lowLinkNewNode, int dfs) {
-//        System.out.println("DETest: " + lowLinkNewNode + ", " + dfs + " unconnected: " + unconnected + " DE Size: " + DE.size());
-        cycles.add(lowLinkNewNode, dfs);
-        while (!(DE.size() == 0) && inCycles(DE.peek())) {
-            DE.pop();
-        }
-    }
-
-//    private void addCycles(long e) {
-//        for (int i = 0; i < cycles.size(); i++) {
-//            long c = cycles.get(i);
-//            if (overlap(c, e)) {
-//                cycles.set(i, expand(c, e));
-//                return;
-//            }
+//
+//    private void DETest(int lowLinkNewNode, int dfs) {
+////        System.out.println("DETest: " + lowLinkNewNode + ", " + dfs + " unconnected: " + unconnected + " DE Size: " + DE.size());
+//        cycles.add(lowLinkNewNode, dfs);
+//        while (!(DE.size() == 0) && inCycles(DE.peek())) {
+//            DE.pop();
 //        }
-//        cycles.add(e);
 //    }
-
-    private boolean inCycles(long f) {
-//        IntTuple2 tt;
-        getIntTuple2(nodePair, f);
-//        System.out.println("inc:" + nodePair.a + "," + nodePair.b + "=" + varDFSNum[nodePair.a] + "," + valDFSNum[nodePair.b]);
-        // 小的存入a大的存入b
-        if (varDFSNum[nodePair.a] == Integer.MAX_VALUE || valDFSNum[nodePair.b] == Integer.MAX_VALUE) {
-            return false;
-        }
-
-        int a, b;
-        if (varDFSNum[nodePair.a] <= valDFSNum[nodePair.b]) {
-            a = varDFSNum[nodePair.a];
-            b = valDFSNum[nodePair.b];
-        } else {
-            a = valDFSNum[nodePair.b];
-            b = varDFSNum[nodePair.a];
-        }
-
-        if (cycles.contains(a, b)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public long getIntTuple2Long(int x, int a) {
-        long c = x;
-        return c << INT_SIZE | a;
-    }
-
-    public void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
-        vvp.a = (int) (vvpIdx >> INT_SIZE);
-        vvp.b = (int) vvpIdx;
-    }
-
-    private boolean cover(long e, int dfsa, int dfsb) {
-        int a = (int) (e >> INT_SIZE);
-        if (a == Integer.MAX_VALUE)
-            return false;
-        int b = (int) e;
-        if (b == Integer.MAX_VALUE)
-            return false;
-//        int a = (int) (f >> INT_SIZE);
-//        int b = (int) f;
-
-        return (dfsa >= a && dfsa <= b) && (dfsb >= a && dfsb <= b);
-    }
-
-    private boolean overlap(long e, long f) {
-        int a = (int) (e >> INT_SIZE);
+//
+////    private void addCycles(long e) {
+////        for (int i = 0; i < cycles.size(); i++) {
+////            long c = cycles.get(i);
+////            if (overlap(c, e)) {
+////                cycles.set(i, expand(c, e));
+////                return;
+////            }
+////        }
+////        cycles.add(e);
+////    }
+//
+//    private boolean inCycles(long f) {
+////        IntTuple2 tt;
+//        getIntTuple2(nodePair, f);
+////        System.out.println("inc:" + nodePair.a + "," + nodePair.b + "=" + varDFSNum[nodePair.a] + "," + valDFSNum[nodePair.b]);
+//        // 小的存入a大的存入b
+//        if (varDFSNum[nodePair.a] == Integer.MAX_VALUE || valDFSNum[nodePair.b] == Integer.MAX_VALUE) {
+//            return false;
+//        }
+//
+//        int a, b;
+//        if (varDFSNum[nodePair.a] <= valDFSNum[nodePair.b]) {
+//            a = varDFSNum[nodePair.a];
+//            b = valDFSNum[nodePair.b];
+//        } else {
+//            a = valDFSNum[nodePair.b];
+//            b = varDFSNum[nodePair.a];
+//        }
+//
+//        if (cycles.contains(a, b)) {
+//            return true;
+//        }
+//
+//        return false;
+//    }
+//
+//    public long getIntTuple2Long(int x, int a) {
+//        long c = x;
+//        return c << INT_SIZE | a;
+//    }
+//
+//    public void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
+//        vvp.a = (int) (vvpIdx >> INT_SIZE);
+//        vvp.b = (int) vvpIdx;
+//    }
+//
+//    private boolean cover(long e, int dfsa, int dfsb) {
+//        int a = (int) (e >> INT_SIZE);
 //        if (a == Integer.MAX_VALUE)
 //            return false;
-        int b = (int) e;
+//        int b = (int) e;
 //        if (b == Integer.MAX_VALUE)
 //            return false;
-        int x = (int) (f >> INT_SIZE);
-//        if (x == Integer.MAX_VALUE)
-//            return false;
-        int y = (int) f;
-//        if (y == Integer.MAX_VALUE)
-//            return false;
-//        System.out.println("overlap: " + x + "," + y + "," + a + "," + b);
-        return (x >= a && x <= b) || (y >= a && y <= b);
-    }
-
-    private long expand(long e, long f) {
-        int x = (int) (e >> INT_SIZE);
-        int y = (int) e;
-        int a = (int) (f >> INT_SIZE);
-        int b = (int) f;
-        return getIntTuple2Long(Math.min(x, a), Math.max(y, b));
-    }
+////        int a = (int) (f >> INT_SIZE);
+////        int b = (int) f;
+//
+//        return (dfsa >= a && dfsa <= b) && (dfsb >= a && dfsb <= b);
+//    }
+//
+//    private boolean overlap(long e, long f) {
+//        int a = (int) (e >> INT_SIZE);
+////        if (a == Integer.MAX_VALUE)
+////            return false;
+//        int b = (int) e;
+////        if (b == Integer.MAX_VALUE)
+////            return false;
+//        int x = (int) (f >> INT_SIZE);
+////        if (x == Integer.MAX_VALUE)
+////            return false;
+//        int y = (int) f;
+////        if (y == Integer.MAX_VALUE)
+////            return false;
+////        System.out.println("overlap: " + x + "," + y + "," + a + "," + b);
+//        return (x >= a && x <= b) || (y >= a && y <= b);
+//    }
+//
+//    private long expand(long e, long f) {
+//        int x = (int) (e >> INT_SIZE);
+//        int y = (int) e;
+//        int a = (int) (f >> INT_SIZE);
+//        int b = (int) f;
+//        return getIntTuple2Long(Math.min(x, a), Math.max(y, b));
+//    }
 }

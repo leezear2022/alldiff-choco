@@ -7,14 +7,18 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.memory.IEnvironment;
+import org.chocosolver.memory.IStateBitSet;
+import org.chocosolver.memory.IStateInt;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
+import org.chocosolver.util.iterators.DisposableValueIterator;
 import org.chocosolver.util.objects.*;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -29,7 +33,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_WordRamZhang20BitBIS {
+public class AlgoAllDiffAC_WordRamZhang20BitBIS6bak {
 
     //***********************************************************************************
     // VARIABLES
@@ -37,76 +41,59 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 
     // 约束的个数
     static public int num = 0;
-
+    private static int INT_SIZE = 32;
     // 约束的编号
     protected int id;
     protected long numCall = -1;
-
     protected int arity;
     protected IntVar[] vars;
     protected ICause aCause;
-
     // 新增一点（视为变量）
     protected int addArity;
-
     // 自由值集合
-    protected SparseSet freeNode;
-
+    protected SparseSet freeNodes;
     // 以下是bit版本所需数据结构========================
     // numValue是二部图中取值编号的个数，numBit是二部图的最大边数
     protected int numValues;
-
     protected int numNodes;
     // 值到索引
     protected int[] idx2Val;
-    // 索引到值
-    protected TIntIntHashMap val2Idx;
 
-//    // 与值相连的变量
+    //    // 与值相连的变量
 //    protected INaiveBitSet[] B;
 //    protected INaiveBitSet[] D;
-
+    // 索引到值
+    protected TIntIntHashMap val2Idx;
     // 已访问过的变量和值
     protected INaiveBitSet unVisitedVariables;
     protected INaiveBitSet unVisitedValues;
     protected INaiveBitSet matchedValues;
-
+    protected IStateBitSet matchedValuesR;
     // matching
-    protected int[] val2Var;
-    protected int[] var2Val;
+//    protected int[] val2Var;
+//    protected int[] var2Val;
+
+    private IStateInt[] val2VarR;
+    private IStateInt[] var2ValR;
 
     // 记录队列
     protected int[] visiting_;
     protected int[] variable_visited_from_;
-
-    //    long startTime;
-    //
-    IEnvironment env;
-
+    private long startTime = 0;
     // for bit DFS Tarjan
-
     //栈
     protected int[] varStack;
     protected int[] valStack;
     protected INaiveBitSet varIsInStack;
     protected INaiveBitSet valIsInStack;
-    int varStackIdx;
-    int valStackIdx;
-
     protected int maxDFS = 0;
     protected int[] varDFSNum;
     protected int[] valDFSNum;
     protected int[] varLowLink;
     protected int[] valLowLink;
     protected boolean hasSCCSplit = false;
-
-    int sinkDFSNum;
-    int sinkLowLink;
-    boolean sinkIsInStack;
     protected boolean sinkIsUnvisited;
-
     protected int endBitIndex = 64;
-
     //for Gent
     protected RSetPartition partition;
     protected BitSet restriction;
@@ -114,29 +101,45 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
     protected IIntDeltaMonitor[] monitors;
     protected UnaryIntProcedure<Integer> onValRem;
     protected SparseSet triggeringVars;
+    protected SparseSet triggeringVals;
     protected SparseSet changedSCCStartIndex;
     protected SparseSet varsTmp;
     protected SparseSet valsTmp;
-
-//    protected boolean initialPropagation = true;
-
-
-    private TIntArrayList[] deletedValues;
-    private TLongArrayStack DE;
-    private BitIntervalSet cycles;
+    protected boolean initialPropagation = true;
     protected boolean unconnected = false;
-    private IntTuple2 nodePair;
-    private static int INT_SIZE = 32;
     protected boolean isSkiped = false;
-
     //for bit
     protected INaiveBitSet[] B, D;
     protected INaiveBitSet needVisitValues;
+    IStateBitSet[] RB;
+    IStateBitSet[] RD;
+    // if all a in var x val2Idx[a] = a then DomIsRagular[x] = true
+    boolean[] DomIsRegular;
+    //    long startTime;
+    //
+    IEnvironment env;
+    //boolean initialPropagate;
+    int varStackIdx;
+    int valStackIdx;
+    int sinkDFSNum;
+    int sinkLowLink;
+    boolean sinkIsInStack;
+    private TIntArrayList[] deletedValues;
+    private TLongArrayStack DE;
+    private BitIntervalSet cycles;
+    private IntTuple2 nodePair;
+    // !! 记录gamma的前沿
+    private INaiveBitSet gammaFrontier;
+    // 记录gamma的bitset
+    private INaiveBitSet gammaMask;
+
+    // for propagate free nodes
+    private SparseSet notGamma, notA;
 
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_WordRamZhang20BitBIS(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_WordRamZhang20BitBIS6bak(IntVar[] variables, ICause cause, Model model) {
         id = num++;
         env = model.getEnvironment();
         this.vars = variables;
@@ -173,6 +176,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         unVisitedValues = INaiveBitSet.makeBitSet(numValues, true);
 //        unMatchedValues = INaiveBitSet.makeBitSet(numValues, true);
         matchedValues = INaiveBitSet.makeBitSet(numValues, false);
+        matchedValuesR = env.makeBitSet(numValues);
 
         // for bit DFS
         varStack = new int[arity];
@@ -186,21 +190,22 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         varLowLink = new int[arity];
         valLowLink = new int[numValues];
 
-        var2Val = new int[arity];
-        val2Var = new int[numValues];
+        var2ValR = new IStateInt[arity];
+        val2VarR = new IStateInt[numValues];
         for (int i = 0; i < arity; ++i) {
-            var2Val[i] = -1;
+            var2ValR[i] = env.makeInt(-1);
         }
         for (int i = 0; i < numValues; ++i) {
-            val2Var[i] = -1;
+            val2VarR[i] = env.makeInt(-1);
         }
 
-        freeNode = new SparseSet(numValues);
+        freeNodes = new SparseSet(numValues);
 
         // for Gent algorithm
         partition = new RSetPartition(addArity + numValues, env);
         restriction = new BitSet(addArity + numValues);
         triggeringVars = new SparseSet(arity);
+        triggeringVals = new SparseSet(numValues);
         changedSCCStartIndex = new SparseSet(numNodes);
         varsTmp = new SparseSet(arity);
         valsTmp = new SparseSet(numValues);
@@ -211,19 +216,42 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         }
         onValRem = makeProcedure();
 
-        // for bit
+        // for backtracking
         B = new INaiveBitSet[numValues];
+        RB = new IStateBitSet[numValues];
         for (int i = 0; i < numValues; ++i) {
-            B[i] = INaiveBitSet.makeBitSet(arity, false);
+            B[i] = INaiveBitSet.makeBitSet2(arity, false);
+            RB[i] = env.makeBitSet(arity);
         }
 
         D = new INaiveBitSet[arity];
+        RD = new IStateBitSet[arity];
+        DomIsRegular = new boolean[arity];
+        for (int i = 0; i < arity; i++) {
+            D[i] = INaiveBitSet.makeBitSet2(numValues, false);
+            RD[i] = env.makeBitSet(numValues);
+        }
+
         for (int i = 0; i < arity; ++i) {
-            D[i] = INaiveBitSet.makeBitSet(numValues, false);
+            v = vars[i];
+            DisposableValueIterator vit = v.getValueIterator(true);
+            DomIsRegular[i] = true;
+            while (vit.hasNext()) {
+                int val = vit.next();
+                int valIdx = val2Idx.get(val);
+                if (DomIsRegular[i] && val != valIdx)
+                    DomIsRegular[i] = false;
+                RB[valIdx].set(i);
+                B[valIdx].set(i);
+                RD[i].set(valIdx);
+                D[i].set(valIdx);
+            }
+            vit.dispose();
         }
 
         needVisitValues = INaiveBitSet.makeBitSet(numValues, true);
-
+        gammaFrontier = INaiveBitSet.makeBitSet(arity, false);
+        gammaMask = INaiveBitSet.makeBitSet(arity, false);
         // for zhang20
         DE = new TLongArrayStack();
         deletedValues = new TIntArrayList[arity];
@@ -232,13 +260,17 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         }
         cycles = new BitIntervalSet(numNodes + 10);
         nodePair = new IntTuple2(-1, -1);
+
+        // for propagate free nodes
+        notA = new SparseSet(numValues);
+        notGamma = new SparseSet(arity);
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
         return new UnaryIntProcedure<Integer>() {
             int var;
-            // boolean isNotTrigger;
             IntVar v;
+            int sccStartIdx;
 
             @Override
             public UnaryIntProcedure set(Integer o) {
@@ -252,42 +284,85 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
                 if (!triggeringVars.contains(var)) {
                     triggeringVars.add(var);
                     deletedValues[var].clear();
+//                    sccStartIdx = partition.getSCCStartIndexByElement(var);
+//                    if (!changedSCCStartIndex.contains(sccStartIdx)) {
+//                        changedSCCStartIndex.add(sccStartIdx);
+//                    }
                 }
-                deletedValues[var].add(val2Idx.get(i));
+                int valIdx = DomIsRegular[var] ? i : val2Idx.get(i);
+                if (!triggeringVals.contains(valIdx)) {
+                    triggeringVals.add(valIdx);
+                }
+
+                deletedValues[var].add(valIdx);
+                RB[valIdx].clear(var);
+                RD[var].clear(valIdx);
             }
         };
     }
 
-    protected void fillD() {
-//        IntVar v;
-        // 填充B和D
-        for (int i = 0; i < arity; ++i) {
-            D[i].clear();
-            IntVar v = vars[i];
-            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-                int valIdx = val2Idx.get(j);
-                D[i].set(valIdx);
-            }
+
+//    private void fillBAndD(SparseSet changedVars, SparseSet changedVals) {
+//        changedVars.iterateValid();
+//        while (changedVars.hasNextValid()) {
+//            int v = changedVars.next();
+////            RD[v].generateBitSet(D[v]);
+//            D[v].set(RD[v]);
+//        }
+//        changedVals.iterateValid();
+//        while (changedVals.hasNextValid()) {
+//            int a = changedVals.next();
+//            B[a].set(RB[a]);
+////            RB[a].generateBitSet(B[a]);
+//        }
+//    }
+
+    private void fillBAndD(SparseSet changedVars, SparseSet changedVals) {
+        for (int v = 0; v < arity; v++) {
+//        changedVars.iterateValid();
+//        while (changedVars.hasNextValid()) {
+//            int v = changedVars.next();
+//            RD[v].generateBitSet(D[v]);
+            D[v].set(RD[v]);
+        }
+        for (int a = 0; a < numValues; ++a) {
+//        changedVals.iterateValid();
+//        while (changedVals.hasNextValid()) {
+//            int a = changedVals.next();
+            B[a].set(RB[a]);
+//            RB[a].generateBitSet(B[a]);
         }
     }
 
-    protected void fillBandD() {
-        for (int i = 0; i < numValues; ++i) {
-            B[i].clear();
-        }
+//    protected void fillD() {
+////        IntVar v;
+//        // 填充B和D
+//        for (int i = 0; i < arity; ++i) {
+//            D[i].clear();
+//            IntVar v = vars[i];
+//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+//                int valIdx = val2Idx.get(j);
+//                D[i].set(valIdx);
+//            }
+//        }
+//    }
 
-//        IntVar v;
-        // 填充B和D
-        for (int i = 0; i < arity; ++i) {
-            D[i].clear();
-            IntVar v = vars[i];
-            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-                int valIdx = val2Idx.get(j);
-                D[i].set(valIdx);
-                B[valIdx].set(i);
-            }
-        }
-    }
+//    protected void fillBandD() {
+//        for (int i = 0; i < numValues; ++i) {
+//            B[i].clear();
+//        }
+//
+//        // 填充B和D
+//        for (int i = 0; i < arity; ++i) {
+//            D[i].clear();
+//            IntVar v = vars[i];
+//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+//                int valIdx = val2Idx.get(j);
+//                D[i].set(valIdx);
+//                B[valIdx].set(i);
+//            }
+//        }
+//    }
 
     void printDoms() {
         for (var v : vars) {
@@ -299,96 +374,275 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         }
     }
 
+    void checkDoms() {
+//        triggeringVars.iterateValid();
+//        while (triggeringVars.hasNextValid()) {
+//            int i = triggeringVars.next();
+        for (int i = 0; i < arity; i++) {
+            IntVar v = vars[i];
+            for (int valIdx = D[i].firstSetBit(); valIdx != D[i].end(); valIdx = D[i].nextSetBit(valIdx + 1)) {
+                if (!v.contains(idx2Val[valIdx])) {
+                    System.out.println("error 0");
+                }
+            }
+            for (int k = v.getLB(), ub = v.getUB(); k <= ub; k = v.nextValue(k)) {
+                int valIdx = val2Idx.get(k);
+                if (!D[i].get(valIdx)) {
+                    System.out.println("error 1");
+                }
+            }
+        }
+
+//        triggeringVals.iterateValid();
+//        while (triggeringVals.hasNextValid()) {
+//            int i = triggeringVals.next();
+        for (int i = 0; i < numValues; i++) {
+            for (int varIdx = B[i].firstSetBit(); varIdx != B[i].end(); varIdx = B[i].nextSetBit(varIdx + 1)) {
+                if (!vars[varIdx].contains(idx2Val[i])) {
+                    System.out.println("error 2");
+                }
+            }
+        }
+    }
+
+//    boolean testBAndD() {
+//        for (int i = 0; i < arity; i++) {
+//            for (int valIdx = D[i].firstSetBit(); valIdx != D[i].end(); )
+//        }
+//    }
+
     //***********************************************************************************
     // PROPAGATION
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
+        System.out.println("--------------" + (++numCall) + "--------------");
         isSkiped = false;
-        numCall++;
-//        if (numCall<20) {
-//        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
-//            printDoms();
-//        }
         boolean filter = false;
         Measurer.enterProp();
-        long startTime;
-        fillD();
+//        matchedValuesR.generateBitSet(matchedValues);
+        matchedValues.set(matchedValuesR);
+        changedSCCStartIndex.clear();
 
-        if (numCall == 0) {
-            // initial
+        if (initialPropagation) {
             restriction.set(0, numNodes);
             triggeringVars.fill();
             varsTmp.fill();
-            // matching
+            valsTmp.fill();
+            notA.fill();
+            notGamma.fill();
+            checkDoms();
             startTime = System.nanoTime();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
-            // filtering
+            matchedValuesR.set(matchedValues);
+            System.out.println(matchedValues);
+            System.out.println(matchedValuesR);
             startTime = System.nanoTime();
             resetData(varsTmp, valsTmp, true);
-
+            if (freeNodes.validSize() != 0) {
+                propagateFreeNodes();
+            }
             findAllSCC(restriction, varsTmp);
             filter = filterDomains(varsTmp, valsTmp);
             Measurer.filterTime += System.nanoTime() - startTime;
-
+            initialPropagation = false;
         } else {
-            // initial
             triggeringVars.clear();
+            triggeringVals.clear();
+            // 初始化deleteValue
             for (int i = 0; i < arity; ++i) {
                 monitors[i].freeze();
                 monitors[i].forEachRemVal(onValRem.set(i));
                 monitors[i].unfreeze();
             }
-
+            fillBAndD(triggeringVars, triggeringVals);
+            System.out.println("triggeringVars:" + triggeringVars);
+            System.out.println(partition);
+            checkDoms();
+            System.out.println(Arrays.toString(var2ValR));
+            System.out.println(Arrays.toString(val2VarR));
+            System.out.println(matchedValues);
+            System.out.println(matchedValuesR);
             //matching
             startTime = System.nanoTime();
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
-//            System.out.println(Arrays.toString(var2Val));
-            //filtering
+
+            matchedValuesR.set(matchedValues);
+
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
-//            System.out.println(partition);
             Measurer.filterTime += System.nanoTime() - startTime;
         }
-
+//        for (int i = 0; i < arity; i++) {
+//            RD[i].getWord()
+//        }
+//        startTime = System.nanoTime();
+//        findMaximumMatching();
+//        Measurer.matchingTime += System.nanoTime() - startTime;
+//
+//        startTime = System.nanoTime();
+//        filter = filter();
+//        Measurer.filterTime += System.nanoTime() - startTime;
         if (isSkiped) {
             Measurer.enterSkip();
         }
         return filter;
     }
 
+//
+//    public boolean propagateOld() throws ContradictionException {
+//        isSkiped = false;
+//        numCall++;
+////        if (numCall<20) {
+////        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
+////            printDoms();
+////        }
+//        boolean filter = false;
+//        Measurer.enterProp();
+//
+//        fillBandD();
+//
+//        if (initialPropagation) {
+//            // initial
+//            restriction.set(0, numNodes);
+//            triggeringVars.fill();
+//            varsTmp.fill();
+//            valsTmp.fill();
+//            notA.fill();
+//            notGamma.fill();
+//            // matching
+//            startTime = System.nanoTime();
+//            findMaximumMatching();
+//            Measurer.matchingTime += System.nanoTime() - startTime;
+//            // filtering
+//            startTime = System.nanoTime();
+//            resetData(varsTmp, valsTmp, true);
+//            if (freeNodes.validSize() != 0) {
+//                propagateFreeNodes();
+//            }
+//            findAllSCC(restriction, varsTmp);
+//            filter = filterDomains(varsTmp, valsTmp);
+//            Measurer.filterTime += System.nanoTime() - startTime;
+//            initialPropagation = false;
+//        } else {
+//            // initial
+//            triggeringVars.clear();
+//            for (int i = 0; i < arity; ++i) {
+//                monitors[i].freeze();
+//                monitors[i].forEachRemVal(onValRem.set(i));
+//                monitors[i].unfreeze();
+//            }
+//
+//            //matching
+//            startTime = System.nanoTime();
+//            filter |= propagate_SCC_Match();
+//            Measurer.matchingTime += System.nanoTime() - startTime;
+////            System.out.println(Arrays.toString(var2Val));
+//            //filtering
+//            startTime = System.nanoTime();
+//            filter |= propagate_SCC_filter();
+////            System.out.println(partition);
+//            Measurer.filterTime += System.nanoTime() - startTime;
+//        }
+//
+//        if (isSkiped) {
+//            Measurer.enterSkip();
+//        }
+//
+//        return filter;
+//    }
+
+    protected void prepareForMatching() {
+        //freeNode.fill();
+//        matchedValues.clear();
+//        varsTmp.clear();
+        // 增量检查
+        // matching 有效性检查
+        triggeringVars.iterateValid();
+        while (triggeringVars.hasNextValid()) {
+//        for (int varIdx = 0; varIdx < arity; varIdx++) {
+            int varIdx = triggeringVars.next();
+//            IntVar v = vars[varIdx];
+            // !! 这里可以修改一下 已赋值 就不参与修改了
+            if (D[varIdx].isSingleton()) {
+                // 取出变量的唯一值
+                int valIdx = D[varIdx].firstSetBit();
+
+                int oldValIdx = var2ValR[varIdx].get();
+                int oldVarIdx = val2VarR[valIdx].get();
+
+                if (oldValIdx != -1 && oldValIdx != valIdx) {
+                    val2VarR[oldValIdx].set(-1);
+                }
+                if (oldVarIdx != -1 && oldVarIdx != varIdx) {
+                    var2ValR[oldVarIdx].set(-1);
+                }
+
+                val2VarR[valIdx].set(varIdx);
+                var2ValR[varIdx].set(valIdx);
+                //freeNode.remove(valIdx);
+                matchedValues.set(valIdx);
+                matchedValues.clear(oldValIdx);
+            } else {
+                // 检查原匹配是否失效
+                int oldMatchingIndex = var2ValR[varIdx].get();
+                if (oldMatchingIndex != -1) {
+                    // 如果oldMatchingValue无效
+                    if (!D[varIdx].get(oldMatchingIndex)) {
+//                    if (!D[varIdx].get(oldMatchingIndex)) {
+                        val2VarR[oldMatchingIndex].set(-1);
+//                        unMatchedValues.set(oldMatchingIndex);
+                        matchedValues.clear(oldMatchingIndex);
+//                        matchedValues.set(oldMatchingIndex);
+                        var2ValR[varIdx].set(-1);
+                    } else {
+//                        //freeNode.clear(oldMatchingIndex);
+                        //freeNode.remove(oldMatchingIndex);
+                        matchedValues.set(oldMatchingIndex);
+//                    System.out.println(oldMatchingIndex + " is free");
+                    }
+                }
+
+            }
+        }
+    }
+
     protected boolean propagate_SCC_Match() throws ContradictionException {
         boolean res = false;
+//        notA.clear();
+//        notGamma.clear();
         IntVar x, y;
+        System.out.println("=" + matchedValues);
         prepareForMatching();
+        System.out.println("=" + matchedValues);
         changedSCCStartIndex.clear();
         triggeringVars.iterateValid();
         while (triggeringVars.hasNextValid()) {
             int xIdx = triggeringVars.next();
-            int valIdx = var2Val[xIdx];
+            int valIdx = var2ValR[xIdx].get();
             int sccStartIdx = partition.getSCCStartIndexByElement(xIdx);
             x = vars[xIdx];
 
-            if (valIdx == -1) {
+            if (valIdx == -1 || !D[xIdx].get(valIdx)) {
                 repairMatching(sccStartIdx);
             }
 
             if (x.isInstantiated() && partition.partitionSize(sccStartIdx) > 2) {
-                int xVal = vars[xIdx].getValue();
-
+                valIdx = var2ValR[xIdx].get();
+                int xVal = idx2Val[valIdx];
                 if (changedSCCStartIndex.contains(sccStartIdx)) {
                     changedSCCStartIndex.remove(sccStartIdx);
                 }
 
                 //parition s into s1 s2 , from now on s = s2
 //                System.out.println("partition remove: " + xIdx + " " + (val2Idx.get(xVal) + addArity));
-//                System.out.println(partition);
+                System.out.println("-" + partition);
                 partition.remove(xIdx);
-                partition.remove(var2Val[xIdx] + addArity);
+                partition.remove(valIdx + addArity);
 //                System.out.println(xIdx + " is isInstantiated to: " + xVal);
-//                System.out.println(partition);
+                System.out.println("-" + partition);
                 partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
                 do {
                     int yIdx = partition.getValid();
@@ -397,7 +651,10 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
                         if (y.contains(xVal)) {
 //                            System.out.println("remove: " + yIdx + ", " + xVal);
                             res |= y.removeValue(xVal, aCause);
-                            D[yIdx].clear(val2Idx.get(xVal));
+                            D[yIdx].clear(valIdx);
+                            RD[yIdx].clear(valIdx);
+                            B[valIdx].clear(yIdx);
+                            RB[valIdx].clear(yIdx);
                         }
                     }
                 } while (partition.goToNextValid());
@@ -412,78 +669,92 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
                 }
             }
         }
-        finalCheckAndRepairMatching();
+//        finalCheckAndRepairMatching();
         return res;
     }
 
     protected boolean propagate_SCC_filter() throws ContradictionException {
         boolean filter = false;
         maxDFS = 0;
-        unconnected = false;
+        System.out.println(Arrays.toString(var2ValR));
+        System.out.println(Arrays.toString(val2VarR));
+//        unconnected = false;
+        unconnected = !gammaMask.isEmpty();
         cycles.clear();
         changedSCCStartIndex.iterateValid();
         while (changedSCCStartIndex.hasNextValid()) {
             int sccStartIndex = changedSCCStartIndex.next();
-            partition.getPartitionBitSetMaskAndVars(sccStartIndex, restriction, varsTmp, valsTmp, arity, numNodes);
+            System.out.println(partition);
+
+            partition.getPartitionBitSetMaskAndVars(sccStartIndex, restriction, varsTmp, notGamma, valsTmp, notA, freeNodes, arity, numNodes);
             resetData(varsTmp, valsTmp, restriction.get(arity));
+            if (freeNodes.validSize() != 0) {
+                propagateFreeNodes();
+            }
+            System.out.println("free = " + freeNodes);
+
+            System.out.println(restriction);
 //            System.out.println("valDFSNum: " + Arrays.toString(valDFSNum) + ", " + restriction + "," + partition);
             findAllSCC(restriction, varsTmp);
             filter |= filterDomains(varsTmp, valsTmp);
         }
         return filter;
     }
+//
+//    protected void prepareForMatching() {
+//        //freeNode.fill();
+//        matchedValues.clear();
+//        varsTmp.clear();
+//        // 增量检查
+//        // matching 有效性检查
+//        for (int varIdx = 0; varIdx < arity; varIdx++) {
+//            IntVar v = vars[varIdx];
+//            // !! 这里可以修改一下 已赋值 就不参与修改了
+//            if (v.getDomainSize() == 1) {
+//                // 取出变量的唯一值
+//                int valIdx = val2Idx.get(v.getValue());
+//
+//                int oldValIdx = var2Val[varIdx];
+//                int oldVarIdx = val2Var[valIdx];
+//
+//                if (oldValIdx != -1 && oldValIdx != valIdx) {
+//                    val2Var[oldValIdx] = -1;
+//                }
+//                if (oldVarIdx != -1 && oldVarIdx != varIdx) {
+//                    var2Val[oldVarIdx] = -1;
+//                }
+//
+//                val2Var[valIdx] = varIdx;
+//                var2Val[varIdx] = valIdx;
+//                //freeNode.remove(valIdx);
+//                matchedValues.set(valIdx);
+//            } else {
+//                // 检查原匹配是否失效
+//                int oldMatchingIndex = var2Val[varIdx];
+//                if (oldMatchingIndex != -1) {
+//                    // 如果oldMatchingValue无效
+//                    if (!v.contains(idx2Val[oldMatchingIndex])) {
+//                        val2Var[oldMatchingIndex] = -1;
+//                        var2Val[varIdx] = -1;
+//                        varsTmp.add(varIdx);
+//                    } else {
+//                        //freeNode.remove(oldMatchingIndex);
+//                        matchedValues.set(oldMatchingIndex);
+//                    }
+//                } else {
+//                    varsTmp.add(varIdx);
+//                }
+//
+//            }
+//        }
+//    }
 
-    protected void prepareForMatching() {
-        freeNode.fill();
-        matchedValues.clear();
-        varsTmp.clear();
-        // 增量检查
-        // matching 有效性检查
-        for (int varIdx = 0; varIdx < arity; varIdx++) {
-            IntVar v = vars[varIdx];
-            // !! 这里可以修改一下 已赋值 就不参与修改了
-            if (v.getDomainSize() == 1) {
-                // 取出变量的唯一值
-                int valIdx = val2Idx.get(v.getValue());
-
-                int oldValIdx = var2Val[varIdx];
-                int oldVarIdx = val2Var[valIdx];
-
-                if (oldValIdx != -1 && oldValIdx != valIdx) {
-                    val2Var[oldValIdx] = -1;
-                }
-                if (oldVarIdx != -1 && oldVarIdx != varIdx) {
-                    var2Val[oldVarIdx] = -1;
-                }
-
-                val2Var[valIdx] = varIdx;
-                var2Val[varIdx] = valIdx;
-                freeNode.remove(valIdx);
-                matchedValues.set(valIdx);
-            } else {
-                // 检查原匹配是否失效
-                int oldMatchingIndex = var2Val[varIdx];
-                if (oldMatchingIndex != -1) {
-                    // 如果oldMatchingValue无效
-                    if (!v.contains(idx2Val[oldMatchingIndex])) {
-                        val2Var[oldMatchingIndex] = -1;
-                        var2Val[varIdx] = -1;
-                        varsTmp.add(varIdx);
-                    } else {
-                        freeNode.remove(oldMatchingIndex);
-                        matchedValues.set(oldMatchingIndex);
-                    }
-                } else {
-                    varsTmp.add(varIdx);
-                }
-
-            }
-        }
-    }
-
+    // 在非initialPropagate调用
     protected void repairMatching(int SCCStartIndex) throws ContradictionException {
         // repair max matching.
+        System.out.println("repair matching: sccStartIndex: " + SCCStartIndex);
         partition.setIteratorIndexBySCCStartIndex(SCCStartIndex);
+
         do {
             int varIdx = partition.getValid();
 //            if (id == 7) {
@@ -491,55 +762,57 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            }
             if (varIdx < arity) {
 //                if (var2Val[varIdx] == -1) {
-                if (var2Val[varIdx] == -1) {
+                int valIdx = var2ValR[varIdx].get();
+                if (valIdx == -1 || !D[varIdx].get(valIdx)) {
+                    var2ValR[varIdx].set(-1);
                     unVisitedValues.set();
 //                visitedVariables.clear();
                     unVisitedVariables.set();
                     MakeAugmentingPath(varIdx);
                 }
 
-                if (var2Val[varIdx] == -1) {
+                if (var2ValR[varIdx].get() == -1) {
 //                    for (int i = 0; i < vars.length; i++) {
 //                        monitors[i].unfreeze();
 //                    }
 //                    System.out.println("match fail");
 //                    Measurer.matchingTime += System.nanoTime() - startTime;
+                    Measurer.matchingTime += System.nanoTime() - startTime;
                     vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
-                } else {
-                    varsTmp.remove(varIdx);
                 }
             }
         } while (partition.goToNextValid());
     }
 
-    protected void finalCheckAndRepairMatching() throws ContradictionException {
-        varsTmp.iterateValid();
-        while (varsTmp.hasNextValid()) {
-            int varIdx = varsTmp.next();
-            if (var2Val[varIdx] == -1) {
-                unVisitedValues.set();
-//                visitedVariables.clear();
-                unVisitedVariables.set();
-                MakeAugmentingPath(varIdx);
-            }
-            if (var2Val[varIdx] == -1) {
-                // No augmenting path exists.
-//                System.out.println("match fail");
-//                for (int i = 0; i < vars.length; i++) {
-//                    monitors[i].unfreeze();
-//                }
-//                    System.out.println("match fail");
-//                Measurer.matchingTime += System.nanoTime() - startTime;
-                vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
-            }
-        }
-    }
+//    protected void finalCheckAndRepairMatching() throws ContradictionException {
+//        varsTmp.iterateValid();
+//        while (varsTmp.hasNextValid()) {
+//            int varIdx = varsTmp.next();
+//            if (var2Val[varIdx] == -1) {
+//                unVisitedValues.set();
+////                visitedVariables.clear();
+//                unVisitedVariables.set();
+//                MakeAugmentingPath(varIdx);
+//            }
+//            if (var2Val[varIdx] == -1) {
+//                // No augmenting path exists.
+////                System.out.println("match fail");
+////                for (int i = 0; i < vars.length; i++) {
+////                    monitors[i].unfreeze();
+////                }
+////                    System.out.println("match fail");
+////                Measurer.matchingTime += System.nanoTime() - startTime;
+//                vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
+//            }
+//        }
+//    }
 
     //***********************************************************************************
     // Initialization
     //***********************************************************************************
 
     protected void MakeAugmentingPath(int start) {
+        System.out.println("MakeAugmentingPath: " + start);
         int num_to_visit = 0;
         int num_visited = 0;
         // visit 里存的是变量
@@ -550,10 +823,11 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         while (num_visited < num_to_visit) {
             // Dequeue node to visit.
             int node = visiting_[num_visited++];
-            IntVar v = vars[node];
+//            IntVar v = vars[node];
 
-            for (int value = v.getLB(), ub = v.getUB(); value <= ub; value = v.nextValue(value)) {
-                int valIdx = val2Idx.get(value);
+//            for (int value = v.getLB(), ub = v.getUB(); value <= ub; value = v.nextValue(value)) {
+//                int valIdx = val2Idx.get(value);
+            for (int valIdx = D[node].firstSetBit(); valIdx != D[node].end(); valIdx = D[node].nextSetBit(valIdx + 1)) {
                 if (!unVisitedValues.get(valIdx)) continue;
                 unVisitedValues.clear(valIdx);
                 if (!matchedValues.get(valIdx)) {
@@ -561,10 +835,10 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
                     int path_value = valIdx;
                     while (path_node != -1) {
                         // 旧变量拿到旧匹配值
-                        int old_value = var2Val[path_node];
+                        int old_value = var2ValR[path_node].get();
                         // 旧变量拿到新匹配值
-                        var2Val[path_node] = path_value;
-                        val2Var[path_value] = path_node;
+                        var2ValR[path_node].set(path_value);
+                        val2VarR[path_value].set(path_node);
 
                         // 回溯到上一个变量
                         path_node = variable_visited_from_[path_node];
@@ -572,8 +846,8 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
                         path_value = old_value;
                     }
 
-//                    freeNode.clear(valIdx);
-                    freeNode.remove(valIdx);
+//                    //freeNode.clear(valIdx);
+                    //freeNode.remove(valIdx);
                     matchedValues.set(valIdx);
 //                    System.out.println(valIdx + " is not free");
                     return;
@@ -582,102 +856,105 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
                     // 若没有该值已经有匹配，但变量没有匹配
 
                     // 先拿到这个值的匹配变量
-                    int next_node = val2Var[valIdx];
+                    int next_node = val2VarR[valIdx].get();
 //                    variable_visited_.set(next_node);
                     unVisitedVariables.clear(next_node);
                     // 把这个变量加入队列中
                     visiting_[num_to_visit++] = next_node;
                     variable_visited_from_[next_node] = node;
-//                    freeNode.clear(valIdx);
-                    freeNode.remove(valIdx);
+//                    //freeNode.clear(valIdx);
+                    //freeNode.remove(valIdx);
                     matchedValues.set(valIdx);
                 }
             }
         }
     }
 
+    // for initialpropagation
     protected void findMaximumMatching() throws ContradictionException {
-        freeNode.fill();
+//        //freeNode.fill();
         matchedValues.clear();
-
-        // 增量检查
-        // matching 有效性检查
-        for (int varIdx = 0; varIdx < arity; varIdx++) {
-            IntVar v = vars[varIdx];
-            // !! 这里可以修改一下 已赋值 就不参与修改了
-//            if (v.getDomainSize() == 1) {
+//
+//        // 增量检查
+//        // matching 有效性检查
+//        for (int varIdx = 0; varIdx < arity; varIdx++) {
+//            IntVar v = vars[varIdx];
+//            // !! 这里可以修改一下 已赋值 就不参与修改了
+////            if (v.getDomainSize() == 1) {
+////                // 取出变量的唯一值
+////                int valIdx = val2Idx.get(v.getValue());
+////                B[valIdx].set(varIdx);
+////                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
+//            if (D[varIdx].isSingleton()) {
 //                // 取出变量的唯一值
-//                int valIdx = val2Idx.get(v.getValue());
-//                B[valIdx].set(varIdx);
-//                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
-            if (v.getDomainSize() == 1) {
-                // 取出变量的唯一值
-                int valIdx = val2Idx.get(v.getValue());
-//                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
-
-                int oldValIdx = var2Val[varIdx];
-                int oldVarIdx = val2Var[valIdx];
-
-                if (oldValIdx != -1 && oldValIdx != valIdx) {
-                    val2Var[oldValIdx] = -1;
-//                    unMatchedValues.set(oldValIdx);
-//                    matchedValues.clear(oldValIdx);
-                }
-                if (oldVarIdx != -1 && oldVarIdx != varIdx) {
-                    var2Val[oldVarIdx] = -1;
-                }
-
-                val2Var[valIdx] = varIdx;
-//                unMatchedValues.clear(valIdx);
-                var2Val[varIdx] = valIdx;
-                freeNode.remove(valIdx);
-                matchedValues.set(valIdx);
-            } else {
-                // 检查原匹配是否失效
-                int oldMatchingIndex = var2Val[varIdx];
-                if (oldMatchingIndex != -1) {
-                    // 如果oldMatchingValue无效
-                    if (!v.contains(idx2Val[oldMatchingIndex])) {
+//                int valIdx = D[varIdx].firstSetBit();
+////                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
+//
+//                int oldValIdx = var2ValR[varIdx].get();
+//                int oldVarIdx = val2VarR[valIdx].get();
+//
+//                if (oldValIdx != -1 && oldValIdx != valIdx) {
+//                    val2VarR[oldValIdx].set(-1);
+////                    unMatchedValues.set(oldValIdx);
+////                    matchedValues.clear(oldValIdx);
+//                }
+//                if (oldVarIdx != -1 && oldVarIdx != varIdx) {
+//                    var2ValR[oldVarIdx].set(-1);
+//                }
+//
+//                val2VarR[valIdx].set(varIdx);
+////                unMatchedValues.clear(valIdx);
+//                var2ValR[varIdx].set(valIdx);
+//                //freeNode.remove(valIdx);
+//                matchedValues.set(valIdx);
+//            } else {
+//                // 检查原匹配是否失效
+//                int oldMatchingIndex = var2ValR[varIdx].get();
+//                if (oldMatchingIndex != -1) {
+//                    // 如果oldMatchingValue无效
 //                    if (!D[varIdx].get(oldMatchingIndex)) {
-                        val2Var[oldMatchingIndex] = -1;
-//                        unMatchedValues.set(oldMatchingIndex);
-//                        matchedValues.clear(oldMatchingIndex);
-                        var2Val[varIdx] = -1;
-                    } else {
-//                        freeNode.clear(oldMatchingIndex);
-                        freeNode.remove(oldMatchingIndex);
-                        matchedValues.set(oldMatchingIndex);
-//                    System.out.println(oldMatchingIndex + " is free");
-                    }
-                }
-
-            }
-        }
+////                    if (!D[varIdx].get(oldMatchingIndex)) {
+//                        val2VarR[oldMatchingIndex].set(-1);
+////                        unMatchedValues.set(oldMatchingIndex);
+////                        matchedValues.clear(oldMatchingIndex);
+//                        var2ValR[varIdx].set(-1);
+//                    } else {
+////                        //freeNode.clear(oldMatchingIndex);
+//                        //freeNode.remove(oldMatchingIndex);
+//                        matchedValues.set(oldMatchingIndex);
+////                    System.out.println(oldMatchingIndex + " is free");
+//                    }
+//                }
+//
+//            }
+//        }
 
         // Compute max matching.
         for (int varIdx = 0; varIdx < arity; varIdx++) {
-            if (var2Val[varIdx] == -1) {
+            if (var2ValR[varIdx].get() == -1) {
 //                value_visited_.clear();
                 unVisitedValues.set();
 //                visitedVariables.clear();
                 unVisitedVariables.set();
                 MakeAugmentingPath(varIdx);
             }
-            if (var2Val[varIdx] == -1) {
+            if (var2ValR[varIdx].get() == -1) {
                 // No augmenting path exists.
 //                Measurer.matchingTime += System.nanoTime() - startTime;
+                initialPropagation = false;
+                Measurer.matchingTime += System.nanoTime() - startTime;
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
         }
 
-//        System.out.println(Arrays.toString(var2Val));
-//        System.out.println(Arrays.toString(val2Var));
+
     }
     //***********************************************************************************
     // PRUNING
     //***********************************************************************************
 
     protected boolean filterDomains(SparseSet filterVars, SparseSet filterVals) throws ContradictionException {
+        System.out.println("filter: " + filterVars + ", " + filterVals);
         boolean filter = false;
         filterVars.iterateValid();
         while (filterVars.hasNextValid()) {
@@ -691,19 +968,40 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //                int ub = v.getUB();
 //                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
 //                    int valIdx = val2Idx.get(k);
-//                    System.out.println(varIdx+", "+valIdx);
-                    if (!partition.inSameSCC(varIdx, valIdx + addArity)) {
-                        Measurer.enterP2();
-                        if (valIdx == var2Val[varIdx]) {
-                            int valNum = v.getDomainSize();
-                            Measurer.numDelValuesP2 += valNum - 1;
-                            filter |= v.instantiateTo(k, aCause);
-//                            System.out.println("instantiate: " + varIdx + ", " + k);
-                        } else {
-                            ++Measurer.numDelValuesP2;
-                            filter |= v.removeValue(k, aCause);
+//                    System.out.println(varIdx + ", " + valIdx + ", " + notGamma.contains(varIdx) + ", " + notA.contains(valIdx));
+//                    if (!notGamma.contains(varIdx) && notA.contains(valIdx)) {
+                    if (gammaMask.get(varIdx) && notA.contains(valIdx)) {
+                        ++Measurer.numDelValuesP1;
+                        Measurer.enterP1();
+                        filter |= v.removeValue(k, aCause);
+                        D[varIdx].clear(valIdx);
+                        B[valIdx].clear(varIdx);
+                        RD[varIdx].clear(valIdx);
+                        RD[valIdx].clear(varIdx);
+//                        System.out.println("first delete: " + varIdx + ", " + k);
+//                    } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
+                    } else if (!gammaMask.get(varIdx) && notA.contains(valIdx)) {
+                        if (!partition.inSameSCC(varIdx, valIdx + addArity)) {
+                            Measurer.enterP2();
+                            if (valIdx == var2ValR[varIdx].get()) {
+                                int valNum = v.getDomainSize();
+                                Measurer.numDelValuesP2 += valNum - 1;
+                                filter |= v.instantiateTo(k, aCause);
+                                D[varIdx].clear();
+                                B[valIdx].clear();
+                                RD[varIdx].set(valIdx);
+                                RD[valIdx].set(varIdx);
+//                                System.out.println("instantiate: " + varIdx + ", " + k);
+                            } else {
+                                ++Measurer.numDelValuesP2;
+                                filter |= v.removeValue(k, aCause);
+                                D[varIdx].clear(valIdx);
+                                B[valIdx].clear(varIdx);
+                                RD[varIdx].clear(valIdx);
+                                RD[valIdx].clear(varIdx);
+                                System.out.println("second delete: " + varIdx + ", " + k);
 //                            D[varIdx].clear(valIdx);
-//                            System.out.println("second delete: " + varIdx + ", " + k);
+                            }
                         }
                     }
                 }
@@ -712,11 +1010,48 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         return filter;
     }
 
+//    protected boolean filterDomains(SparseSet filterVars, SparseSet filterVals) throws ContradictionException {
+//        boolean filter = false;
+//        filterVars.iterateValid();
+//        while (filterVars.hasNextValid()) {
+//            int varIdx = filterVars.next();
+//            IntVar v = vars[varIdx];
+//            if (!v.isInstantiated()) {
+//                filterVals.iterateValid();
+//                while (filterVals.hasNextValid()) {
+//                    int valIdx = filterVals.next();
+//                    int k = idx2Val[valIdx];
+////                int ub = v.getUB();
+////                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
+////                    int valIdx = val2Idx.get(k);
+////                    System.out.println(varIdx+", "+valIdx);
+//                    if (!partition.inSameSCC(varIdx, valIdx + addArity)) {
+//                        Measurer.enterP2();
+//                        if (valIdx == var2Val[varIdx]) {
+//                            int valNum = v.getDomainSize();
+//                            Measurer.numDelValuesP2 += valNum - 1;
+//                            filter |= v.instantiateTo(k, aCause);
+////                            System.out.println("instantiate: " + varIdx + ", " + k);
+//                        } else {
+//                            ++Measurer.numDelValuesP2;
+//                            filter |= v.removeValue(k, aCause);
+////                            D[varIdx].clear(valIdx);
+////                            System.out.println("second delete: " + varIdx + ", " + k);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return filter;
+//    }
+
+
     protected void resetData(SparseSet resetVars, SparseSet resetVals, boolean containsSink) {
 //        maxDFS = 0;
 //        cycles.clear();
         DE.clear();
         hasSCCSplit = false;
+        gammaMask.clear();
 
         resetVals.iterateValid();
         while (resetVals.hasNextValid()) {
@@ -732,6 +1067,10 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            System.out.println("resetVar: " + i);
             varLowLink[i] = Integer.MAX_VALUE;
             varDFSNum[i] = Integer.MAX_VALUE;
+            // freeNodes设置成partition的全部值
+            // 匹配值 都不可能是freeNodes集合的 把它们从freeNodes中删除
+            System.out.println("resetVar: " + i + "f remove: " + var2ValR[i].get());
+            freeNodes.remove(var2ValR[i].get());
             if (triggeringVars.contains(i)) {
                 var iter = deletedValues[i].iterator();
                 while (iter.hasNext()) {
@@ -752,6 +1091,71 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         unVisitedVariables.set();
         unVisitedValues.set();
     }
+
+    // for propagate free node
+    private void propagateFreeNodes() {
+//        notGamma.clear();
+//        notA.fill();
+//         restriction记录寻找SCC的过程中未访问的变量
+//        restriction.clear();
+//        restriction.flip(0, arity);
+//        notA.clear();
+//        gammaMask.clear();
+
+        int valIdx, varIdx;
+        freeNodes.iterateValid();
+        while (freeNodes.hasNextValid()) {
+            valIdx = freeNodes.next();
+            notA.remove(valIdx);
+//            notGamma.remove (varIdx);
+            gammaMask.or(B[valIdx]);
+        }
+//        gammaMask.and(restriction);
+        gammaFrontier.set(gammaMask);
+        for (varIdx = gammaFrontier.nextSetBit(0);
+             varIdx != gammaFrontier.end();
+             varIdx = gammaFrontier.nextSetBit(0)) {
+            // !! 这里可以将Extended改成Frontier，只记录前沿，记录方法是三个BitSet比较，
+            // frontier 扩展，从valMask中去掉gammaMask已记录的变量
+            valIdx = var2ValR[varIdx].get();
+            gammaFrontier.orAfterMinus(B[valIdx], gammaMask);
+            // 除去第i个变量
+            gammaFrontier.clear(varIdx);
+            // gamma 扩展
+            gammaMask.or(B[valIdx]);
+            notGamma.remove(varIdx);
+            notA.remove(valIdx);
+            restriction.clear(varIdx);
+            restriction.clear(valIdx);
+        }
+//            notA.remove(valIdx);
+        // 首先把与自由值相连的变量入队列
+//            valUnmatchedVar[valIdx].iterateValid();
+//            while (valUnmatchedVar[valIdx].hasNextValid()) {
+//                varIdx = valUnmatchedVar[valIdx].next();
+//                if (notGamma.contains(varIdx)) {
+//                    fifo[indexLast++] = varIdx;
+//                    notGamma.remove(varIdx);
+//                    restriction.clear(varIdx);
+//                }
+//            }
+        // 然后，对队列中每个变量的匹配值，把与该值相连的非匹配变量入队
+//            while (indexFirst != indexLast) {
+//                varIdx = fifo[indexFirst++];
+//                valIdx = var2Val[varIdx];
+//                notA.remove(valIdx);
+//                valUnmatchedVar[valIdx].iterateValid();
+//                while (valUnmatchedVar[valIdx].hasNextValid()) {
+//                    varIdx = valUnmatchedVar[valIdx].next();
+//                    if (notGamma.contains(varIdx)) {
+//                        fifo[indexLast++] = varIdx;
+//                        notGamma.remove(varIdx);
+//                        restriction.clear(varIdx);
+//                    }
+//                }
+//            }
+    }
+
 
     boolean findAllSCC(BitSet restri, SparseSet resVars) {
         clearVarStack();
@@ -782,7 +1186,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             if (v.getDomainSize() == 1 && !partition.isSingleton(i)) {
 //                varSCC[i] = nbSCC;
 //                singleton.set(i);
-                int totalIdx = valIndex2TotalIndex(var2Val[i]);
+                int totalIdx = valIndex2TotalIndex(var2ValR[i].get());
                 restri.clear(i);
                 restri.clear(totalIdx);
                 partition.remove(i);
@@ -810,7 +1214,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            if (!unVisitedValues.get(newNode)) {
 //                if (valIsInStack.get(newNode)) {
 //                    varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
-//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
+//                    if (!initialPropagation &&  !unconnected &&DE.size() != 0) DETest(valLowLink[newNode], maxDFS - 1);
 //                }
 //            } else {
 //                strongConnectVal(newNode);
@@ -827,7 +1231,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            }
 //        }
 //
-//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+//        if ( !initialPropagation && !unconnected && (DE.size() == 0)) {
 ////            System.out.println("xixi");
 //            isSkiped = true;
 //            return;
@@ -849,7 +1253,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            if (!unVisitedVariables.get(matchedVar)) {
 //                if (varIsInStack.get(matchedVar)) {
 //                    valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
-//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(varLowLink[matchedVar], maxDFS - 1);
+//                    if (!initialPropagation &&  !unconnected &&DE.size() != 0) DETest(varLowLink[matchedVar], maxDFS - 1);
 //                }
 //            } else {
 //                strongConnectVar(matchedVar);
@@ -862,7 +1266,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            if (!sinkIsUnvisited) {
 //                if (sinkIsInStack) {
 //                    valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
-//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(sinkLowLink, maxDFS - 1);
+//                    if (!initialPropagation &&  !unconnected &&DE.size() != 0) DETest(sinkLowLink, maxDFS - 1);
 //                }
 //            } else {
 //                strongConnectSink();
@@ -879,7 +1283,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            }
 //        }
 //
-//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+//        if ( !initialPropagation && !unconnected && (DE.size() == 0)) {
 ////            System.out.println("xixi");
 //            isSkiped = true;
 //            return;
@@ -913,7 +1317,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            if (!unVisitedValues.get(newNode)) {
 //                if (valIsInStack.get(newNode)) {
 //                    sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-//                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
+//                    if (!initialPropagation &&  !unconnected &&DE.size() != 0) DETest(valLowLink[newNode], maxDFS - 1);
 //                }
 //            } else {
 //                strongConnectVal(newNode);
@@ -959,7 +1363,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //            }
 //        }
 //
-//        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+//        if ( !initialPropagation && !unconnected && (DE.size() == 0)) {
 ////            System.out.println("xixi");
 //            isSkiped = true;
 //            return;
@@ -977,7 +1381,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
 //         p2
         long values = 0;
         int newNode = 0, iBase = 0;
-        int matchedVal = var2Val[curNode];
+        int matchedVal = var2ValR[curNode].get();
         int i = 0;
         for (int iWord = D[curNode].firstSetIndex(); iWord <= D[curNode].lastSetIndex(); ++iWord) {
             values = D[curNode].getWord(iWord) & valIsInStack.getWord(iWord);
@@ -989,7 +1393,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
                 newNode = iBase + i;
                 if (newNode == matchedVal) continue;
                 varLowLink[curNode] = Math.min(varLowLink[curNode], valDFSNum[newNode]);
-                if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
+                if (!initialPropagation && !unconnected && DE.size() != 0) DETest(valLowLink[newNode], maxDFS - 1);
             }
 
             values = D[curNode].getWord(iWord) & unVisitedValues.getWord(iWord);
@@ -1010,7 +1414,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             }
         }
 //        System.out.println("back");
-        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+        if (!initialPropagation && !unconnected && (DE.size() == 0)) {
 //            System.out.println("xixi");
             isSkiped = true;
             return;
@@ -1023,7 +1427,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         valLowLink[curNode] = maxDFS;
         maxDFS++;
         unVisitedValues.clear(curNode);
-        int matchedVar = val2Var[curNode];
+        int matchedVar = val2VarR[curNode].get();
         if (matchedVar != -1) {
             //have matched variable
 //            System.out.println("scValtoVar: " + (addArity + curNode) + ", " + matchedVar + ", " + unVisitedVariables.get(matchedVar));
@@ -1031,7 +1435,8 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             if (!unVisitedVariables.get(matchedVar)) {
                 if (varIsInStack.get(matchedVar)) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], varDFSNum[matchedVar]);
-                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(varLowLink[matchedVar], maxDFS - 1);
+                    if (!initialPropagation && DE.size() != 0 && !unconnected)
+                        DETest(varLowLink[matchedVar], maxDFS - 1);
                 }
             } else {
                 strongConnectVar(matchedVar);
@@ -1044,7 +1449,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             if (!sinkIsUnvisited) {
                 if (sinkIsInStack) {
                     valLowLink[curNode] = Math.min(valLowLink[curNode], sinkDFSNum);
-                    if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(sinkLowLink, maxDFS - 1);
+                    if (!initialPropagation && !unconnected && DE.size() != 0) DETest(sinkLowLink, maxDFS - 1);
                 }
             } else {
                 strongConnectSink();
@@ -1077,7 +1482,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             }
         }
 
-        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+        if (!initialPropagation && !unconnected && (DE.size() == 0)) {
 //            System.out.println("xixi");
             isSkiped = true;
             return;
@@ -1101,7 +1506,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             for (i = nextSetBit(values, 0); i != 64; values &= ~(1L << i), i = nextSetBit(values, 0)) {
                 newNode = iBase + i;
                 sinkLowLink = Math.min(sinkLowLink, valDFSNum[newNode]);
-                if (numCall != 0 && DE.size() != 0 && !unconnected) DETest(valLowLink[newNode], maxDFS - 1);
+                if (!initialPropagation && !unconnected && DE.size() != 0) DETest(valLowLink[newNode], maxDFS - 1);
             }
 
 //            values = matchedValues.getWord(iWord) & unVisitedValues.getWord(iWord);
@@ -1131,7 +1536,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             }
         }
 
-        if (numCall != 0 && !unconnected && (DE.size() == 0)) {
+        if (!initialPropagation && !unconnected && (DE.size() == 0)) {
 //            System.out.println("xixi");
             isSkiped = true;
             return;

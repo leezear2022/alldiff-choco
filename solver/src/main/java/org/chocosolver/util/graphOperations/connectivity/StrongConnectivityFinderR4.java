@@ -6,7 +6,6 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.array.TLongArrayStack;
-import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.IntTuple2;
 import org.chocosolver.util.objects.RSetPartition;
@@ -133,11 +132,11 @@ public class StrongConnectivityFinderR4 {
 
     public void findAllSCC(int sccIndexStart) {
         ISet nodes = graph.getNodes();
-        partition.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndexBySCCStartIndex(sccIndexStart);
         do {
-            int ii = partition.getValue();
+            int ii = partition.getValid();
             unvisited.set(ii, nodes.contains(ii));
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
         findAllSCCOf(unvisited);
     }
 
@@ -306,13 +305,13 @@ public class StrongConnectivityFinderR4 {
         SCCDE.clear();
 
         ISet nodes = graph.getNodes();
-        partition.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndexBySCCStartIndex(sccIndexStart);
         do {
-            int ii = partition.getValue();
+            int ii = partition.getValid();
             SCCDE.set(ii);
             SCCDE.or(bitDE[ii]);
             unvisited.set(ii, nodes.contains(ii));
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
         return findAllSCCOf_ED(unvisited);
     }
 
@@ -320,11 +319,11 @@ public class StrongConnectivityFinderR4 {
     public boolean findAllSCC_ED(int sccIndexStart, TLongArrayStack deleteEdge) {
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
-        partition.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndexBySCCStartIndex(sccIndexStart);
         do {
-            int ii = partition.getValue();
+            int ii = partition.getValid();
             unvisited.set(ii, nodes.contains(ii));
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
         return findAllSCCOf_ED(unvisited);
     }
 

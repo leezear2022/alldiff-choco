@@ -12,6 +12,7 @@ package org.chocosolver.memory.structure;
 import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.memory.IStateLong;
+import org.chocosolver.util.objects.INaiveBitSet;
 
 
 public class OneWordS64BitSet implements IStateBitSet {
@@ -346,6 +347,11 @@ public class OneWordS64BitSet implements IStateBitSet {
         word.set(w);
     }
 
+    @Override
+    public void generateBitSet(INaiveBitSet a) {
+        a.setWord(0,word.get());
+    }
+
     /**
      * Returns the number of bits set to <tt>true</tt> in this
      * <code>BitSet</code>.
@@ -408,5 +414,10 @@ public class OneWordS64BitSet implements IStateBitSet {
 
         b.append('}');
         return b.toString();
+    }
+
+    @Override
+    public void set(INaiveBitSet a) {
+        word.set(a.getWord(0));
     }
 }

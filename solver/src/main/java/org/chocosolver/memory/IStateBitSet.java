@@ -10,13 +10,15 @@
 package org.chocosolver.memory;
 
 
+import org.chocosolver.util.objects.INaiveBitSet;
+
 /**
  * Created by IntelliJ IDEA.
  * User: julien
  * Date: 12 juil. 2007
  * Time: 10:16:08
  */
-public interface IStateBitSet  {
+public interface IStateBitSet {
 
 
     /**
@@ -119,9 +121,12 @@ public interface IStateBitSet  {
     boolean isEmpty();
 
     // additional function for alldifferent constraint
+    void generateBitSet(INaiveBitSet a);
 
     long getWord(int wordIndex);
 
     void setWord(int wordIndex, long w);
+
+    void set(INaiveBitSet a);
 
 }

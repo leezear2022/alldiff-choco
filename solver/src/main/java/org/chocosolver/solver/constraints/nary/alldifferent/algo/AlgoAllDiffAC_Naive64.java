@@ -1,6 +1,7 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
+
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.ICause;
@@ -401,7 +402,7 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
                         filter |= v.removeValue(k, aCause);
                         //                System.out.println("first delete: " + v.getName() + ", " + k);
                     } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
-                        if ((graphLinkedMatrix[varIdx] & 1L << val2Var[valIdx]) == 0L && !checkSCC(varIdx, valIdx)) {
+                        if (!checkSCC(varIdx, valIdx)) {
                             Measurer.enterP2();
                             if (valIdx == var2Val[varIdx]) {
                                 int valNum = v.getDomainSize();
@@ -422,6 +423,9 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
     }
 
     private boolean checkSCC(int varIdx, int valIdx) {
+        if ((graphLinkedMatrix[varIdx] & 1L << val2Var[valIdx]) == 1L) {
+            return true;
+        }
         for (int i = nextSetBit(graphLinkedFrontier[varIdx], 0);
              i != BITS_PER_WORD; i = nextSetBit(graphLinkedFrontier[varIdx], 0)) {
             graphLinkedFrontier[varIdx] |= graphLinkedMatrix[i] & ~graphLinkedMatrix[varIdx];

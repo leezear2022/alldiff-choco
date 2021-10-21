@@ -51,13 +51,13 @@ public class testAllDiff {
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
 //                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
-//                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0015-m1.xml",
-//                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-07.xml",
+                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0020-m1.xml",
+//                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-06.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "C:/exp/AllDiffBench/GolombRuler/GolombRuler-05-a3.xml",
 //                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
-                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
+//                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
 
         };
         XCSPParser parser = new XCSPParser();
@@ -107,13 +107,24 @@ public class testAllDiff {
 //                "WordRamRegin",
 //                "WordRamGent",
                 "WordRamWordRam",
-                "WordRamZhang20",
-                "WordRamZhang20BIS",
-                "ACZhang18",
-                "WordRamZhang20BitBIS",
+                "WordRamWordRam",
+//                "WordRamWordRam",
+//                "WordRamZhang20",
+//                "WordRamZhang20BIS",
+//                "ACZhang18",
+//                "WordRamZhang20BitBIS",
                 "WordRamZhang20BitBIS2",
-                "ACNaive",
+                "WordRamZhang20BitBIS2",
+                "WordRamZhang20BitBIS4",
+                "WordRamZhang20BitBIS4",
+//                "WordRamZhang20BitBIS4",
+//                "ACNaive",
         };
+//        String[] algorithms = new String[]{
+//                "ACNaive",
+//                "ACNaive",
+//                "ACNaiveNew",
+//        };
         int runNum = 1;
 
         for (String ins : instances) {

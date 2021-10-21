@@ -136,11 +136,11 @@ public class StrongConnectivityFinderR3 {
 
     public void findAllSCC(int sccIndexStart) {
         ISet nodes = graph.getNodes();
-        partition.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndexBySCCStartIndex(sccIndexStart);
         do {
-            int ii = partition.getValue();
+            int ii = partition.getValid();
             unvisited.set(ii, nodes.contains(ii));
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
         findAllSCCOf(unvisited);
     }
 
@@ -326,11 +326,11 @@ public class StrongConnectivityFinderR3 {
     public boolean findAllSCC_ED(int sccIndexStart, TLongArrayStack deleteEdge) {
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
-        partition.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndexBySCCStartIndex(sccIndexStart);
         do {
-            int ii = partition.getValue();
+            int ii = partition.getValid();
             unvisited.set(ii, nodes.contains(ii));
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
         return findAllSCCOf_ED(unvisited);
     }
 

@@ -51,6 +51,7 @@ public class AllDifferent extends Constraint {
     public static final String WordRamZhang20IS = "WordRamZhang20IS";
     public static final String WordRamZhang20BitBIS = "WordRamZhang20BitBIS";
     public static final String WordRamZhang20BitBIS2 = "WordRamZhang20BitBIS2";
+    public static final String WordRamZhang20BitBIS4 = "WordRamZhang20BitBIS4";
     public static final String ACZhang18 = "ACZhang18";
     public static final String ACZhang20 = "ACZhang20";
     public static final String ACZhang20Bit = "ACZhang20Bit";
@@ -84,8 +85,8 @@ public class AllDifferent extends Constraint {
             case AC:
             case AC_ZHANG:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC(VARS, true)};
-            case Gent:
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent(VARS)};
+//            case Gent:
+//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent(VARS)};
             case ACFair:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Fair(VARS)};
             case ACChen:
@@ -102,12 +103,12 @@ public class AllDifferent extends Constraint {
             case AC20:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC20(VARS)};
 //                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20(VARS)};
-            case Gent20:
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20(VARS)};
-            case ACZhang20Bit:
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20Bit(VARS)};
-            case Gent20BitIS:
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20BitIS(VARS)};
+//            case Gent20:
+//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20(VARS)};
+//            case ACZhang20Bit:
+//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20Bit(VARS)};
+//            case Gent20BitIS:
+//                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20BitIS(VARS)};
             case ACZhang18M:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang18M(VARS)};
             case ACNaive:
@@ -137,6 +138,8 @@ public class AllDifferent extends Constraint {
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20BitBIS(VARS)};
             case WordRamZhang20BitBIS2:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20BitBIS2(VARS)};
+            case WordRamZhang20BitBIS4:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20BitBIS4(VARS)};
             case DEFAULT:
             default: {
                 // adds a Probabilistic AC (only if at least some variables have an enumerated domain)

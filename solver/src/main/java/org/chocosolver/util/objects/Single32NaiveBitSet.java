@@ -5,6 +5,7 @@ import org.chocosolver.memory.IStateBitSet;
 public class Single32NaiveBitSet implements INaiveBitSet {
     protected int words;
     protected int lastMask;
+    protected int bitSize;
 
     protected final static int ADDRESS_BITS_PER_WORD = 5;
     protected final static int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
@@ -14,6 +15,7 @@ public class Single32NaiveBitSet implements INaiveBitSet {
 
     public Single32NaiveBitSet(int nbits, boolean initValue) {
         lastMask = WORD_MASK >>> (BITS_PER_WORD - nbits);
+        bitSize = nbits;
         if (initValue) {
             words = lastMask;
         }
@@ -77,6 +79,11 @@ public class Single32NaiveBitSet implements INaiveBitSet {
     }
 
     @Override
+    public int bitCapacity() {
+        return 0;
+    }
+
+    @Override
     public int int64Size() {
         return 1;
     }
@@ -109,6 +116,11 @@ public class Single32NaiveBitSet implements INaiveBitSet {
     @Override
     public void or(INaiveBitSet a, INaiveBitSet b, INaiveBitSet c) {
         words |= (int) a.getWord(0) | (int) b.getWord(0) | (int) c.getWord(0);
+    }
+
+    @Override
+    public void minus(INaiveBitSet a) {
+        words &= ~a.getWord(0);
     }
 
     @Override
@@ -159,6 +171,11 @@ public class Single32NaiveBitSet implements INaiveBitSet {
     @Override
     public boolean isEmpty() {
         return words == 0;
+    }
+
+    @Override
+    public boolean nonEmpty() {
+        return false;
     }
 
     @Override

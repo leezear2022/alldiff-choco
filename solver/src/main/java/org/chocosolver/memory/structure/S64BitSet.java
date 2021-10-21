@@ -13,6 +13,7 @@ import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.memory.IStateInt;
 import org.chocosolver.memory.IStateLong;
+import org.chocosolver.util.objects.INaiveBitSet;
 
 import java.lang.reflect.Array;
 
@@ -554,6 +555,19 @@ public class S64BitSet implements IStateBitSet {
     @Override
     public void setWord(int wordIndex, long w) {
         words[wordIndex].set(w);
+    }
+
+    @Override
+    public void set(INaiveBitSet a) {
+        for (int i = 0; i < words.length; i++) {
+            words[i].set(a.getWord(i));
+        }
+    }
+
+    public void generateBitSet(INaiveBitSet a) {
+        for (int i = 0; i < words.length; i++) {
+            a.setWord(i, words[i].get());
+        }
     }
 
     /**

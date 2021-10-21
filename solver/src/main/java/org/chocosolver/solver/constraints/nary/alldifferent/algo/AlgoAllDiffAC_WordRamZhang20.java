@@ -338,9 +338,9 @@ public class AlgoAllDiffAC_WordRamZhang20 {
                 partition.remove(var2Val[xIdx] + addArity);
 //                System.out.println(xIdx + " is isInstantiated to: " + xVal);
 //                System.out.println(partition);
-                partition.setIteratorIndex(sccStartIdx);
+                partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
                 do {
-                    int yIdx = partition.getValue();
+                    int yIdx = partition.getValid();
                     if (yIdx < arity) {
                         y = vars[yIdx];
                         if (y.contains(xVal)) {
@@ -349,7 +349,7 @@ public class AlgoAllDiffAC_WordRamZhang20 {
 //                            Dbit[yIdx].clear(val2Idx.get(xVal));
                         }
                     }
-                } while (partition.nextValid());
+                } while (partition.goToNextValid());
 
                 if (partition.partitionSize(sccStartIdx) > 2) {
                     changedSCCStartIndex.add(sccStartIdx);
@@ -432,9 +432,9 @@ public class AlgoAllDiffAC_WordRamZhang20 {
 
     protected void repairMatching(int SCCStartIndex) throws ContradictionException {
         // repair max matching.
-        partition.setIteratorIndex(SCCStartIndex);
+        partition.setIteratorIndexBySCCStartIndex(SCCStartIndex);
         do {
-            int varIdx = partition.getValue();
+            int varIdx = partition.getValid();
 //            if (id == 7) {
 //                System.out.print(varIdx + " ");
 //            }
@@ -458,7 +458,7 @@ public class AlgoAllDiffAC_WordRamZhang20 {
                     varsTmp.remove(varIdx);
                 }
             }
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
     }
 
     protected void finalCheckAndRepairMatching() throws ContradictionException {

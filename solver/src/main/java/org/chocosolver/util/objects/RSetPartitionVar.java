@@ -7,12 +7,11 @@ import org.chocosolver.memory.IStateBitSet;
 import java.util.Arrays;
 import java.util.BitSet;
 
-public class RSetPartition {
+public class RSetPartitionVar {
     static int INDEXOVERFLOW = -1;
     int[] dense;
     int[] sparse;
     IStateBitSet sccStart;
-    IStateBitSet varMask;
     IEnvironment env;
     int limit = 0;
     int iterIdx = -1;
@@ -20,35 +19,10 @@ public class RSetPartition {
     int lastPos;
     int tmpStartIndex = -1;
     int arity;
-    int addArity;
-    int numValues;
     int sccEndIndex = INDEXOVERFLOW;
     int sccStartIndex = INDEXOVERFLOW;
 
-    public RSetPartition(int arity, int numValues, IEnvironment e) {
-        this.arity = arity;
-        this.addArity = arity + 1;
-        this.numValues = numValues;
-        this.size = addArity + numValues;
-        this.lastPos = size - 1;
-        this.env = e;
-        dense = new int[size];
-        sparse = new int[size];
-        for (int i = 0; i < size; i++) {
-            dense[i] = i;
-            sparse[i] = i;
-        }
-        // 0标记SCC的开头
-        sccStart = env.makeBitSet(size);
-        //splitPoint = 011110,11111
-        sccStart.set(1, size);
-
-        varMask = env.makeBitSet(size);
-        // sink节点暂时算val
-        varMask.set(0, arity);
-    }
-
-    public RSetPartition(int size, IEnvironment e) {
+    public RSetPartitionVar(int size, IEnvironment e) {
         this.size = size;
         this.lastPos = size - 1;
         this.env = e;
@@ -62,12 +36,7 @@ public class RSetPartition {
         sccStart = env.makeBitSet(size);
         //splitPoint = 011110,11111
         sccStart.set(1, size);
-        arity = size / 2;
-        addArity = arity + 1;
-
-        varMask = env.makeBitSet(size);
-        // sink节点暂时算val
-        varMask.set(0, arity);
+        arity = size;
     }
 
     public void add(int e) {
@@ -78,10 +47,6 @@ public class RSetPartition {
         sparse[tmp] = index;
         dense[index] = tmp;
         dense[limit] = e;
-//        varMask.set(index, varMask.get(limit));
-//        varMask.set(limit, varMask.get(index));
-        varMask.set(limit, e < arity);
-        varMask.set(index, tmp < arity);
         ++limit;
     }
 
@@ -102,8 +67,6 @@ public class RSetPartition {
             sparse[tmp] = index;
             dense[index] = tmp;
             dense[index2] = e;
-            varMask.set(index, tmp < arity);
-            varMask.set(index2, e < arity);
         }
         // 前一处设置split
         sccStart.clear(index2);
@@ -180,11 +143,6 @@ public class RSetPartition {
         return ++iterIdx != size && sccStart.get(iterIdx);
     }
 
-    public boolean goToNextValidVar() {
-        int nextVarIndex = varMask.nextSetBit(iterIdx + 1);
-        return nextVarIndex != -1 && nextVarIndex <= sccEndIndex;
-    }
-
     private int getSCCEndIndex(int index) {
         return index < lastPos ? sccStart.nextClearBit(index + 1) - 1 : lastPos;
     }
@@ -207,21 +165,6 @@ public class RSetPartition {
         this.sccEndIndex = getSCCEndIndex(start);
     }
 
-//    public void setVarIteratorIndexBySCCStartIndex(int start) {
-//        this.iterIdx = varMask.nextSetBit(start) - 1;
-//        this.sccStartIndex = start;
-//        this.sccEndIndex = getSCCEndIndex(start);
-//        return iterIdx > -1;
-//    }
-
-    //
-    public boolean NextVar() {
-//        this.iterIdx = varMask.nextSetBit(iterIdx+1);
-        int nextVarIndex = varMask.nextSetBit(iterIdx + 1);
-        return nextVarIndex != -1 && nextVarIndex <= sccEndIndex;
-
-    }
-
     public void disposeSCCIterator() {
         iterIdx = INDEXOVERFLOW;
         sccEndIndex = INDEXOVERFLOW;
@@ -232,95 +175,6 @@ public class RSetPartition {
         return !sccStart.get(startIterIdx);
     }
 
-    public boolean getVarAndValMask(SparseSet changedSCCStartIndex, INaiveBitSet vars, INaiveBitSet vals) {
-        vars.clear();
-        vals.clear();
-        boolean hasSink = false;
-        changedSCCStartIndex.iterateValid();
-        while (changedSCCStartIndex.hasNextValid()) {
-            int sccStartIndex = changedSCCStartIndex.next();
-            for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
-                int a = dense[i];
-                if (a < arity) {
-                    vars.set(a);
-                } else if (a > arity) {
-                    vals.set(a - addArity);
-                } else {
-                    hasSink = true;
-                }
-            }
-        }
-        return hasSink;
-    }
-
-    public boolean getVarAndValMask(SparseSet changedSCCStartIndex, INaiveBitSet vars, INaiveBitSet vals, INaiveBitSet vals2) {
-        vars.clear();
-        vals.clear();
-        vals2.clear();
-        boolean hasSink = false;
-        changedSCCStartIndex.iterateValid();
-        while (changedSCCStartIndex.hasNextValid()) {
-            int sccStartIndex = changedSCCStartIndex.next();
-            for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
-                int a = dense[i];
-                if (a < arity) {
-                    vars.set(a);
-                } else if (a > arity) {
-                    vals.set(a - addArity);
-                    vals2.set(a - addArity);
-                } else {
-                    hasSink = true;
-                }
-            }
-        }
-        return hasSink;
-    }
-
-    public boolean getVarAndValMask(SparseSet changedSCCStartIndex, BitSet vars, BitSet vals, INaiveBitSet vals2) {
-        vars.clear();
-        vals.clear();
-        vals2.clear();
-        boolean hasSink = false;
-        changedSCCStartIndex.iterateValid();
-        while (changedSCCStartIndex.hasNextValid()) {
-            int sccStartIndex = changedSCCStartIndex.next();
-            for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
-                int a = dense[i];
-                if (a < arity) {
-                    vars.set(a);
-                } else if (a > arity) {
-                    vals.set(a - addArity);
-                    vals2.set(a - addArity);
-                } else {
-                    hasSink = true;
-                }
-            }
-        }
-        return hasSink;
-    }
-
-    public boolean getVarAndValMask(SparseSet changedSCCStartIndex, BitSet vars, BitSet vals, BitSet vals2) {
-        vars.clear();
-        vals.clear();
-        vals2.clear();
-        boolean hasSink = false;
-        changedSCCStartIndex.iterateValid();
-        while (changedSCCStartIndex.hasNextValid()) {
-            int sccStartIndex = changedSCCStartIndex.next();
-            for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
-                int a = dense[i];
-                if (a < arity) {
-                    vars.set(a);
-                } else if (a > arity) {
-                    vals.set(a - addArity);
-                    vals2.set(a - addArity);
-                } else {
-                    hasSink = true;
-                }
-            }
-        }
-        return hasSink;
-    }
 
 //    public boolean greatThanTwo(int startIterIdx) {
 //        if (startIterIdx + 2 == size) {
@@ -348,14 +202,22 @@ public class RSetPartition {
         return false;
     }
 
-    public boolean isSingleton(int varID) {
-        // 如果varID是0且它的后一个也是0 那么它是singleton的
-        int index = sparse[varID];
-        if (index == size) {
-            return !sccStart.get(index);
-        } else {
-            return !sccStart.get(index) && !sccStart.get(index + 1);
-        }
+//    public boolean isSingleton(int varID) {
+//        // 如果varID是0且它的后一个也是0 那么它是singleton的
+//        int index = sparse[varID];
+//        if (index == size) {
+//            return !sccStart.get(index);
+//        } else {
+//            return !sccStart.get(index) && !sccStart.get(index + 1);
+//        }
+//    }
+
+    public boolean isSingleton(int sccStartIndex) {
+        if (sccStartIndex == lastPos)
+            return true;
+        else
+            return !sccStart.get(sccStartIndex + 1);
+
     }
 
     public void getSCCStartIndex(TIntHashSet indices) {
@@ -474,23 +336,15 @@ public class RSetPartition {
         }
     }
 
-    public boolean prepartitionAndGetMask(int sccStartIndex, BitSet restriction, INaiveBitSet gammaMask, INaiveBitSet freeNodes) {
+    public void prepartitionAndGetMask(int sccStartIndex, BitSet restriction, INaiveBitSet gammaMask) {
         restriction.clear();
-        boolean resIsNonempty = true;
-        for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
-            int a = dense[i];
-            if (a < arity && !gammaMask.get(a)) {
-                // a属于gamma或A集合 不需参与findSCC自成一个SCC
-                // 放到最前边
-//                add(a);
-//            } else {
-                restriction.set(a);
-                resIsNonempty = true;
+        // v属于gamma 不需参与findSCC, 它们自成一个SCC
+        for (int i = sccStartIndex,v, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
+            v = dense[i];
+            if ( !gammaMask.get(v)) {
+                restriction.set(v);
             }
         }
-//        setSplit();
-//        limit = INDEXOVERFLOW;
-        return resIsNonempty;
     }
 
 
@@ -535,23 +389,19 @@ public class RSetPartition {
         return ss.toString();
     }
 
-
-    public boolean prepartitionAndGetMask(int sccStartIndex, BitSet restriction, INaiveBitSet gammaMask, INaiveBitSet freeNodes, SparseSet varsTmp, SparseSet valsTmp) {
-        restriction.clear();
-        boolean resIsNonempty = true;
-        for (int i = sccStartIndex, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
-            int a = dense[i];
-            if (!((a < arity && gammaMask.get(a)) || (a > arity && freeNodes.get(a - addArity)))) {
-                // a属于gamma或A集合 不需参与findSCC自成一个SCC
-                // 放到最前边
-//                add(a);
-//            } else {
-                restriction.set(a);
-                resIsNonempty = true;
+    public void getVarAndValMask(SparseSet changedSCCStartIndex, BitSet vars, INaiveBitSet vals, INaiveBitSet vals2, INaiveBitSet[] D) {
+        vars.clear();
+        vals.clear();
+        vals2.clear();
+        changedSCCStartIndex.iterateValid();
+        while (changedSCCStartIndex.hasNextValid()) {
+            int sccStartIndex = changedSCCStartIndex.next();
+            for (int i = sccStartIndex, v, end = getSCCEndIndex(sccStartIndex); i <= end; i++) {
+                v = dense[i];
+                vars.set(v);
+                vals.or(D[v]);
+                vals2.or(D[v]);
             }
         }
-//        setSplit();
-//        limit = INDEXOVERFLOW;
-        return resIsNonempty;
     }
 }

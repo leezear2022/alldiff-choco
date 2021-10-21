@@ -11,7 +11,7 @@ public class NaiveBitSet implements INaiveBitSet {
     protected long lastMask;
     protected int lowerIndex = longSize;
     protected int upperIndex = INDEX_OVERFLOW;
-    protected int numBits = 0;
+    protected int numOneBits = 0;
 
     protected final static int ADDRESS_BITS_PER_WORD = 6;
     protected final static int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
@@ -41,7 +41,7 @@ public class NaiveBitSet implements INaiveBitSet {
         upperIndex = INDEX_OVERFLOW;
         if (initValue) {
             set();
-            numBits = nbits;
+            numOneBits = nbits;
         }
     }
 
@@ -54,7 +54,7 @@ public class NaiveBitSet implements INaiveBitSet {
         words[len] = lastMask;
         lowerIndex = 0;
         upperIndex = len;
-        numBits = bitSize;
+        numOneBits = bitSize;
     }
 
     @Override
@@ -74,7 +74,7 @@ public class NaiveBitSet implements INaiveBitSet {
                 upperIndex = idx;
             }
 
-            numBits++;
+            numOneBits++;
         }
     }
 
@@ -85,7 +85,7 @@ public class NaiveBitSet implements INaiveBitSet {
         }
         lowerIndex = s.firstSetIndex();
         upperIndex = s.lastSetIndex();
-        numBits = s.size();
+        numOneBits = s.size();
     }
 
     @Override
@@ -104,7 +104,7 @@ public class NaiveBitSet implements INaiveBitSet {
                 upperIndex = i;
             }
         }
-        numBits = s.size();
+        numOneBits = s.size();
     }
 
     @Override
@@ -113,10 +113,10 @@ public class NaiveBitSet implements INaiveBitSet {
         lowerIndex = longSize;
         upperIndex = INDEX_OVERFLOW;
         int len = longSize - 1;
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < len; ++i) {
             words[i] = ~words[i];
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
             if (words[i] != 0) {
                 lowerIndex = lowerIndex > i ? i : lowerIndex;
                 upperIndex = upperIndex < i ? i : upperIndex;
@@ -128,7 +128,7 @@ public class NaiveBitSet implements INaiveBitSet {
             lowerIndex = lowerIndex > len ? len : lowerIndex;
             upperIndex = upperIndex < len ? len : upperIndex;
         }
-        numBits += Long.bitCount(words[len]);
+        numOneBits += Long.bitCount(words[len]);
     }
 
     @Override
@@ -146,7 +146,7 @@ public class NaiveBitSet implements INaiveBitSet {
     public void setWord(int wordIdx, long word) {
         long oldWord = words[wordIdx];
         words[wordIdx] = word;
-        numBits = numBits - Long.bitCount(oldWord) + Long.bitCount(word);
+        numOneBits = numOneBits - Long.bitCount(oldWord) + Long.bitCount(word);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class NaiveBitSet implements INaiveBitSet {
         }
         lowerIndex = longSize;
         upperIndex = INDEX_OVERFLOW;
-        numBits = 0;
+        numOneBits = 0;
     }
 
     @Override
@@ -174,13 +174,18 @@ public class NaiveBitSet implements INaiveBitSet {
             if (idx > upperIndex) {
                 upperIndex = idx;
             }
-            numBits--;
+            numOneBits--;
         }
     }
 
     @Override
     public int size() {
-        return numBits;
+        return numOneBits;
+    }
+
+    @Override
+    public int bitCapacity() {
+        return bitSize;
     }
 
     @Override
@@ -202,8 +207,10 @@ public class NaiveBitSet implements INaiveBitSet {
 //        for (int i = lowerIndex; i <= upperIndex; ++i) {
 //            words[i] &= s.getWord(i);
 //        }
+        numOneBits = 0;
         for (int i = 0; i <= longSize; ++i) {
             words[i] &= s.getWord(i);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
@@ -220,10 +227,10 @@ public class NaiveBitSet implements INaiveBitSet {
 //            }
 //        }
 
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             words[i] &= (a.getWord(i) & b.getWord(i));
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
@@ -231,73 +238,82 @@ public class NaiveBitSet implements INaiveBitSet {
     public void and(INaiveBitSet a, INaiveBitSet b, INaiveBitSet c) {
 //        int i = INaiveBitSet.min(lowerIndex, a.firstSetIndex(), b.firstSetIndex(), c.firstSetIndex()),
 //                ub = INaiveBitSet.max(upperIndex, a.lastSetIndex(), b.lastSetIndex(), c.lastSetIndex());
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             words[i] &= (a.getWord(i) & b.getWord(i) & c.getWord(i));
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
     @Override
     public void or(INaiveBitSet s) {
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             words[i] |= s.getWord(i);
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
     @Override
     public void or(INaiveBitSet a, INaiveBitSet b) {
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             words[i] |= a.getWord(i) | b.getWord(i);
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
     @Override
     public void or(INaiveBitSet a, INaiveBitSet b, INaiveBitSet c) {
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             words[i] |= a.getWord(i) | b.getWord(i) | c.getWord(i);
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
+        }
+    }
+
+    @Override
+    public void minus(INaiveBitSet a) {
+        numOneBits = 0;
+        for (int i = 0; i < longSize; ++i) {
+            words[i] &= ~a.getWord(0);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
     @Override
     public void andAfterMinus(INaiveBitSet a, INaiveBitSet b) {
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             words[i] &= a.getWord(i) & ~b.getWord(i);
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
     @Override
     public void orAfterMinus(INaiveBitSet a, INaiveBitSet b) {
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             this.words[i] |= a.getWord(i) & ~b.getWord(i);
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
     @Override
     public void setAfterMinus(INaiveBitSet a, INaiveBitSet b) {
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             words[i] = a.getWord(i) & ~b.getWord(i);
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
     @Override
     public void setAfterAnd(INaiveBitSet a, INaiveBitSet b) {
-        numBits = 0;
+        numOneBits = 0;
         for (int i = 0; i < longSize; ++i) {
             words[i] = a.getWord(i) & b.getWord(i);
-            numBits += Long.bitCount(words[i]);
+            numOneBits += Long.bitCount(words[i]);
         }
     }
 
@@ -353,7 +369,7 @@ public class NaiveBitSet implements INaiveBitSet {
 
     @Override
     public int firstSetBit() {
-        return (numBits == 0) ? INDEX_OVERFLOW : (64 * lowerIndex + Long.numberOfTrailingZeros(words[lowerIndex]));
+        return (numOneBits == 0) ? INDEX_OVERFLOW : (64 * lowerIndex + Long.numberOfTrailingZeros(words[lowerIndex]));
     }
 
 //    @Override
@@ -368,27 +384,32 @@ public class NaiveBitSet implements INaiveBitSet {
 
     @Override
     public boolean isEmpty() {
-        return numBits == 0l;
+        return numOneBits == 0l;
+    }
+
+    @Override
+    public boolean nonEmpty() {
+        return numOneBits != 0l;
     }
 
     @Override
     public int firstSetIndex() {
-        return (numBits == 0l) ? INDEX_OVERFLOW : lowerIndex;
+        return (numOneBits == 0l) ? INDEX_OVERFLOW : lowerIndex;
     }
 
     @Override
     public int lastSetIndex() {
-        return (numBits == 0l) ? INDEX_OVERFLOW : upperIndex;
+        return (numOneBits == 0l) ? INDEX_OVERFLOW : upperIndex;
     }
 
     @Override
     public boolean isSingleton() {
-        return numBits == 1;
+        return numOneBits == 1;
     }
 
     @Override
     public int singleValue() {
-        return (numBits == 1) ? firstSetBit() : INDEX_OVERFLOW;
+        return (numOneBits == 1) ? firstSetBit() : INDEX_OVERFLOW;
     }
 
     @Override
@@ -399,7 +420,7 @@ public class NaiveBitSet implements INaiveBitSet {
     @Override
     public boolean overlap(INaiveBitSet s) {
         for (int i = 0; i <= longSize; ++i) {
-            if((words[i] & s.getWord(i))!=0){
+            if ((words[i] & s.getWord(i)) != 0) {
                 return true;
             }
         }

@@ -1,7 +1,6 @@
 package org.chocosolver.util.objects;
 
 import org.chocosolver.memory.IStateBitSet;
-import org.chocosolver.memory.structure.S64BitSet;
 
 public interface INaiveBitSet {
 
@@ -27,6 +26,8 @@ public interface INaiveBitSet {
 
     int size();
 
+    int bitCapacity();
+
     int int64Size();
 
     void and(INaiveBitSet s);
@@ -40,6 +41,8 @@ public interface INaiveBitSet {
     void or(INaiveBitSet a, INaiveBitSet b);
 
     void or(INaiveBitSet a, INaiveBitSet b, INaiveBitSet c);
+
+    void minus(INaiveBitSet a);
 
     void andAfterMinus(INaiveBitSet a, INaiveBitSet b);
 
@@ -65,6 +68,7 @@ public interface INaiveBitSet {
 //    int prevClearBit(int fromIndex);
 
     boolean isEmpty();
+    boolean nonEmpty();
 
     int firstSetIndex();
 
@@ -107,6 +111,16 @@ public interface INaiveBitSet {
 
     static INaiveBitSet makeBitSet(int size, boolean initValue) {
         if (size < 64) {
+            return new Single64NaiveBitSet(size, initValue);
+        } else {
+            return new NaiveBitSet(size, initValue);
+        }
+    }
+
+    static INaiveBitSet makeBitSet2(int size, boolean initValue) {
+        if (size <= 32) {
+            return new Single32NaiveBitSet(size, initValue);
+        } else if (size <= 64) {
             return new Single64NaiveBitSet(size, initValue);
         } else {
             return new NaiveBitSet(size, initValue);

@@ -1,7 +1,7 @@
 /*
  * This file is part of choco-solver, http://choco-solver.org/
  *
- * Copyright (c) 2020, IMT Atlantique. All rights reserved.
+ * Copyright (c) 2019, IMT Atlantique. All rights reserved.
  *
  * Licensed under the BSD 4-clause license.
  *
@@ -11,10 +11,7 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC20;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffACFast;
-//import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Gent20;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_WordRamZhang20BitBIS6;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
@@ -22,23 +19,27 @@ import org.chocosolver.util.ESat;
 /**
  * Propagator for AllDifferent AC constraint for integer variables
  * <p/>
- * Uses Regin algorithm
+ * Uses Zhang algorithm in the paper of IJCAI-18
+ * "A Fast Algorithm for Generalized Arc Consistency of the Alldifferent Constraint"
+ * <p>
+ * We try to use the bit to speed up.
+ * <p>
  * Runs in O(m.n) worst case time for the initial propagation
  * but has a good average behavior in practice
  * <p/>
  * Runs incrementally for maintaining a matching
  * <p/>
  *
- * @author Jean-Guillaume Fages
+ * @author Jia'nan Chen
  */
-public class PropAllDiffAC20 extends Propagator<IntVar> {
 
-    //***********************************************************************************
+public class PropAllDiffAC_WordRamZhang20BitBIS4 extends Propagator<IntVar> {
+
+    //***********************************************************************************0
     // VARIABLES
     //***********************************************************************************
 
-//    protected AlgoAllDiffAC_Gent20 filter;
-    protected AlgoAllDiffAC20 filter;
+    protected AlgoAllDiffAC_WordRamZhang20BitBIS6 filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -50,10 +51,9 @@ public class PropAllDiffAC20 extends Propagator<IntVar> {
      *
      * @param variables array of integer variables
      */
-    public PropAllDiffAC20(IntVar[] variables) {
+    public PropAllDiffAC_WordRamZhang20BitBIS4(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-        filter = new AlgoAllDiffAC20(variables, this);
-//        filter = new AlgoAllDiffAC_Gent20(variables, this, this.getModel());
+        filter = new AlgoAllDiffAC_WordRamZhang20BitBIS6(variables, this, this.getModel());
     }
 
     //***********************************************************************************

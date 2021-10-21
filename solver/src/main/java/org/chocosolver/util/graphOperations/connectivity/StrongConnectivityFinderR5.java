@@ -147,11 +147,11 @@ public class StrongConnectivityFinderR5 {
 
     public void findAllSCC(int sccIndexStart) {
         ISet nodes = graph.getNodes();
-        partition.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndexBySCCStartIndex(sccIndexStart);
         do {
-            int ii = partition.getValue();
+            int ii = partition.getValid();
             unvisited.set(ii, nodes.contains(ii));
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
         findAllSCCOf(unvisited);
     }
 
@@ -318,11 +318,11 @@ public class StrongConnectivityFinderR5 {
     public boolean findAllSCC_ED(int sccIndexStart, TLongArrayStack deleteEdge) {
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
-        partition.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndexBySCCStartIndex(sccIndexStart);
         do {
-            int ii = partition.getValue();
+            int ii = partition.getValid();
             unvisited.set(ii, nodes.contains(ii));
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
         return findAllSCCOf_ED(unvisited);
     }
 
@@ -330,10 +330,10 @@ public class StrongConnectivityFinderR5 {
 //        DE = deleteEdge;
         DE.clear();
         ISet nodes = graph.getNodes();
-        partition.setIteratorIndex(sccIndexStart);
+        partition.setIteratorIndexBySCCStartIndex(sccIndexStart);
         System.out.println("+++++++++");
         do {
-            int ii = partition.getValue();
+            int ii = partition.getValid();
             unvisited.set(ii, nodes.contains(ii));
             System.out.println("var: " + ii);
             if (ii < arity) {
@@ -344,7 +344,7 @@ public class StrongConnectivityFinderR5 {
                     DE.push(getIntTuple2Long(ii, valIdx));
                 }
             }
-        } while (partition.nextValid());
+        } while (partition.goToNextValid());
         System.out.println("+++++++++");
         return findAllSCCOf_ED(unvisited);
     }
