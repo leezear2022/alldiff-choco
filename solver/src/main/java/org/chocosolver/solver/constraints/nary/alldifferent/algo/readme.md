@@ -1,0 +1,4 @@
+##AlgoAllDiffAC_Naive64RSCCSPLIT
+AlgoAllDiffAC_Naive64+scc
+AlgoAllDiffAC_Naive64改进版，加入全部改进点
+R代表了bitDom可回溯

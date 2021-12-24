@@ -403,11 +403,12 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS6 {
 
     void printDoms() {
         for (var v : vars) {
-            System.out.print(v.getId() + "\t\t: ");
-            for (int k = v.getLB(), ub = v.getUB(); k <= ub; k = v.nextValue(k)) {
-                System.out.print(k + " ");
-            }
-            System.out.println();
+//            System.out.print(v.getId() + "\t\t: ");
+//            for (int k = v.getLB(), ub = v.getUB(); k <= ub; k = v.nextValue(k)) {
+//                System.out.print(k + " ");
+//            }
+//            System.out.println();
+            System.out.println(v.getDomainSize());
         }
     }
 
@@ -462,8 +463,8 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS6 {
         numCall++;
 
 //        if (numCall == 308) {
-//            System.out.println("----------------" + id + " propagate: " + (numCall) + "----------------");
-//            printDoms();
+            System.out.println("----------------" + id + " propagate: " + (numCall) + "----------------");
+            printDoms();
 //        }
 
         if (initialPropagation) {
@@ -536,8 +537,8 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS6 {
         }
 
 //        if (numCall == 308) {
-//            System.out.println("+++");
-//            printDoms();
+        System.out.println("+++");
+        printDoms();
 //        }
 
         return filter;
@@ -573,7 +574,9 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS6 {
                 var2ValR[varIdx].set(valIdx);
                 //freeNode.remove(valIdx);
                 matchedValues.set(valIdx);
-                matchedValues.clear(oldValIdx);
+                if (oldValIdx != -1) {
+                    matchedValues.clear(oldValIdx);
+                }
             } else {
                 // 检查原匹配是否失效
                 int oldMatchingIndex = var2ValR[varIdx].get();

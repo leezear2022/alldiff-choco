@@ -284,11 +284,12 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS2 {
 
     void printDoms() {
         for (var v : vars) {
-            System.out.print(v.getId() + "\t\t: ");
-            for (int k = v.getLB(), ub = v.getUB(); k <= ub; k = v.nextValue(k)) {
-                System.out.print(k + " ");
-            }
-            System.out.println();
+//            System.out.print(v.getId() + "\t\t: ");
+//            for (int k = v.getLB(), ub = v.getUB(); k <= ub; k = v.nextValue(k)) {
+//                System.out.print(k + " ");
+//            }
+//            System.out.println();
+            System.out.println(v.getDomainSize());
         }
     }
 
@@ -305,8 +306,8 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS2 {
         numCall++;
 
 //        if (numCall == 308) {
-//            System.out.println("----------------" + id + " propagate: " + (numCall) + "----------------");
-//            printDoms();
+        System.out.println("----------------" + id + " propagate: " + (numCall) + "----------------");
+        printDoms();
 //        }
 
         if (initialPropagation) {
@@ -362,8 +363,8 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS2 {
             Measurer.enterSkip();
         }
 //        if (numCall == 308) {
-//            System.out.println("+++");
-//            printDoms();
+        System.out.println("+++");
+        printDoms();
 //        }
 
         return filter;

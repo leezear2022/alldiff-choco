@@ -15,8 +15,8 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.util.iterators.DisposableValueIterator;
 import org.chocosolver.util.objects.INaiveBitSet;
+import org.chocosolver.util.objects.IStateBitSetPartition;
 import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.objects.RSetPartition;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
@@ -102,7 +102,9 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     // 记录scc
     private BitSet[] sccMatrix;
     protected boolean initialPropagation = true;
-    protected RSetPartition partition;
+    //    protected RSetPartition partition;
+//    protected RSetPartition partition;
+    protected IStateBitSetPartition partition;
     private final SparseSet triggeringVars;
     private final SparseSet triggeringVals;
     private final IIntDeltaMonitor[] monitors;
@@ -188,7 +190,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                 if (DomIsRegular[i] && val != valIdx)
                     DomIsRegular[i] = false;
                 RB[valIdx].set(i);
-                RD[i].get(valIdx);
+                RD[i].set(valIdx);
             }
             vit.dispose();
         }
@@ -250,7 +252,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             sccMatrix[i] = new BitSet(arity);
         }
         // for Gent algorithm
-        partition = new RSetPartition(addArity + numValues, env);
+        partition = new IStateBitSetPartition(arity, env);
         triggeringVars = new SparseSet(arity);
         triggeringVals = new SparseSet(numValues);
         varsTmp = new SparseSet(arity);
@@ -725,8 +727,10 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
     protected void repairMatching(int SCCStartIndex) throws ContradictionException {
         // repair max matching.
         partition.setIteratorIndexBySCCStartIndex(SCCStartIndex);
-        do {
-            int varIdx = partition.getValid();
+        while (partition.hasNext()) {
+            int varIdx = partition.next();
+//        do {
+//            int varIdx = partition.getValid();
 //            if (id == 7) {
 //                System.out.print(varIdx + " ");
 //            }
@@ -752,7 +756,8 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                     varsTmp.remove(varIdx);
                 }
             }
-        } while (partition.goToNextValid());
+        }
+//    } while(partition.goToNextValid());
     }
 
     protected void finalCheckAndRepairMatching() throws ContradictionException {
@@ -792,11 +797,11 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             x = vars[xIdx];
 
             // valIdx失效
-            if (valIdx == -1||!D[xIdx].get(valIdx)) {
+            if (valIdx == -1 || !D[xIdx].get(valIdx)) {
                 repairMatching(sccStartIdx);
             }
 
-            if (x.isInstantiated() && partition.partitionSize(sccStartIdx) > 2) {
+            if (x.isInstantiated() && !partition.isSingletonByStartIndex(sccStartIdx)) {
                 valIdx = var2ValR[xIdx].get();
                 int xVal = idx2Val[valIdx];
                 if (changedSCCStartIndex.contains(sccStartIdx)) {
@@ -807,29 +812,31 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
 //                System.out.println("partition remove: " + xIdx + " " + (val2Idx.get(xVal) + addArity));
 //                System.out.println(partition);
                 partition.remove(xIdx);
-                partition.remove(valIdx + addArity);
 //                System.out.println(xIdx + " is isInstantiated to: " + xVal);
 //                System.out.println(partition);
                 partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
-                do {
-                    int yIdx = partition.getValid();
+//                do {
+                while (partition.hasNext()) {
+                    int yIdx = partition.next();
                     if (yIdx < arity) {
-                        y = vars[yIdx];
-                        if (y.contains(xVal)) {
+                        if (D[yIdx].get(valIdx)) {
 //                            System.out.println("remove: " + yIdx + ", " + xVal);
+                            y = vars[yIdx];
                             res |= y.removeValue(xVal, aCause);
-                            D[yIdx].clear(valIdx);
-                            B[valIdx].clear(yIdx);
+                            removeValue(yIdx, valIdx);
                         }
                     }
-                } while (partition.goToNextValid());
+                }
+//                } while (partition.goToNextValid());
 
-                if (partition.partitionSize(sccStartIdx) > 2) {
+                partition.disposeSCCIterator();
+
+                if (!partition.isSingletonByStartIndex(sccStartIdx)) {
                     changedSCCStartIndex.add(sccStartIdx);
                 }
 
             } else {
-                if (partition.partitionSize(sccStartIdx) > 2) {
+                if (!partition.isSingletonByStartIndex(sccStartIdx)) {
                     changedSCCStartIndex.add(sccStartIdx);
                 }
             }
@@ -847,7 +854,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         changedSCCStartIndex.iterateValid();
         while (changedSCCStartIndex.hasNextValid()) {
             int sccStartIndex = changedSCCStartIndex.next();
-            partition.getPartitionVars(sccStartIndex, varsTmp);
+//            partition.getPartitionVars(sccStartIndex, varsTmp);
             filter |= filterDomains(sccStartIndex, varsTmp);
 //            partition.getPartitionBitSetMaskAndVars(sccStartIndex, restriction, varsTmp, notGamma, valsTmp, notA, freeNodes, arity, numNodes);
 //            resetData(varsTmp, valsTmp, restriction.get(arity));
@@ -930,6 +937,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                         Measurer.enterP1();
 //                        D[varIdx].clear(valIdx);
                         filter |= v.removeValue(k, aCause);
+                        removeValue(varIdx, valIdx);
                         //                System.out.println("first delete: " + v.getName() + ", " + k);
                     } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         if (!checkSCC(varIdx, valIdx)) {
@@ -938,10 +946,12 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                                 int valNum = v.getDomainSize();
                                 Measurer.numDelValuesP2 += valNum - 1;
                                 filter |= v.instantiateTo(k, aCause);
+                                instantiateTo(varIdx, valIdx);
 //                            System.out.println("instantiate  : " + v.getName() + ", " + k);
                             } else {
                                 ++Measurer.numDelValuesP2;
                                 filter |= v.removeValue(k, aCause);
+                                removeValue(varIdx, valIdx);
 //                            System.out.println("second delete: " + v.getName() + ", " + k);
                             }
                         }
@@ -967,10 +977,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                         ++Measurer.numDelValuesP1;
                         Measurer.enterP1();
                         filter |= v.removeValue(k, aCause);
-                        D[varIdx].clear(valIdx);
-                        RD[varIdx].clear(valIdx);
-                        B[valIdx].clear(varIdx);
-                        RB[valIdx].clear(varIdx);
+                        removeValue(varIdx, valIdx);
                         //                System.out.println("first delete: " + v.getName() + ", " + k);
                     } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         if (!checkSCC(varIdx, valIdx)) {
@@ -979,22 +986,12 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
                                 int valNum = v.getDomainSize();
                                 Measurer.numDelValuesP2 += valNum - 1;
                                 filter |= v.instantiateTo(k, aCause);
-                                D[varIdx].clear();
-                                D[varIdx].set(valIdx);
-                                RD[varIdx].clear();
-                                RD[varIdx].set(valIdx);
-                                B[valIdx].clear();
-                                B[valIdx].set(varIdx);
-                                RB[valIdx].clear();
-                                RB[valIdx].set(varIdx);
+                                instantiateTo(varIdx, valIdx);
 //                            System.out.println("instantiate  : " + v.getName() + ", " + k);
                             } else {
                                 ++Measurer.numDelValuesP2;
                                 filter |= v.removeValue(k, aCause);
-                                D[varIdx].clear(valIdx);
-                                RD[varIdx].clear(valIdx);
-                                B[valIdx].clear(varIdx);
-                                RB[valIdx].clear(varIdx);
+                                removeValue(varIdx, valIdx);
 //                            System.out.println("second delete: " + v.getName() + ", " + k);
                             }
                         } else if (graphLinkedMatrix[varIdx2].get(varIdx)) {
@@ -1052,5 +1049,24 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
             }
         }
         return false;
+    }
+
+    void removeValue(int varIdx, int valIdx) {
+        D[varIdx].clear(valIdx);
+        RD[varIdx].clear(valIdx);
+        B[valIdx].clear(varIdx);
+        RB[valIdx].clear(varIdx);
+    }
+
+    void instantiateTo(int varIdx, int valIdx) {
+        D[varIdx].clear();
+        RD[varIdx].clear();
+        B[valIdx].clear();
+        RB[valIdx].clear();
+
+        D[varIdx].set(valIdx);
+        RD[varIdx].set(valIdx);
+        B[valIdx].set(varIdx);
+        RB[valIdx].set(varIdx);
     }
 }
