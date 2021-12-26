@@ -1069,4 +1069,7 @@ public class AlgoAllDiffAC_NaiveBitSetNew extends AlgoAllDiffAC_Naive {
         B[valIdx].set(varIdx);
         RB[valIdx].set(varIdx);
     }
+
+
+
 }
