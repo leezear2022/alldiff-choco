@@ -43,7 +43,7 @@ public class IStateLongPartition extends IStatePartition {
     @Override
     int maskNextSetBit(int e) {
         if (e >= BITS_PER_WORD)
-            return -1;
+            return INDEXOVERFLOW;
         long currentValue = sccMask.get() & (WORD_MASK << e);
         return (currentValue == 0) ? INDEXOVERFLOW : Long.numberOfTrailingZeros(currentValue);
     }

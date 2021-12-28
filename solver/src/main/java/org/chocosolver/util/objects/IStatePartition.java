@@ -24,6 +24,7 @@ abstract class IStatePartition {
         }
     }
 
+    // limit operations
     public void add(int e) {
         int index = sparse[e];
         int tmp = dense[limit];
@@ -57,23 +58,12 @@ abstract class IStatePartition {
         maskSet(index2);
     }
 
-    public void setSplit() {
-        // 若为1则表示新分区的开始
-        if (limit != size)
-            maskSet(limit);
-    }
-
-    public void setSplitTmp() {
-        // 若为1则表示新分区的开始
-        if (iterIdx != size)
-            maskSet(iterIdx);
-    }
-
     public int resetLimitByElement(int e) {
         limit = getSCCStartIndex(sparse[e]);
         return limit;
     }
 
+    // index operation
     int getSCCStartIndex(int index) {
         return maskPrevSetBit(index);
     }
@@ -90,8 +80,28 @@ abstract class IStatePartition {
         return getSCCEndIndex(sparse[e]);
     }
 
-    // for iteration
+    void getSCCStartIndices(SparseSet s) {
+        s.clear();
+        for (int i = maskNextSetBit(0); i != -1; i = maskNextSetBit(i + 1)) {
+            s.add(i);
+        }
+    }
 
+    // size
+    public boolean isSingletonByStartIndex(int index) {
+        if (index == size) {
+            return maskGet(index);
+        } else {
+            return maskGet(index) && maskGet(index + 1);
+        }
+    }
+
+    public boolean isSingletonByElement(int e) {
+        return isSingletonByStartIndex(sparse[e]);
+    }
+    
+    // iterator actions
+    // for iteration
     public void disposeSCCIterator() {
         iterIdx = INDEXOVEROVERFLOW;
         sccEndIndex = INDEXOVERFLOW;
@@ -105,21 +115,17 @@ abstract class IStatePartition {
         this.sccEndIndex = getSCCEndIndex(start);
     }
 
-    public boolean isValid() {
-        return iterIdx >= sccStartIndex && iterIdx <= sccEndIndex;
-    }
+//    public boolean isValid() {
+//        return iterIdx >= sccStartIndex && iterIdx <= sccEndIndex;
+//    }
 
     public boolean hasNext() {
         return iterIdx >= sccStartIndex && iterIdx <= sccEndIndex;
     }
 
-//    public boolean goToNextValid() {
-//        return ++iterIdx >= sccStartIndex && iterIdx <= sccEndIndex;
+//    public int getValue() {
+//        return dense[iterIdx];
 //    }
-
-    public int getValue() {
-        return dense[iterIdx];
-    }
 
     public int next() {
         return dense[iterIdx++];
@@ -132,11 +138,14 @@ abstract class IStatePartition {
 
     public void nextOrElseSetSplit(IntBoolPair ib) {
         if (iterIdx == tmpIdx) {
-            // 当前到tmp区域，tmpIdx失效，
+            // 当前遍历到tmp区域，tmpIdx失效，设定前方区域为独立SCC
             ib.y = true;
             disposeTmp();
             sccStartIndex = iterIdx;
-            setSplit();
+            if (iterIdx != size)
+                maskSet(iterIdx);
+        } else {
+            ib.y = false;
         }
 
         ib.x = dense[iterIdx++];
@@ -152,7 +161,6 @@ abstract class IStatePartition {
         dense[tmpIdx] = e;
     }
 
-
     public void disposeTmp() {
         tmpIdx = INDEXOVEROVEROVERFLOW;
     }
@@ -165,25 +173,27 @@ abstract class IStatePartition {
         ++iterIdx;
     }
 
-    public boolean isSingletonByStartIndex(int index) {
-        if (index == size) {
-            return maskGet(index);
-        } else {
-            return maskGet(index) && maskGet(index + 1);
-        }
+    public void setSplit() {
+        // 若为1则表示新分区的开始
+        if (limit != size)
+            maskSet(limit);
     }
 
-    public boolean isSingletonByElement(int e) {
-        return isSingletonByStartIndex(sparse[e]);
+    public void setSplitTmp() {
+        // 若为1则表示新分区的开始
+        if (iterIdx != size)
+            maskSet(iterIdx);
     }
 
-    void getSCCStartIndices(SparseSet s) {
-        s.clear();
-        for (int i = maskNextSetBit(0); i != -1; i = maskNextSetBit(i + 1)) {
-            s.add(i);
-        }
+    /**
+     * return whether node e is in the SCC of current SCC
+     * @param e
+     * @return in same SCC
+     */
+    public boolean inSameSCC(int e) {
+        int index = sparse[e];
+        return index >= sccStartIndex && index <= sccEndIndex;
     }
-
 
     // 子类只需重写bit运算部分
     abstract void maskSet(int e);
