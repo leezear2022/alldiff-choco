@@ -68,6 +68,7 @@ public interface INaiveBitSet {
 //    int prevClearBit(int fromIndex);
 
     boolean isEmpty();
+
     boolean nonEmpty();
 
     int firstSetIndex();
@@ -125,5 +126,9 @@ public interface INaiveBitSet {
         } else {
             return new NaiveBitSet(size, initValue);
         }
+    }
+
+    static INaiveBitSet makeBitSet3(int size, boolean initValue) {
+        return new NaiveBitSet(size, initValue);
     }
 }

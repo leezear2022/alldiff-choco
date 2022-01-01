@@ -56,6 +56,8 @@ public class AllDifferent extends Constraint {
     public static final String ACZhang20 = "ACZhang20";
     public static final String ACZhang20Bit = "ACZhang20Bit";
     public static final String ACNaive = "ACNaive";
+    public static final String ACSimple = "ACSimple";
+    public static final String ACSimpleGent = "ACSimpleGent";
 
     public AllDifferent(IntVar[] vars, String type) {
         super(ConstraintsName.ALLDIFFERENT, createPropagators(vars, type));
@@ -111,10 +113,14 @@ public class AllDifferent extends Constraint {
 //                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Gent20BitIS(VARS)};
             case ACZhang18M:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang18M(VARS)};
+            case ACSimple:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Simple(VARS)};
+            case ACSimpleGent:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_SimpleGent(VARS)};
             case ACNaive:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
             case ACNaiveR:
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveBitSetNew(VARS)};
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveR(VARS)};
             case ACNaiveNew:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_NaiveBitSetNew(VARS)};
             case WordRam:

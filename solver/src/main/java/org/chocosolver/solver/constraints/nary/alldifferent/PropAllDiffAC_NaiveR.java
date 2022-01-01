@@ -12,13 +12,12 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Naive;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Naive32;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Naive64;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_NaiveBitSet;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_NaiveBitSetR;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.objects.Measurer;
 
 /**
  * Propagator for AllDifferent AC constraint for integer variables
@@ -37,13 +36,13 @@ import org.chocosolver.util.objects.Measurer;
  * @author Jia'nan Chen
  */
 
-public class PropAllDiffAC_Naive extends Propagator<IntVar> {
+public class PropAllDiffAC_NaiveR extends Propagator<IntVar> {
 
     //***********************************************************************************0
     // VARIABLES
     //***********************************************************************************
 
-    protected AlgoAllDiffAC_Naive filter;
+    protected AlgoAllDiffAC_NaiveBitSetR filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -55,7 +54,7 @@ public class PropAllDiffAC_Naive extends Propagator<IntVar> {
      *
      * @param variables array of integer variables
      */
-    public PropAllDiffAC_Naive(IntVar[] variables) {
+    public PropAllDiffAC_NaiveR(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
 
 //        Measurer.maxAllDiffArity = Math.max(Measurer.maxAllDiffArity, vars.length);
@@ -63,11 +62,7 @@ public class PropAllDiffAC_Naive extends Propagator<IntVar> {
 //        if (vars.length <= 32) {
 //            this.filter = new AlgoAllDiffAC_Naive32(variables, this);
 //        } else
-            if (vars.length <= 64) {
-            this.filter = new AlgoAllDiffAC_Naive64(variables, this);
-        } else {
-            this.filter = new AlgoAllDiffAC_NaiveBitSet(variables, this);
-        }
+            this.filter = new AlgoAllDiffAC_NaiveBitSetR(variables, this);
 //        Measurer.numAllDiff++;
     }
 

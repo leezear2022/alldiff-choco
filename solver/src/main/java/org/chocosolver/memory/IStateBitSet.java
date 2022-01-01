@@ -11,6 +11,7 @@ package org.chocosolver.memory;
 
 
 import org.chocosolver.util.objects.INaiveBitSet;
+import org.chocosolver.util.objects.SimpleBitSet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -122,6 +123,8 @@ public interface IStateBitSet {
 
     // additional function for alldifferent constraint
     void generateBitSet(INaiveBitSet a);
+
+    void generateBitSet(SimpleBitSet a);
 
     long getWord(int wordIndex);
 

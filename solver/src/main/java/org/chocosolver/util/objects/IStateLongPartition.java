@@ -43,9 +43,9 @@ public class IStateLongPartition extends IStatePartition {
     @Override
     int maskNextSetBit(int e) {
         if (e >= BITS_PER_WORD)
-            return INDEXOVERFLOW;
+            return INDEX_OVERFLOW;
         long currentValue = sccMask.get() & (WORD_MASK << e);
-        return (currentValue == 0) ? INDEXOVERFLOW : Long.numberOfTrailingZeros(currentValue);
+        return (currentValue == 0) ? INDEX_OVERFLOW : Long.numberOfTrailingZeros(currentValue);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class IStateLongPartition extends IStatePartition {
         if (e >= BITS_PER_WORD)
             return -1;
         long currentValue = ~sccMask.get() & (WORD_MASK << e);
-        return (currentValue == 0) ? INDEXOVERFLOW : Long.numberOfTrailingZeros(currentValue);
+        return (currentValue == 0) ? INDEX_OVERFLOW : Long.numberOfTrailingZeros(currentValue);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class IStateLongPartition extends IStatePartition {
         if (e < 0)
             return -1;
         long currentValue = sccMask.get() & (WORD_MASK >>> -(e + 1));
-        return (currentValue == 0) ? INDEXOVERFLOW : Long.numberOfLeadingZeros(currentValue);
+        return (currentValue == 0) ? INDEX_OVERFLOW : Long.numberOfLeadingZeros(currentValue);
     }
 
     @Override
@@ -69,7 +69,12 @@ public class IStateLongPartition extends IStatePartition {
         if (e < 0)
             return -1;
         long currentValue = ~sccMask.get() & (WORD_MASK >>> -(e + 1));
-        return (currentValue == 0) ? INDEXOVERFLOW : BIT_INDEX_MASK - Long.numberOfLeadingZeros(currentValue);
+        return (currentValue == 0) ? INDEX_OVERFLOW : BIT_INDEX_MASK - Long.numberOfLeadingZeros(currentValue);
+    }
+
+    @Override
+    String maskStr() {
+        return sccMask.toString();
     }
 }
 

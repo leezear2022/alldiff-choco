@@ -47,7 +47,7 @@ public class testAllDiff {
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
 //                "C:\\bench\\X3\\SportsScheduling\\SportsScheduling-08.xml",
 //                "/Users/lizhe/allDiff_Series/Queens/Queens-0008-m1.xml",
-//                "/Users/lizhe/allDiff_Series/Queens/Queens-0008-m1.xml",
+//                "/Users/leezear/allDiff_Series/Queens/Queens-0008-m1.xml",
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
 //                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
@@ -55,14 +55,16 @@ public class testAllDiff {
 //                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-06.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
-                "C:/exp/AllDiffBench/GolombRuler/GolombRuler-05-a3.xml",
+//                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
+//                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
+                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml"
 //                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
 
         };
         XCSPParser parser = new XCSPParser();
 //        String[] algorithms = new String[]{
-////                "AC_REGIN",
+//                "AC_REGIN",
 //                "ACFair",
 ////                "Gent",
 ////                "AC_ZHANG",
@@ -91,7 +93,8 @@ public class testAllDiff {
 //        };
         String[] algorithms = new String[]{
 //                "AC",
-//                "ACFair",
+                "ACFair",
+                "AC_REGIN",
 //                "ACChen",
 //                "ACZhang20Bit",
 //                "ACChen20",
@@ -106,19 +109,24 @@ public class testAllDiff {
 //                "WordRam",
 //                "WordRamRegin",
 //                "WordRamGent",
-                "WordRamWordRam",
+//                "WordRamWordRam",
 //                "WordRamWordRam",
 //                "WordRamWordRam",
 //                "WordRamZhang20",
 //                "WordRamZhang20BIS",
 //                "ACZhang18",
 //                "WordRamZhang20BitBIS",
-                "WordRamZhang20BitBIS2",
 //                "WordRamZhang20BitBIS2",
-                "WordRamZhang20BitBIS4",
+//                "WordRamZhang20BitBIS2",
+//                "WordRamZhang20BitBIS4",
 //                "WordRamZhang20BitBIS4",
 //                "WordRamZhang20BitBIS4",
 //                "ACNaive",
+//                "ACNaive",
+                "ACNaiveR",
+//                "ACNaiveNew",
+//                "ACSimple",
+                "ACSimpleGent",
         };
 //        String[] algorithms = new String[]{
 //                "ACNaive",
@@ -138,6 +146,7 @@ public class testAllDiff {
                     try {
                         parser.model(model, ins, algo);
                     } catch (Exception e) {
+
                         e.printStackTrace();
                     }
                     IntVar[] decVars = (IntVar[]) model.getHook("decisions");
@@ -147,14 +156,14 @@ public class testAllDiff {
                     Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                     Solver solver = model.getSolver();
 //                    solver.setSearch(Search.defaultSearch(model));
-//                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
 //                    solver.setSearch(Search.minDomLBSearch(decVars));
 //                    solver.setSearch(new ImpactBased(decVars, true));
 //                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
 //                  solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
 //                  solver.setSearch(intVarSearch();

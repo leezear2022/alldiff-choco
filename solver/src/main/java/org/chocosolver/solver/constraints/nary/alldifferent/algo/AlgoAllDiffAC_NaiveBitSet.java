@@ -32,6 +32,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
     static public int num = 0;
     // 约束的编号
     private int id;
+    private static long numCall = -1;
 
     private int arity;
     private IntVar[] vars;
@@ -153,6 +154,8 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
+        System.out.println("----------------" + id + " propagate: " + (++numCall) + "----------------");
+        printDomains();
         Measurer.enterProp();
         startTime = System.nanoTime();
         findMaximumMatching();
@@ -162,6 +165,15 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
         boolean filter = filter();
         Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
+    }
+
+    private void printDomains() {
+        // 填充B和D
+        for (int i = 0; i < arity; ++i) {
+            IntVar v = vars[i];
+//            System.out.println(D[i]);
+            System.out.println(v);
+        }
     }
 
     //***********************************************************************************
@@ -375,9 +387,9 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                 graphLinkedMatrix[varIdx].clear(varIdx);
                 graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
             }
-//                System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
-//                System.out.println(graphLinkedMatrix[varIdx]);
-//                System.out.println(graphLinkedFrontier[varIdx]);
+            System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
+            System.out.println(graphLinkedMatrix[varIdx]);
+            System.out.println(graphLinkedFrontier[varIdx]);
         }
     }
 

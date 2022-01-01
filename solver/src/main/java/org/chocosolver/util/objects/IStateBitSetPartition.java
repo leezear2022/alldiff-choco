@@ -3,6 +3,8 @@ package org.chocosolver.util.objects;
 import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.memory.IStateBitSet;
 
+import java.util.Arrays;
+
 public class IStateBitSetPartition extends IStatePartition {
     IStateBitSet sccMask;
 
@@ -52,6 +54,12 @@ public class IStateBitSetPartition extends IStatePartition {
     int maskPrevClearBit(int e) {
         return sccMask.prevClearBit(e);
     }
+
+    @Override
+    String maskStr() {
+        return sccMask.toString();
+    }
+
 
 }
 //    @Override

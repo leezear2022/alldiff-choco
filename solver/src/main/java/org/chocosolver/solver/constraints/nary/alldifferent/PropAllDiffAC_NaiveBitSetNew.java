@@ -41,7 +41,7 @@ public class PropAllDiffAC_NaiveBitSetNew extends Propagator<IntVar> {
     //***********************************************************************************
 
     //    protected AlgoAllDiffAC_Naive filter;
-    protected AlgoAllDiffAC_NaiveBitSetNew filter;
+    protected AlgoAllDiffAC_SimpleGent filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -64,7 +64,7 @@ public class PropAllDiffAC_NaiveBitSetNew extends Propagator<IntVar> {
 //        } else {
 //            this.filter = new AlgoAllDiffAC_NaiveBitSet(variables, this);
 //        }
-        this.filter = new AlgoAllDiffAC_NaiveBitSetNew(variables, this, model);
+        this.filter = new AlgoAllDiffAC_SimpleGent(variables, this, model);
 
     }
 

@@ -13,6 +13,7 @@ import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.memory.IStateInt;
 import org.chocosolver.util.objects.INaiveBitSet;
+import org.chocosolver.util.objects.SimpleBitSet;
 
 
 public class OneWordS32BitSet implements IStateBitSet {
@@ -344,6 +345,11 @@ public class OneWordS32BitSet implements IStateBitSet {
     @Override
     public void generateBitSet(INaiveBitSet a) {
         a.setWord(0, word.get());
+    }
+
+    @Override
+    public void generateBitSet(SimpleBitSet a) {
+        a.words[0] = this.word.get();
     }
 
     @Override
