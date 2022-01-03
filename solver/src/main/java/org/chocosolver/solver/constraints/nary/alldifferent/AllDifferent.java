@@ -58,6 +58,7 @@ public class AllDifferent extends Constraint {
     public static final String ACNaive = "ACNaive";
     public static final String ACSimple = "ACSimple";
     public static final String ACSimpleGent = "ACSimpleGent";
+    public static final String ACSimpleGentFree = "ACSimpleGentFree";
 
     public AllDifferent(IntVar[] vars, String type) {
         super(ConstraintsName.ALLDIFFERENT, createPropagators(vars, type));
@@ -117,6 +118,8 @@ public class AllDifferent extends Constraint {
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Simple(VARS)};
             case ACSimpleGent:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_SimpleGent(VARS)};
+            case ACSimpleGentFree:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_SimpleGentFree(VARS)};
             case ACNaive:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
             case ACNaiveR:

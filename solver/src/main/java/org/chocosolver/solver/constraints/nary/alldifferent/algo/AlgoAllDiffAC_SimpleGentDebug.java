@@ -34,7 +34,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_SimpleGentDebug extends AlgoAllDiffAC_Naive {
+public class AlgoAllDiffAC_SimpleGentDebug extends AlgoAllDiffAC_Simple {
 
     //***********************************************************************************
     // VARIABLES

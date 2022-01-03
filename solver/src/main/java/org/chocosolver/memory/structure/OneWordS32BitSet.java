@@ -432,4 +432,9 @@ public class OneWordS32BitSet implements IStateBitSet {
     public void set(INaiveBitSet a) {
         word.set((int) a.getWord(0));
     }
+
+    @Override
+    public int getWordsInUse() {
+        return word.get() == 0l ? 0 : 1;
+    }
 }

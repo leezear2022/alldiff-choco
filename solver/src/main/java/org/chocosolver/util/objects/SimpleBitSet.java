@@ -56,6 +56,8 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
 
     /* Used to shift left or right for a partial word mask */
     public static final long WORD_MASK = 0xffffffffffffffffL;
+    public long lastMask;
+
 
 //    /**
 //     * @serialField bits long[]
@@ -141,7 +143,7 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
         // nbits can't be negative; size 0 is OK
         if (nbits < 0)
             throw new NegativeArraySizeException("nbits < 0: " + nbits);
-
+        lastMask = WORD_MASK >>> (BITS_PER_WORD - (nbits % BITS_PER_WORD));
         initWords(nbits);
         sizeIsSticky = true;
     }
@@ -514,6 +516,16 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
             clear(fromIndex, toIndex);
     }
 
+    public void set() {
+//        int ub = words.length - 1;
+        wordsInUse = words.length;
+        for (int i = 0; i < wordsInUse; ++i) {
+            words[i] = WORD_MASK;
+        }
+        words[wordsInUse - 1] = lastMask;
+        checkInvariants();
+    }
+
     public void set(SimpleBitSet set) {
 //        if (!sizeIsSticky)
 //            trimToSize();
@@ -523,6 +535,30 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
 
         System.arraycopy(set.words, 0, words, 0, set.wordsInUse);
         wordsInUse = set.wordsInUse;
+        checkInvariants();
+    }
+
+    public void set(IStateBitSet set) {
+//        if (!sizeIsSticky)
+//            trimToSize();
+//
+//        if (!set.sizeIsSticky)
+//            set.trimToSize();
+
+        wordsInUse = set.getWordsInUse();
+        for (int i = 0; i < wordsInUse; i++) {
+            words[i] = set.getWord(i);
+        }
+        checkInvariants();
+    }
+
+    public void setNeg(IStateBitSet set) {
+        wordsInUse = words.length;
+        for (int i = 0; i < wordsInUse; i++) {
+            words[i] = ~set.getWord(i);
+        }
+        words[wordsInUse - 1] &= lastMask;
+        recalculateWordsInUse();
         checkInvariants();
     }
 
@@ -935,22 +971,34 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
         if (this == set)
             return;
 
-        int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
-
-        if (wordsInUse < set.wordsInUse) {
-            ensureCapacity(set.wordsInUse);
-            wordsInUse = set.wordsInUse;
-        }
+        wordsInUse = Math.max(wordsInUse, set.wordsInUse);
 
         // Perform logical OR on words in common
-        for (int i = 0; i < wordsInCommon; i++)
+        for (int i = 0; i < wordsInUse; i++)
             words[i] |= set.words[i];
 
-        // Copy any remaining words
-        if (wordsInCommon < set.wordsInUse)
-            System.arraycopy(set.words, wordsInCommon,
-                    words, wordsInCommon,
-                    wordsInUse - wordsInCommon);
+        // recalculateWordsInUse() is unnecessary
+        checkInvariants();
+    }
+
+    public void or(IStateBitSet set) {
+        // wordsInUse 取两者最大值
+        wordsInUse = Math.max(wordsInUse, set.getWordsInUse());
+//
+//        if (wordsInUse < set.getWordsInUse()) {
+//            ensureCapacity(set.getWordsInUse());
+//            wordsInUse = set.getWordsInUse();
+//        }
+
+        // Perform logical OR on words in common
+        for (int i = 0; i < wordsInUse; i++)
+            words[i] |= set.getWord(i);
+
+//        // Copy any remaining words
+//        if (wordsInCommon < set.getWordsInUse())
+//            System.arraycopy(set.words, wordsInCommon,
+//                    words, wordsInCommon,
+//                    wordsInUse - wordsInCommon);
 
         // recalculateWordsInUse() is unnecessary
         checkInvariants();
@@ -1428,11 +1476,57 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
     }
 
+    public void orAfterMinus(IStateBitSet a, SimpleBitSet b) {
+
+        /**
+         * a-b->c
+         * 0 0->0
+         * 0 1->0
+         * 1 0->1
+         * 1 1->0
+         * c.wordsInUse is initial to a.wordsInUse
+         * */
+
+
+        int wordsInCommon = Math.min(wordsInUse, a.getWordsInUse());
+
+        if (wordsInUse < a.getWordsInUse()) {
+            ensureCapacity(a.getWordsInUse());
+            wordsInUse = a.getWordsInUse();
+        }
+
+        // Perform logical OR on words in common
+        for (int i = 0; i < wordsInCommon; i++)
+            this.words[i] |= a.getWord(i) & ~b.words[i];
+
+        // Copy any remaining words
+        if (wordsInCommon < a.getWordsInUse()) {
+//            System.arraycopy(a.words, wordsInCommon,
+//                    words, wordsInCommon,
+//                    wordsInUse - wordsInCommon);
+            for (int i = wordsInCommon; i < wordsInUse; i++) {
+                words[i] = a.getWord(i);
+            }
+        }
+        // recalculateWordsInUse() is unnecessary
+        checkInvariants();
+    }
+
     public void setAfterMinus(SimpleBitSet a, SimpleBitSet b) {
         // a 集合应是最长的
         wordsInUse = a.wordsInUse;
         for (int i = 0; i < wordsInUse; ++i) {
             this.words[i] = a.words[i] & ~b.words[i];
+        }
+        recalculateWordsInUse();
+        checkInvariants();
+    }
+
+    public void setAfterMinus(IStateBitSet a, SimpleBitSet b) {
+        // a 集合应是最长的，最后一个word不用处理
+        wordsInUse = a.getWordsInUse();
+        for (int i = 0; i < wordsInUse; ++i) {
+            this.words[i] = a.getWordsInUse() & ~b.words[i];
         }
         recalculateWordsInUse();
         checkInvariants();

@@ -565,6 +565,11 @@ public class S64BitSet implements IStateBitSet {
         }
     }
 
+    @Override
+    public int getWordsInUse() {
+        return wordsInUse.get();
+    }
+
     public void generateBitSet(INaiveBitSet a) {
         for (int i = 0; i < words.length; i++) {
             a.setWord(i, words[i].get());

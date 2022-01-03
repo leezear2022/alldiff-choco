@@ -291,6 +291,13 @@ public abstract class IStatePartition {
         return next;
     }
 
+    public int splitTmp() {
+        int newStart = tmpIdx;
+        maskSet(newStart);
+        disposeTmp();
+        return newStart;
+    }
+
 //    public void moveToTmp() {
 //        tmpIdx = (tmpIdx == INDEX_OVER_OVER_OVERFLOW) ? sccEndIndex : tmpIdx - 1;
 //        int e = dense[cursor];
@@ -315,11 +322,12 @@ public abstract class IStatePartition {
         // 查找当前索引
         int index = sparse[e];
         // 如果e的索引在tmp中则不需移动
-        if (index >= tmpIdx)
+        if (index >= tmpIdx && tmpIdx >= 0)
             return;
         // 查找边界索引
         tmpIdx = (tmpIdx == INDEX_OVER_OVER_OVERFLOW) ? sccEndIndex : tmpIdx - 1;
         if (index != tmpIdx) {
+//            System.out.println("xixi");
             int tmp = dense[tmpIdx];
             sparse[e] = tmpIdx;
             sparse[tmp] = index;
@@ -372,7 +380,7 @@ public abstract class IStatePartition {
         // lastRet不能处理
         // lastRet = INDEX_OVER_OVERFLOW;
         // 若处理 再调用removeCurrentToHead()会出错
-        if (tmpIdx == -1) {
+        if (tmpIdx == INDEX_OVER_OVER_OVERFLOW) {
             return index >= cursor && index <= sccEndIndex;
         } else {
             return index >= cursor && index <= tmpIdx;

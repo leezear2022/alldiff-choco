@@ -31,7 +31,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
+public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
 
     //***********************************************************************************
     // VARIABLES
@@ -39,7 +39,7 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
     // 约束的个数
     static public int num = 0;
     static public int INDEX_OVERFLOW = -1;
-    static long numCall =-1;
+    static long numCall = -1;
     // 约束的编号
     private int id;
     private int arity;
@@ -59,9 +59,9 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
     private SparseSet notGamma;
     // Dc-A
     private SparseSet notA;
-    // 与值相连的变量
-    private SimpleBitSet[] B;
-    private SimpleBitSet[] D;
+//    // 与值相连的变量
+//    private SimpleBitSet[] B;
+//    private SimpleBitSet[] D;
 
     // 已访问过的变量和值
     private SimpleBitSet unVisitedVariables;
@@ -156,18 +156,18 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
         // System.out.println("-----------idx2Val-----------");
         // System.out.println(Arrays.toString(idx2Val));
         // for backtracking
-        B = new SimpleBitSet[numValues];
+//        B = new SimpleBitSet[numValues];
         RB = new IStateBitSet[numValues];
         for (int i = 0; i < numValues; ++i) {
-            B[i] = new SimpleBitSet(arity);
+//            B[i] = new SimpleBitSet(arity);
             RB[i] = env.makeBitSet(arity);
         }
 
-        D = new SimpleBitSet[arity];
+//        D = new SimpleBitSet[arity];
         RD = new IStateBitSet[arity];
         domIsRegular = new boolean[arity];
         for (int i = 0; i < arity; i++) {
-            D[i] = new SimpleBitSet(numValues);
+//            D[i] = new SimpleBitSet(numValues);
             RD[i] = env.makeBitSet(numValues);
         }
 
@@ -181,9 +181,9 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
                 if (domIsRegular[i] && val != valIdx)
                     domIsRegular[i] = false;
                 RB[valIdx].set(i);
-                B[valIdx].set(i);
+//                B[valIdx].set(i);
                 RD[i].set(valIdx);
-                D[i].set(valIdx);
+//                D[i].set(valIdx);
             }
             vit.dispose();
         }
@@ -317,21 +317,7 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
         // 填充B和D
         for (int i = 0; i < arity; ++i) {
             IntVar v = vars[i];
-            System.out.println(D[i]);
-            System.out.println(v);
-        }
-    }
-
-    private void printBitDomains() {
-        for (int i = 0; i < numValues; ++i) {
-            System.out.println("val " + "i: " + B[i]);
-        }
-
-        IntVar v;
-        // 填充B和D
-        for (int i = 0; i < arity; ++i) {
-            v = vars[i];
-            System.out.println("val " + "i: " + D[i]);
+//            System.out.println(D[i]);
             System.out.println(v);
         }
     }
@@ -351,7 +337,7 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
                 triggeringVars.add(varIdx);
                 // 只动变量论域改变的变量，触发变量和删值队列都更新一下
                 monitors[varIdx].forEachRemVal(onValRem.set(varIdx));
-                RD[varIdx].generateBitSet(D[varIdx]);
+//                RD[varIdx].generateBitSet(D[varIdx]);
                 updatedVars.add(varIdx);
             }
             monitors[varIdx].unfreeze();
@@ -382,13 +368,13 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
         while (num_visited < num_to_visit) {
             // Dequeue node to visit.
             int node = visiting_[num_visited++];
-            updateBitDom(node);
+//            updateBitDom(node);
 //            needVisitValues.setAfterAnd(D[node], unVisitedValues);
 //            for (int valIdx = needVisitValues.firstSetBit(); valIdx != unVisitedValues.end(); valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
-            for (int valIdx = D[node].nextSetBit(0); valIdx >= 0; valIdx = D[node].nextSetBit(valIdx + 1)) {
+            for (int valIdx = RD[node].nextSetBit(0); valIdx >= 0; valIdx = RD[node].nextSetBit(valIdx + 1)) {
                 if (visitedValues.get(valIdx)) continue;
                 visitedValues.set(valIdx);
-                updateBitBel(valIdx);
+//                updateBitBel(valIdx);
 //                if (val2Var[valIdx] == -1) {
                 if (!matchedValuesR.get(valIdx)) {
                     // value_to_variable_[valIdx] ， value这个值未分配到变量，即是一个free
@@ -473,10 +459,10 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
         partition.setIteratorIndexBySCCStartIndex(SCCStartIndex);
         while (partition.hasNext()) {
             int varIdx = partition.next();
-            updateBitDom(varIdx);
+//            updateBitDom(varIdx);
             int valIdx = var2ValR[varIdx].get();
             // 值失效
-            if (valIdx == -1 || !D[varIdx].get(valIdx)) {
+            if (valIdx == -1 || !RD[varIdx].get(valIdx)) {
                 var2ValR[varIdx].set(-1);
                 visitedValues.clear();
                 unVisitedVariables.set(0, arity);
@@ -501,20 +487,20 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
         triggeringVars.iterateValid();
         while (triggeringVars.hasNextValid()) {
             int xIdx = triggeringVars.next();
-            updateBitDom(xIdx);
+//            updateBitDom(xIdx);
             int valIdx = var2ValR[xIdx].get();
 
             int sccStartIdx = partition.getSCCStartIndexByElement(xIdx);
             x = vars[xIdx];
 
             // valIdx失效
-            if (valIdx == -1 || !D[xIdx].get(valIdx)) {
+            if (valIdx == -1 || !RD[xIdx].get(valIdx)) {
                 repairMatching(sccStartIdx);
             }
 
             if (x.isInstantiated() && !partition.isSingletonByStartIndex(sccStartIdx)) {
                 valIdx = var2ValR[xIdx].get();
-                updateBitBel(valIdx);
+//                updateBitBel(valIdx);
                 int xVal = idx2Val[valIdx];
                 if (changedSCCStartIndex.contains(sccStartIdx)) {
                     changedSCCStartIndex.remove(sccStartIdx);
@@ -527,8 +513,8 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
                 partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
                 while (partition.hasNext()) {
                     int yIdx = partition.next();
-                    updateBitDom(yIdx);
-                    if (D[yIdx].get(valIdx)) {
+//                    updateBitDom(yIdx);
+                    if (RD[yIdx].get(valIdx)) {
                         y = vars[yIdx];
                         res |= y.removeValue(xVal, aCause);
                         removeValue(yIdx, valIdx);
@@ -572,11 +558,11 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
         while (partition.hasNext()) {
 
             int varIdx = partition.next();
-            updateBitDom(varIdx);
+//            updateBitDom(varIdx);
             // 从变量id拿到匹配值再拿到该值所能到达的变量mask
             int valIdx = var2ValR[varIdx].get();
-            updateBitBel(valIdx);
-            graphLinkedMatrix[varIdx].set(B[valIdx]);
+//            updateBitBel(valIdx);
+            graphLinkedMatrix[varIdx].set(RB[valIdx]);
             graphLinkedMatrix[varIdx].clear(varIdx);
             graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
 //            System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
@@ -593,7 +579,7 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
             int varIdx = partition.nextAndSplitWhenEnteringTmp();
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
-                for (int valIdx = D[varIdx].nextSetBit(0); valIdx >= 0; valIdx = D[varIdx].nextSetBit(valIdx + 1)) {
+                for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
                     int k = idx2Val[valIdx];
 
                     if (!checkSCC(varIdx, valIdx)) {
@@ -644,44 +630,44 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Naive {
     }
 
     void removeValue(int varIdx, int valIdx) {
-        D[varIdx].clear(valIdx);
+//        D[varIdx].clear(valIdx);
         RD[varIdx].clear(valIdx);
-        B[valIdx].clear(varIdx);
+//        B[valIdx].clear(varIdx);
         RB[valIdx].clear(varIdx);
     }
 
     void instantiateTo(int varIdx, int valIdx) {
-        D[varIdx].clear();
+//        D[varIdx].clear();
         RD[varIdx].clear();
-        D[varIdx].set(valIdx);
+//        D[varIdx].set(valIdx);
         RD[varIdx].set(valIdx);
 
-        B[valIdx].clear();
+//        B[valIdx].clear();
         RB[valIdx].clear();
-        B[valIdx].set(varIdx);
+//        B[valIdx].set(varIdx);
         RB[valIdx].set(varIdx);
     }
 
 
-    // for lazy update, 最早在matching时，最晚在initiateMatrix时检测
-    void updateBitBel(int valIdx) {
-        // bit值未更新，此处更新
-        if (!updatedVals.contains(valIdx)) {
-            updatedVals.add(valIdx);
-//            System.out.println("RB[" + valIdx + "]\t" + RB[valIdx]);
-            RB[valIdx].generateBitSet(B[valIdx]);
-//            System.out.println("B[" + valIdx + "]\t" + B[valIdx]);
-        }
-    }
-
-    // for lazy update, 最早在matching时，最晚在initiateMatrix时检测
-    void updateBitDom(int varIdx) {
-        // bit值未更新，此处更新
-        if (!updatedVars.contains(varIdx)) {
-            updatedVars.add(varIdx);
-//            System.out.println("RD[" + varIdx + "]\t" + RD[varIdx]);
-            RD[varIdx].generateBitSet(D[varIdx]);
-//            System.out.println("D[" + varIdx + "]\t" + D[varIdx]);
-        }
-    }
+//    // for lazy update, 最早在matching时，最晚在initiateMatrix时检测
+//    void updateBitBel(int valIdx) {
+//        // bit值未更新，此处更新
+//        if (!updatedVals.contains(valIdx)) {
+//            updatedVals.add(valIdx);
+////            System.out.println("RB[" + valIdx + "]\t" + RB[valIdx]);
+//            RB[valIdx].generateBitSet(B[valIdx]);
+////            System.out.println("B[" + valIdx + "]\t" + B[valIdx]);
+//        }
+//    }
+//
+//    // for lazy update, 最早在matching时，最晚在initiateMatrix时检测
+//    void updateBitDom(int varIdx) {
+//        // bit值未更新，此处更新
+//        if (!updatedVars.contains(varIdx)) {
+//            updatedVars.add(varIdx);
+////            System.out.println("RD[" + varIdx + "]\t" + RD[varIdx]);
+//            RD[varIdx].generateBitSet(D[varIdx]);
+////            System.out.println("D[" + varIdx + "]\t" + D[varIdx]);
+//        }
+//    }
 }
