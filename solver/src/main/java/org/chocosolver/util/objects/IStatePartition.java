@@ -556,6 +556,8 @@ public abstract class IStatePartition {
         return index >= sccStartIndex && index < unknownIndex;
     }
 
+
+
     public boolean isInUnknown(int index) {
         return index >= unknownIndex && index < movedIndex;
     }
@@ -581,4 +583,22 @@ public abstract class IStatePartition {
     }
 
 
+    public boolean currentInChecked() {
+        return isInConnected(sparse[lastRet]);
+    }
+
+    public boolean varInConnected(int e) {
+        int index = sparse[e];
+        return index >= sccStartIndex && index < unknownIndex;
+    }
+
+    public boolean varInUnknown(int e) {
+        int index = sparse[e];
+        return index >= unknownIndex && index < movedIndex;
+    }
+
+    public boolean varInMoved(int e) {
+        int index = sparse[e];
+        return movedIsDisable() ? false : index >= movedIndex && index <= sccEndIndex;
+    }
 }

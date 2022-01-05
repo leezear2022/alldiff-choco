@@ -619,7 +619,67 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
         return filter;
     }
 
+    private boolean filterDomainsPartition(int sccStartIndex) throws ContradictionException {
+        boolean filter = false;
+        partition.setIteratorIndexBySCCStartIndex(sccStartIndex);
+        while (partition.hasNext()) {
+            int varIdx = partition.nextAndSplitWhenMeetingUnknownAndMoved();
+            IntVar v = vars[varIdx];
+            if (!v.isInstantiated()) {
 
+                int matchedVal = var2ValR[varIdx].get();
+                int k = idx2Val[matchedVal];
+                // 先验证匹配值，再验证其它值
+                if (!checkSCC(varIdx, matchedVal)) {
+                    int valNum = v.getDomainSize();
+                    Measurer.numDelValuesP2 += valNum - 1;
+                    filter |= v.instantiateTo(k, aCause);
+                    instantiateTo(varIdx, matchedVal);
+                    partition.removeCurrentToTail();
+                    break;
+                    // System.out.println("instantiate  : " + v.getName() + ", " + k);
+                } else {
+                    partition.setCurrentConnected();
+                    // 再验证其它值
+                    for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
+                        int varIdx2 = val2VarR[valIdx].get();
+                        if (valIdx != varIdx2) {
+                            k = idx2Val[valIdx];
+                            if(partition.varInUnknown(varIdx2)){
+                                // 在Unknown分区中，需检查，能连通就加入Connected，不通连通就放入Moved分区
+                                if (!checkSCC(varIdx, varIdx2)) {
+                                    Measurer.enterP2();
+                                    ++Measurer.numDelValuesP2;
+                                    filter |= v.removeValue(k, aCause);
+                                    removeValue(varIdx, valIdx);
+                                    if (partition.canMoveToTmp(varIdx2)) {
+                                        // varIdx2未分裂，将varIdx2移入tmp分区中
+                                        partition.addMoved(varIdx2);
+                                    }
+                                    // System.out.println("second delete: " + v.getName() + ", " + k);
+                                } else {
+                                    partition.addConnected(varIdx2);
+                                }
+                            }else if (partition.varInMoved(varIdx2)){
+                                // var2在moved分区
+                                Measurer.enterP2();
+                                ++Measurer.numDelValuesP2;
+                                filter |= v.removeValue(k, aCause);
+                                removeValue(varIdx, valIdx);
+                                if (partition.canMoveToTmp(varIdx2)) {
+                                    // varIdx2未分裂，将varIdx2移入tmp分区中
+                                    partition.addMoved(varIdx2);
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+        partition.disposeSCCIterator();
+        return filter;
+    }
     private boolean checkSCC(int x, int a) {
         int y = val2VarR[a].get();
         if (graphLinkedMatrix[x].get(y)) {
