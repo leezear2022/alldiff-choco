@@ -1,7 +1,6 @@
 package org.chocosolver.util.objects;
 
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
 
 public abstract class IStatePartition {
     static int INDEX_OVERFLOW = -1;
@@ -17,7 +16,8 @@ public abstract class IStatePartition {
     int cursor = INDEX_OVER_OVERFLOW;
     int sccEndIndex = INDEX_OVERFLOW;
     int sccStartIndex = INDEX_OVERFLOW;
-    int tmpIdx = INDEX_OVER_OVER_OVERFLOW;
+    int movedIndex = INDEX_OVER_OVER_OVERFLOW;
+    int unknownIndex = INDEX_OVER_OVER_OVERFLOW;
 
     public IStatePartition(int nbit) {
         size = nbit;
@@ -106,7 +106,7 @@ public abstract class IStatePartition {
          *  lastRect<-tmpIdx-1
          *  tmpIdx-1<-tmp
          * */
-        int newTmpIdx = tmpIdx - 1;
+        int newTmpIdx = movedIndex - 1;
         int tmp_e = dense[newTmpIdx];
         int e = dense[lastRet];
         int end_e = dense[sccEndIndex];
@@ -118,7 +118,7 @@ public abstract class IStatePartition {
         dense[lastRet] = dense[newTmpIdx];
         dense[newTmpIdx] = dense[end_e];
 
-        tmpIdx = newTmpIdx;
+        movedIndex = newTmpIdx;
 
         maskSet(sccEndIndex);
         --sccEndIndex;
@@ -164,7 +164,7 @@ public abstract class IStatePartition {
         if (this.lastRet == -1) {
             throw new IllegalStateException();
         }
-        if (inCurrentSCC(tmpIdx)) {
+        if (inCurrentSCC(movedIndex)) {
             removeCurrentToTailTmp();
         } else {
             // 当前tmp无效
@@ -228,12 +228,13 @@ public abstract class IStatePartition {
         lastRet = INDEX_OVER_OVERFLOW;
         sccEndIndex = INDEX_OVERFLOW;
         sccStartIndex = INDEX_OVERFLOW;
-        tmpIdx = INDEX_OVER_OVER_OVERFLOW;
+        movedIndex = INDEX_OVER_OVER_OVERFLOW;
     }
 
     public void setIteratorIndexBySCCStartIndex(int start) {
-        this.cursor = start;
         this.sccStartIndex = start;
+        this.cursor = start;
+        this.unknownIndex = start;
         this.sccEndIndex = getSCCEndIndex(start);
     }
 
@@ -256,12 +257,12 @@ public abstract class IStatePartition {
     }
 
     public void next(IntBoolPair ib) {
-        ib.y = cursor == tmpIdx;
+        ib.y = cursor == movedIndex;
         ib.x = dense[cursor++];
     }
 
     public void nextOrElseSetSplit(IntBoolPair ib) {
-        if (cursor == tmpIdx) {
+        if (cursor == movedIndex) {
             // 当前遍历到tmp区域，tmpIdx失效，设定前方区域为独立SCC
             ib.y = true;
             disposeTmp();
@@ -276,23 +277,55 @@ public abstract class IStatePartition {
         lastRet = cursor++;
     }
 
-    public int nextAndSplitWhenEnteringTmp() {
-        if (cursor == tmpIdx) {
-            // 当前遍历到tmp区域，tmpIdx失效，设定前方区域为独立SCC
+    public int nextAndSplitWhenMeetingUnknownAndMoved() {
+        if (cursor != sccStartIndex && cursor == unknownIndex) {
+            // cursor非sccStart 且首次进入unknown区域
+            // 分裂当前scc，但并不置当前变量为connected
+            if (cursor == movedIndex) {
+                // 当前遍历到tmp区域，tmpIdx失效，设定前方区域为独立SCC
 //            ib.y = true;
-            disposeTmp();
+                disposeTmp();
+            }
             sccStartIndex = cursor;
+
             if (cursor != size)
                 maskSet(cursor);
         }
+
+
+//            sccStartIndex = cursor;
+//            if (cursor != size)
+//                maskSet(cursor);
+//        }
 
         int next = dense[cursor];
         lastRet = cursor++;
         return next;
     }
 
+    public void setCurrentConnected() {
+        if (lastRet == unknownIndex) {
+            // 当前元素在unknown区域内
+            // 此时moved区已经移走了
+            ++unknownIndex;
+        }
+    }
+
+    public void addConnected(int e) {
+        int index = sparse[e];
+
+        if (index < unknownIndex && index <= sccEndIndex) {
+            int tmp = dense[movedIndex];
+            sparse[e] = movedIndex;
+            sparse[tmp] = index;
+            dense[index] = tmp;
+            dense[movedIndex] = e;
+        }
+        ++unknownIndex;
+    }
+
     public int splitTmp() {
-        int newStart = tmpIdx;
+        int newStart = movedIndex;
         maskSet(newStart);
         disposeTmp();
         return newStart;
@@ -309,7 +342,7 @@ public abstract class IStatePartition {
 //    }
 
 
-    public void moveToTmp(int e) {
+    public void addMoved(int e) {
 //        tmpIdx = (tmpIdx == INDEX_OVER_OVER_OVERFLOW) ? sccEndIndex : tmpIdx - 1;
 ////        int e = dense[cursor];
 //        int index = sparse[e];
@@ -322,22 +355,23 @@ public abstract class IStatePartition {
         // 查找当前索引
         int index = sparse[e];
         // 如果e的索引在tmp中则不需移动
-        if (index >= tmpIdx && tmpIdx >= 0)
+        if (index >= movedIndex && movedIndex >= 0)
             return;
         // 查找边界索引
-        tmpIdx = (tmpIdx == INDEX_OVER_OVER_OVERFLOW) ? sccEndIndex : tmpIdx - 1;
-        if (index != tmpIdx) {
+        movedIndex = (movedIndex == INDEX_OVER_OVER_OVERFLOW) ? sccEndIndex : movedIndex - 1;
+        if (index != movedIndex) {
 //            System.out.println("xixi");
-            int tmp = dense[tmpIdx];
-            sparse[e] = tmpIdx;
+            int tmp = dense[movedIndex];
+            sparse[e] = movedIndex;
             sparse[tmp] = index;
             dense[index] = tmp;
-            dense[tmpIdx] = e;
+            dense[movedIndex] = e;
         }
+        --movedIndex;
     }
 
     public void disposeTmp() {
-        tmpIdx = INDEX_OVER_OVER_OVERFLOW;
+        movedIndex = INDEX_OVER_OVER_OVERFLOW;
     }
 
     public void disposeIter() {
@@ -380,10 +414,10 @@ public abstract class IStatePartition {
         // lastRet不能处理
         // lastRet = INDEX_OVER_OVERFLOW;
         // 若处理 再调用removeCurrentToHead()会出错
-        if (tmpIdx == INDEX_OVER_OVER_OVERFLOW) {
+        if (movedIndex == INDEX_OVER_OVER_OVERFLOW) {
             return index >= cursor && index <= sccEndIndex;
         } else {
-            return index >= cursor && index <= tmpIdx;
+            return index >= cursor && index <= movedIndex;
         }
     }
 
@@ -392,6 +426,15 @@ public abstract class IStatePartition {
         return index < sccStartIndex || index > sccEndIndex;
 
     }
+
+//    public Subpartition getSubparition(int e) {
+//        int index = sparse[e];
+//        if (isInvalid(index)) {
+//            return Subpartition.Invalid;
+//        }
+//        return Subpartition.AfterSCC;
+//    }
+
 
     // 子类只需重写bit运算部分
     abstract void maskSet(int e);
@@ -491,5 +534,51 @@ public abstract class IStatePartition {
             this.y = y;
         }
     }
+
+    public enum Subpartition {
+        Invalid, BeforeSCC, Connected, Unknown, Moved, UnknownAndMoved, AfterSCC,
+    }
+
+
+    public boolean isInvalid(int index) {
+        return index < 0;
+    }
+
+    public boolean movedIsDisable() {
+        return movedIndex == INDEX_OVER_OVER_OVERFLOW;
+    }
+
+    public boolean beforeCurrentSCC(int index) {
+        return index >= 0 && index < sccStartIndex;
+    }
+
+    public boolean isInConnected(int index) {
+        return index >= sccStartIndex && index < unknownIndex;
+    }
+
+    public boolean isInUnknown(int index) {
+        return index >= unknownIndex && index < movedIndex;
+    }
+
+    public boolean isInMoved(int index) {
+        return movedIsDisable() ? false : index >= movedIndex && index <= sccEndIndex;
+    }
+
+    public boolean unknownMeetsMoved() {
+        return (!movedIsDisable()) && unknownIndex == movedIndex;
+    }
+
+    public boolean meetsUnknown(int index) {
+        return index == unknownIndex;
+    }
+
+    public boolean isUnknownAndMoved(int index) {
+        return movedIsDisable() ? false : index == movedIndex && movedIndex == unknownIndex;
+    }
+
+    public boolean AfterCurrentSCC(int index) {
+        return index > sccEndIndex;
+    }
+
 
 }

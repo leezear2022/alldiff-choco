@@ -16,7 +16,6 @@ import org.chocosolver.util.iterators.DisposableValueIterator;
 import org.chocosolver.util.objects.*;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
-import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -576,31 +575,41 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
         boolean filter = false;
         partition.setIteratorIndexBySCCStartIndex(sccStartIndex);
         while (partition.hasNext()) {
-            int varIdx = partition.nextAndSplitWhenEnteringTmp();
+            int varIdx = partition.nextAndSplitWhenMeetingUnknownAndMoved();
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
-                for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
-                    int k = idx2Val[valIdx];
 
-                    if (!checkSCC(varIdx, valIdx)) {
-                        Measurer.enterP2();
+                int matchedVal = var2ValR[varIdx].get();
+                int k = idx2Val[matchedVal];
+                // 先验证匹配值，再验证其它值
+                if (!checkSCC(varIdx, matchedVal)) {
+                    int valNum = v.getDomainSize();
+                    Measurer.numDelValuesP2 += valNum - 1;
+                    filter |= v.instantiateTo(k, aCause);
+                    instantiateTo(varIdx, matchedVal);
+                    partition.removeCurrentToTail();
+                    break;
+                    // System.out.println("instantiate  : " + v.getName() + ", " + k);
+                } else {
+                    partition.setCurrentConnected();
+                    // 再验证其它值
+                    for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
                         int varIdx2 = val2VarR[valIdx].get();
-                        if (varIdx == varIdx2) {
-                            int valNum = v.getDomainSize();
-                            Measurer.numDelValuesP2 += valNum - 1;
-                            filter |= v.instantiateTo(k, aCause);
-                            instantiateTo(varIdx, valIdx);
-                            partition.removeCurrentToTail();
-//                            System.out.println("instantiate  : " + v.getName() + ", " + k);
-                        } else {
-                            ++Measurer.numDelValuesP2;
-                            filter |= v.removeValue(k, aCause);
-                            removeValue(varIdx, valIdx);
-                            if (partition.canMoveToTmp(varIdx2)) {
-                                // varIdx2未分裂，将varIdx2移入tmp分区中
-                                partition.moveToTmp(varIdx2);
+                        if (valIdx != varIdx2) {
+                            k = idx2Val[valIdx];
+                            if (!checkSCC(varIdx, varIdx2)) {
+                                Measurer.enterP2();
+                                ++Measurer.numDelValuesP2;
+                                filter |= v.removeValue(k, aCause);
+                                removeValue(varIdx, valIdx);
+                                if (partition.canMoveToTmp(varIdx2)) {
+                                    // varIdx2未分裂，将varIdx2移入tmp分区中
+                                    partition.addMoved(varIdx2);
+                                }
+                                // System.out.println("second delete: " + v.getName() + ", " + k);
+                            } else {
+                                partition.addConnected(varIdx2);
                             }
-//                            System.out.println("second delete: " + v.getName() + ", " + k);
                         }
                     }
                 }

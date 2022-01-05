@@ -651,7 +651,7 @@ public class AlgoAllDiffAC_SimpleGentFree extends AlgoAllDiffAC_Simple {
 
         partition.setIteratorIndexBySCCStartIndex(sccStartIndex);
         while (partition.hasNext()) {
-            int varIdx = partition.nextAndSplitWhenEnteringTmp();
+            int varIdx = partition.nextAndSplitWhenMeetingUnknownAndMoved();
             IntVar v = vars[varIdx];
             if (!v.isInstantiated() && !gammaMask.get(varIdx)) {
                 for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
@@ -679,7 +679,7 @@ public class AlgoAllDiffAC_SimpleGentFree extends AlgoAllDiffAC_Simple {
                             removeValue(varIdx, valIdx);
                             if (partition.canMoveToTmp(varIdx2)) {
                                 // varIdx2未分裂，将varIdx2移入tmp分区中
-                                partition.moveToTmp(varIdx2);
+                                partition.addMoved(varIdx2);
                             }
                             System.out.println("second delete: " + varIdx + ", " + k);
                         }
