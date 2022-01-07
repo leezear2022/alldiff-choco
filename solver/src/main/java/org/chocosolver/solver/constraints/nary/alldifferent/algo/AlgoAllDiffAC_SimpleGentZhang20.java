@@ -3,6 +3,7 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 //import org.chocosolver.amtf.Measurer;
 
 import gnu.trove.iterator.TIntIntIterator;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.memory.IStateBitSet;
@@ -13,7 +14,10 @@ import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.util.iterators.DisposableValueIterator;
-import org.chocosolver.util.objects.*;
+import org.chocosolver.util.objects.IStateBitSetPartition;
+import org.chocosolver.util.objects.Measurer;
+import org.chocosolver.util.objects.SimpleBitSet;
+import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
 import java.util.Arrays;
@@ -31,7 +35,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
+public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 
     //***********************************************************************************
     // VARIABLES
@@ -56,9 +60,9 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
     // 索引到值
     private TIntIntHashMap val2Idx;
     // Xc-Γ(A)
-    private SparseSet notGamma;
+//    private SparseSet notGamma;
     // Dc-A
-    private SparseSet notA;
+//    private SparseSet notA;
 //    // 与值相连的变量
 //    private SimpleBitSet[] B;
 //    private SimpleBitSet[] D;
@@ -93,14 +97,19 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
     private IIntDeltaMonitor[] monitors;
     private UnaryIntProcedure<Integer> onValRem;
     private SparseSet[] deletedValues;
-    protected SparseSet varsTmp;
+    //    protected SparseSet varsTmp;
     private SparseSet changedSCCStartIndex;
     protected boolean unconnected = false;
     protected boolean isSkiped = false;
+    // for early detect
+    private TIntArrayList deletedVars;
+    private int numSCCDeleteValues;
+    private int numSCCValues;
+
 
     // 懒计算域更新
-    private SparseSet updatedVars;
-    private SparseSet updatedVals;
+//    private SparseSet updatedVars;
+//    private SparseSet updatedVals;
 
     long startTime;
     //    // for backtrack
@@ -110,10 +119,11 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
     // if all a in var x val2Idx[a] = a then DomIsRagular[x] = true
     boolean[] domIsRegular;
 
+
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_SimpleGent(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_SimpleGentZhang20(IntVar[] variables, ICause cause, Model model) {
         super(variables, cause, model.getEnvironment());
         id = num++;
         env = model.getEnvironment();
@@ -210,8 +220,8 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
         freeNode = new SparseSet(numValues);
         gammaFrontier = new SimpleBitSet(arity);
         gammaMask = new SimpleBitSet(arity);
-        notGamma = new SparseSet(arity);
-        notA = new SparseSet(numValues);
+//        notGamma = new SparseSet(arity);
+//        notA = new SparseSet(numValues);
 
         graphLinkedMatrix = new SimpleBitSet[arity];
         graphLinkedFrontier = new SimpleBitSet[arity];
@@ -225,9 +235,9 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
         triggeringVars = new SparseSet(arity);
 //        triggeringVals = new SparseSet(numValues);
         // 已懒更新的变量/值
-        updatedVars = new SparseSet(arity);
-        updatedVals = new SparseSet(numValues);
-        varsTmp = new SparseSet(arity);
+//        updatedVars = new SparseSet(arity);
+//        updatedVals = new SparseSet(numValues);
+//        varsTmp = new SparseSet(arity);
         changedSCCStartIndex = new SparseSet(arity);
         monitors = new IIntDeltaMonitor[vars.length];
         for (int i = 0; i < vars.length; i++) {
@@ -239,6 +249,8 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
         for (int i = 0; i < arity; i++) {
             deletedValues[i] = new SparseSet(numValues);
         }
+
+        deletedVars = new TIntArrayList(arity);
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -290,8 +302,8 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
         if (initialPropagation) {
 //            triggeringVals.fill();
             triggeringVars.fill();
-            updatedVars.fill();
-            updatedVals.fill();
+//            updatedVars.fill();
+//            updatedVals.fill();
             startTime = System.nanoTime();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
@@ -341,8 +353,8 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
     private void deltaUpdate() throws ContradictionException {
         // 触发队列和更新队列
         triggeringVars.clear();
-        updatedVars.clear();
-        updatedVals.clear();
+//        updatedVars.clear();
+//        updatedVals.clear();
 
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             monitors[varIdx].freeze();
@@ -354,7 +366,7 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
                 // 只动变量论域改变的变量，触发变量和删值队列都更新一下
                 monitors[varIdx].forEachRemVal(onValRem.set(varIdx));
 //                RD[varIdx].generateBitSet(D[varIdx]);
-                updatedVars.add(varIdx);
+//                updatedVars.add(varIdx);
             }
             monitors[varIdx].unfreeze();
         }
@@ -570,6 +582,10 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
     private void initiateMatrix(int sccStartIdx) {
         // 重置两个矩阵
         // 只重置notGamma的变量
+        deletedVars.clear();
+        numSCCDeleteValues = 0;
+        numSCCValues = 0;
+
         partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
         while (partition.hasNext()) {
 
@@ -581,6 +597,13 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
             graphLinkedMatrix[varIdx].set(RB[valIdx]);
             graphLinkedMatrix[varIdx].clear(varIdx);
             graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
+
+            // 初始化本scc的deletedVars
+            if (triggeringVars.contains(varIdx)) {
+                deletedVars.add(varIdx);
+                numSCCDeleteValues += deletedValues[varIdx].validSize();
+            }
+            numSCCValues += vars[varIdx].getDomainSize();
 //            System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
 //            System.out.println(graphLinkedMatrix[varIdx]);
 //            System.out.println(graphLinkedFrontier[varIdx]);
@@ -634,6 +657,26 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
         }
         partition.disposeSCCIterator();
         return filter;
+    }
+
+    /**
+     * @return true if useless propagation
+     */
+    private boolean filterDomainsEarlyDetection() {
+        for (int i = 0, ub = deletedVars.size(); i < ub; i++) {
+            int varIdx = deletedVars.get(i);
+            SparseSet del = deletedValues[varIdx];
+            del.iterateValid();
+            while (del.hasNextValid()) {
+                int valIdx = del.next();
+                // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
+                if (!checkSCC(varIdx, valIdx) ||
+                        !checkSCC(val2VarR[valIdx].get(), var2ValR[varIdx].get())) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private boolean filterDomainsPartition(int sccStartIndex) throws ContradictionException {

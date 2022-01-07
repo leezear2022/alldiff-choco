@@ -57,8 +57,8 @@ public class testAllDiff {
 //                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
-                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
-//                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0015-m1.xml"
+//                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
+                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml"
 //                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
 
@@ -94,8 +94,8 @@ public class testAllDiff {
 //        };
         String[] algorithms = new String[]{
 //                "AC",
-//                "ACFair",
-//                "AC_REGIN",
+                "ACFair",
+                "AC_REGIN",
 //                "ACChen",
 //                "ACZhang20Bit",
 //                "ACChen20",
@@ -128,8 +128,8 @@ public class testAllDiff {
 //                "ACNaiveR",
 //                "ACNaiveNew",
                 "ACSimple",
-//                "ACSimpleGent",
-                "ACSimpleGentFree",
+                "ACSimpleGent",
+//                "ACSimpleGentFree",
         };
 //        String[] algorithms = new String[]{
 //                "ACNaive",

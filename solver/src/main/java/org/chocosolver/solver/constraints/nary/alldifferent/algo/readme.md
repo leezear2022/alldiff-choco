@@ -8,3 +8,6 @@ AlgoAllDiffAC_SimpleGentFree: Zhang18+Gent+Bit
 
 
 
+AlgoAllDiffAC_SimpleGent: 
+分为三个分区：Checked,unknown,moved
+

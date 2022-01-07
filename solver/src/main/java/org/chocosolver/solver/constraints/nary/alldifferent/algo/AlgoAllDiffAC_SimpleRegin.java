@@ -163,6 +163,7 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
         startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
+        System.out.println("matching: " + Arrays.toString(var2Val));
 //        System.out.println("matching: " + Arrays.toString(var2Val));
         startTime = System.nanoTime();
         boolean filter = filter();
@@ -393,8 +394,8 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
 
     private boolean filter() throws ContradictionException {
         distinguish();
-        System.out.println(gammaMask);
-        System.out.println(freeNodes);
+//        System.out.println(gammaMask);
+//        System.out.println(freeNodes);
 //        System.out.println(notGamma);
 //        System.out.println(notA);
         initiateMatrix();

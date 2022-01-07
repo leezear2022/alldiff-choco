@@ -562,6 +562,17 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
     }
 
+    public void setNegAnd(IStateBitSet a, IStateBitSet b) {
+        // 结果长度比一定比b小
+        wordsInUse = b.getWordsInUse();
+        for (int i = 0; i < wordsInUse; i++) {
+            words[i] = ~a.getWord(i) & b.getWord(i);
+        }
+//        words[wordsInUse - 1] &= lastMask;
+        recalculateWordsInUse();
+        checkInvariants();
+    }
+
     /**
      * Sets the bit specified by the index to {@code false}.
      *
@@ -1526,7 +1537,7 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
         // a 集合应是最长的，最后一个word不用处理
         wordsInUse = a.getWordsInUse();
         for (int i = 0; i < wordsInUse; ++i) {
-            this.words[i] = a.getWordsInUse() & ~b.words[i];
+            this.words[i] = a.getWord(i) & ~b.words[i];
         }
         recalculateWordsInUse();
         checkInvariants();

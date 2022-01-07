@@ -16,6 +16,7 @@ public abstract class IStatePartition {
     int cursor = INDEX_OVER_OVERFLOW;
     int sccEndIndex = INDEX_OVERFLOW;
     int sccStartIndex = INDEX_OVERFLOW;
+    int gammaEndIndex = INDEX_OVER_OVER_OVERFLOW;
     int movedIndex = INDEX_OVER_OVER_OVERFLOW;
     int unknownIndex = INDEX_OVER_OVER_OVERFLOW;
 
@@ -103,22 +104,26 @@ public abstract class IStatePartition {
          * 交换策略：
          *  tmp<-sccEnd
          *  sccEnd<-lastRect
-         *  lastRect<-tmpIdx-1
-         *  tmpIdx-1<-tmp
+         *  lastRect<-movedIdx-1
+         *  movedIdx-1<-tmp
+         *
+         *  moveIndex不会与lastRect一致，
+         *  因为只要lastRect在获取到时，
+         *  MovedIndex都会被检查一次。
          * */
-        int newTmpIdx = movedIndex - 1;
-        int tmp_e = dense[newTmpIdx];
+        int newMovedIndex = movedIndex - 1;
+        int moved_e = dense[newMovedIndex];
         int e = dense[lastRet];
         int end_e = dense[sccEndIndex];
 
         sparse[e] = sccEndIndex;
-        sparse[tmp_e] = lastRet;
-        sparse[end_e] = newTmpIdx;
+        sparse[moved_e] = lastRet;
+        sparse[end_e] = newMovedIndex;
         dense[sccEndIndex] = dense[lastRet];
-        dense[lastRet] = dense[newTmpIdx];
-        dense[newTmpIdx] = dense[end_e];
+        dense[lastRet] = dense[newMovedIndex];
+        dense[newMovedIndex] = dense[end_e];
 
-        movedIndex = newTmpIdx;
+        movedIndex = newMovedIndex;
 
         maskSet(sccEndIndex);
         --sccEndIndex;
@@ -225,6 +230,7 @@ public abstract class IStatePartition {
     // for iteration
     public void disposeSCCIterator() {
         cursor = INDEX_OVER_OVERFLOW;
+        unknownIndex = INDEX_OVER_OVER_OVERFLOW;
         lastRet = INDEX_OVER_OVERFLOW;
         sccEndIndex = INDEX_OVERFLOW;
         sccStartIndex = INDEX_OVERFLOW;
@@ -235,10 +241,19 @@ public abstract class IStatePartition {
         this.sccStartIndex = start;
         this.cursor = start;
         this.unknownIndex = start;
+        this.movedIndex = INDEX_OVER_OVER_OVERFLOW;
         this.sccEndIndex = getSCCEndIndex(start);
     }
 
-//    public boolean isValid() {
+    public void setIteratorIndexAfterGamma() {
+//        this.sccStartIndex = gammaEndIndex+1;
+        this.cursor = gammaEndIndex + 1;
+//        this.unknownIndex = gammaEndIndex+1;
+//        this.movedIndex = INDEX_OVER_OVER_OVERFLOW;
+        this.sccEndIndex = getSCCEndIndex(0);
+    }
+
+    //    public boolean isValid() {
 //        return iterIdx >= sccStartIndex && iterIdx <= sccEndIndex;
 //    }
 
@@ -265,7 +280,7 @@ public abstract class IStatePartition {
         if (cursor == movedIndex) {
             // 当前遍历到tmp区域，tmpIdx失效，设定前方区域为独立SCC
             ib.y = true;
-            disposeTmp();
+            disposeMoved();
             sccStartIndex = cursor;
             if (cursor != size)
                 maskSet(cursor);
@@ -277,26 +292,22 @@ public abstract class IStatePartition {
         lastRet = cursor++;
     }
 
+
+    /***
+     * 获取下一个值，如果这个值进入Unknown区，scc分区
+     *
+     */
     public int nextAndSplitWhenMeetingUnknownAndMoved() {
         if (cursor != sccStartIndex && cursor == unknownIndex) {
             // cursor非sccStart 且首次进入unknown区域
-            // 分裂当前scc，但并不置当前变量为connected
-            if (cursor == movedIndex) {
-                // 当前遍历到tmp区域，tmpIdx失效，设定前方区域为独立SCC
-//            ib.y = true;
-                disposeTmp();
-            }
+            // 分裂当前scc，但不置当前变量为connected
             sccStartIndex = cursor;
+            // moved区域置为空此处重新计算
+            disposeMoved();
 
             if (cursor != size)
                 maskSet(cursor);
         }
-
-
-//            sccStartIndex = cursor;
-//            if (cursor != size)
-//                maskSet(cursor);
-//        }
 
         int next = dense[cursor];
         lastRet = cursor++;
@@ -312,22 +323,39 @@ public abstract class IStatePartition {
     }
 
     public void addConnected(int e) {
+        // 将变量e加入Connected子分区
         int index = sparse[e];
+        int ub = movedIsDisable() ? sccEndIndex : movedIndex - 1;
 
-        if (index < unknownIndex && index <= sccEndIndex) {
-            int tmp = dense[movedIndex];
-            sparse[e] = movedIndex;
+
+        if (index > unknownIndex && index <= ub) {
+            // 若变量索引位于 (unknownIndex, ub] 需要交换并扩容
+            // 交换unknownIndex和index
+            int tmp = dense[unknownIndex];
+            sparse[e] = unknownIndex;
             sparse[tmp] = index;
             dense[index] = tmp;
-            dense[movedIndex] = e;
+            dense[unknownIndex] = e;
+            ++unknownIndex;
+        } else if (index == unknownIndex) {
+            // 若变量索引==unknownIndex，仅扩容
+            ++unknownIndex;
         }
-        ++unknownIndex;
+
+        // 否则它在connected里边，不需添加。
     }
 
     public int splitTmp() {
         int newStart = movedIndex;
         maskSet(newStart);
-        disposeTmp();
+        disposeMoved();
+        return newStart;
+    }
+
+    public int splitGamma() {
+        int newStart = gammaEndIndex + 1;
+        maskSet(newStart);
+//        disposeMoved();
         return newStart;
     }
 
@@ -340,7 +368,6 @@ public abstract class IStatePartition {
 //        dense[cursor] = tmp;
 //        dense[tmpIdx] = e;
 //    }
-
 
     public void addMoved(int e) {
 //        tmpIdx = (tmpIdx == INDEX_OVER_OVER_OVERFLOW) ? sccEndIndex : tmpIdx - 1;
@@ -370,8 +397,32 @@ public abstract class IStatePartition {
         --movedIndex;
     }
 
-    public void disposeTmp() {
+    public void addGamma(int e) {
+        // 查找当前索引
+        int index = sparse[e];
+        // 若当前变量在Gamma子分区则不用移动
+        if (index >= 0 && index <= gammaEndIndex)
+            return;
+
+        // 获得新的gammaEndIndex
+        gammaEndIndex = gammaEndIndex == INDEX_OVER_OVER_OVERFLOW ? 0 : gammaEndIndex + 1;
+        if (index != gammaEndIndex) {
+//            System.out.println("xixi");
+            int tmp = dense[gammaEndIndex];
+            sparse[e] = gammaEndIndex;
+            sparse[tmp] = index;
+            dense[index] = tmp;
+            dense[gammaEndIndex] = e;
+        }
+        --gammaEndIndex;
+    }
+
+    public void disposeMoved() {
         movedIndex = INDEX_OVER_OVER_OVERFLOW;
+    }
+
+    public void disposeGamma() {
+        gammaEndIndex = INDEX_OVER_OVER_OVERFLOW;
     }
 
     public void disposeIter() {
@@ -407,6 +458,11 @@ public abstract class IStatePartition {
     public boolean inSameSCC(int e) {
         int index = sparse[e];
         return index >= sccStartIndex && index <= sccEndIndex;
+    }
+
+    public boolean varNotInSameSCC(int e) {
+        int index = sparse[e];
+        return index < sccStartIndex || index > sccEndIndex;
     }
 
     public boolean canMoveToTmp(int e) {
@@ -548,6 +604,10 @@ public abstract class IStatePartition {
         return movedIndex == INDEX_OVER_OVER_OVERFLOW;
     }
 
+    public boolean movedIsEnable() {
+        return movedIndex > 0;
+    }
+
     public boolean beforeCurrentSCC(int index) {
         return index >= 0 && index < sccStartIndex;
     }
@@ -555,7 +615,6 @@ public abstract class IStatePartition {
     public boolean isInConnected(int index) {
         return index >= sccStartIndex && index < unknownIndex;
     }
-
 
 
     public boolean isInUnknown(int index) {
@@ -594,7 +653,13 @@ public abstract class IStatePartition {
 
     public boolean varInUnknown(int e) {
         int index = sparse[e];
-        return index >= unknownIndex && index < movedIndex;
+        if (movedIndex == INDEX_OVER_OVER_OVERFLOW) {
+            // moved区不可用
+            return index >= unknownIndex && index <= sccEndIndex;
+        } else {
+            // moved区可用
+            return index >= unknownIndex && index < movedIndex;
+        }
     }
 
     public boolean varInMoved(int e) {
