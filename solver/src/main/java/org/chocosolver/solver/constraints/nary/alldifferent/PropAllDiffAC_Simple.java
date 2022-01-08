@@ -9,8 +9,12 @@
  */
 package org.chocosolver.solver.constraints.nary.alldifferent;
 
+import gnu.trove.iterator.TIntIntIterator;
+import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Simple;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleGentZhang18;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleRegin;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
@@ -39,7 +43,7 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
     // VARIABLES
     //***********************************************************************************
 
-    protected AlgoAllDiffAC_SimpleRegin filter;
+    protected AlgoAllDiffAC_Simple filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -61,9 +65,46 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
 //        } else if (vars.length <= 64) {
 //            this.filter = new AlgoAllDiffAC_Naive64(variables, this);
 //        } else {
-        this.filter = new AlgoAllDiffAC_SimpleRegin(variables, this);
+
+        if (variables.length == hashValues(variables))
+            this.filter = new AlgoAllDiffAC_SimpleRegin(variables, this);
+        else {
+            this.filter = new AlgoAllDiffAC_SimpleGentZhang18(variables, this, getModel());
+        }
 //        }
 //        Measurer.numAllDiff++;
+    }
+
+    public int hashValues(IntVar[] vars) {
+        int arity = vars.length;
+        int numValues;
+        TIntIntHashMap val2Idx = new TIntIntHashMap();
+        // 先将从0开始的变量论域进行编码，只编一个变量
+        for (int i = 0; i < arity; ++i) {
+            IntVar v = vars[i];
+            if (v.getLB() == 0) {
+                for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+                    if (!val2Idx.containsKey(j)) {
+                        val2Idx.put(j, val2Idx.size());
+                    }
+                }
+                break;
+            }
+        }
+
+        // 全部从头编码
+        for (int i = 0; i < arity; ++i) {
+            IntVar v = vars[i];
+            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+                if (!val2Idx.containsKey(j)) {
+                    val2Idx.put(j, val2Idx.size());
+                }
+            }
+        }
+
+        numValues = val2Idx.size();
+
+        return numValues;
     }
 
     //***********************************************************************************

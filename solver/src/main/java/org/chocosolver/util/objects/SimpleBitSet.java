@@ -545,10 +545,14 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
 //        if (!set.sizeIsSticky)
 //            set.trimToSize();
 
-        wordsInUse = set.getWordsInUse();
-        for (int i = 0; i < wordsInUse; i++) {
+        int ub = set.getWordsInUse();
+        for (int i = 0; i < ub; i++) {
             words[i] = set.getWord(i);
         }
+        for (int i = ub; i < wordsInUse; i++) {
+            words[i] = 0;
+        }
+        wordsInUse = ub;
         checkInvariants();
     }
 
@@ -1013,6 +1017,34 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
 
         // recalculateWordsInUse() is unnecessary
         checkInvariants();
+    }
+
+    public int orCount(IStateBitSet set) {
+        // wordsInUse 取两者最大值
+        wordsInUse = Math.max(wordsInUse, set.getWordsInUse());
+        int numBit = 0;
+//
+//        if (wordsInUse < set.getWordsInUse()) {
+//            ensureCapacity(set.getWordsInUse());
+//            wordsInUse = set.getWordsInUse();
+//        }
+
+        // Perform logical OR on words in common
+        for (int i = 0; i < wordsInUse; i++) {
+            words[i] |= set.getWord(i);
+            numBit += Long.bitCount(words[i]);
+        }
+
+
+//        // Copy any remaining words
+//        if (wordsInCommon < set.getWordsInUse())
+//            System.arraycopy(set.words, wordsInCommon,
+//                    words, wordsInCommon,
+//                    wordsInUse - wordsInCommon);
+
+        // recalculateWordsInUse() is unnecessary
+        checkInvariants();
+        return numBit;
     }
 
     /**
@@ -1525,21 +1557,55 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
 
     public void setAfterMinus(SimpleBitSet a, SimpleBitSet b) {
         // a 集合应是最长的
-        wordsInUse = a.wordsInUse;
-        for (int i = 0; i < wordsInUse; ++i) {
-            this.words[i] = a.words[i] & ~b.words[i];
+        int aWords = a.wordsInUse;
+        int bWords = b.wordsInUse;
+        if (aWords <= bWords) {
+            for (int i = 0; i < aWords; ++i) {
+                this.words[i] = a.words[i] & ~b.words[i];
+            }
+        } else {
+            for (int i = 0; i < bWords; ++i) {
+                this.words[i] = a.words[i] & ~b.words[i];
+            }
+            System.arraycopy(a.words, bWords,
+                    words, bWords,
+                    aWords - bWords);
         }
+        wordsInUse = aWords;
         recalculateWordsInUse();
         checkInvariants();
     }
 
     public void setAfterMinus(IStateBitSet a, SimpleBitSet b) {
         // a 集合应是最长的，最后一个word不用处理
-        wordsInUse = a.getWordsInUse();
-        for (int i = 0; i < wordsInUse; ++i) {
-            this.words[i] = a.getWord(i) & ~b.words[i];
+        int aWords = a.getWordsInUse();
+        int bWords = b.wordsInUse;
+        if (aWords <= bWords) {
+            for (int i = 0; i < aWords; ++i) {
+                this.words[i] = a.getWord(i) & ~b.words[i];
+            }
+        } else {
+            for (int i = 0; i < bWords; ++i) {
+                this.words[i] = a.getWord(i) & ~b.words[i];
+            }
+            for (int i = bWords; i < aWords; i++) {
+                this.words[i] = a.getWord(i);
+            }
         }
+        wordsInUse = aWords;
         recalculateWordsInUse();
         checkInvariants();
+    }
+
+    public boolean eq(IStateBitSet a) {
+        if (wordsInUse != a.getWordsInUse()) {
+            return false;
+        }
+        for (int i = 0; i < wordsInUse; i++) {
+            if (words[i] != a.getWord(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -11,6 +11,8 @@ import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.NaiveBitSetOld;
 import org.chocosolver.util.objects.SparseSet;
 
+import java.util.Arrays;
+
 /**
  * Algorithm of Alldifferent with AC
  * <p>
@@ -160,7 +162,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
         startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
-
+        System.out.println("matching: " + Arrays.toString(var2Val));
         startTime = System.nanoTime();
         boolean filter = filter();
         Measurer.filterTime += System.nanoTime() - startTime;
@@ -378,6 +380,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
     private void initiateMatrix() {
         // 重置两个矩阵
         // 只重置notGamma的变量
+        System.out.println("gamma: " + gammaMask);
         notGamma.iterateValid();
         while (notGamma.hasNextValid()) {
             int varIdx = notGamma.next();
@@ -386,10 +389,11 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                 graphLinkedMatrix[varIdx].setAfterMinus(valMask[var2Val[varIdx]], gammaMask);
                 graphLinkedMatrix[varIdx].clear(varIdx);
                 graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
+
+                System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
+                System.out.println(graphLinkedMatrix[varIdx]);
+                System.out.println(graphLinkedFrontier[varIdx]);
             }
-            System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
-            System.out.println(graphLinkedMatrix[varIdx]);
-            System.out.println(graphLinkedFrontier[varIdx]);
         }
     }
 
@@ -408,7 +412,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                         ++Measurer.numDelValuesP1;
                         Measurer.enterP1();
                         filter |= v.removeValue(k, aCause);
-                        //                System.out.println("first delete: " + v.getName() + ", " + k);
+                        System.out.println("first delete: " + v.getName() + ", " + k);
                     } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         if (!checkSCC(varIdx, valIdx)) {
                             Measurer.enterP2();
@@ -416,11 +420,11 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                                 int valNum = v.getDomainSize();
                                 Measurer.numDelValuesP2 += valNum - 1;
                                 filter |= v.instantiateTo(k, aCause);
-//                            System.out.println("instantiate  : " + v.getName() + ", " + k);
+                                System.out.println("instantiate  : " + v.getName() + ", " + k);
                             } else {
                                 ++Measurer.numDelValuesP2;
                                 filter |= v.removeValue(k, aCause);
-//                            System.out.println("second delete: " + v.getName() + ", " + k);
+                                System.out.println("second delete: " + v.getName() + ", " + k);
                             }
                         }
                     }

@@ -320,8 +320,8 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 //            printDomains();
             startTime = System.nanoTime();
             filter |= propagate_SCC_Match();
-            if (numCall == 24)
-                System.out.println(partition);
+//            if (numCall == 24)
+//                System.out.println(partition);
             System.out.println("matching: " + Arrays.toString(var2ValR));
             Measurer.matchingTime += System.nanoTime() - startTime;
             startTime = System.nanoTime();
@@ -571,7 +571,10 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
         while (changedSCCStartIndex.hasNextValid()) {
             int sccStartIndex = changedSCCStartIndex.next();
             initiateMatrix(sccStartIndex);
-            filter |= filterDomainsPartition(sccStartIndex);
+            if (!earlyDetection()) {
+                Measurer.enterSkip();
+                filter |= filterDomainsPartition(sccStartIndex);
+            }
         }
         return filter;
     }
@@ -628,7 +631,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                     filter |= v.instantiateTo(k, aCause);
                     instantiateTo(varIdx, matchedVal);
                     partition.removeCurrentToTail();
-                    break;
+                    continue;
                     // System.out.println("instantiate  : " + v.getName() + ", " + k);
                 } else {
                     partition.setCurrentConnected();
@@ -662,7 +665,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
     /**
      * @return true if useless propagation
      */
-    private boolean filterDomainsEarlyDetection() {
+    private boolean earlyDetection() {
         for (int i = 0, ub = deletedVars.size(); i < ub; i++) {
             int varIdx = deletedVars.get(i);
             SparseSet del = deletedValues[varIdx];
@@ -699,7 +702,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                     instantiateTo(varIdx, matchedVal);
                     partition.removeCurrentToTail();
                     System.out.println("instantiate  : " + varIdx + ", " + matchedVal);
-                    break;
+                    continue;
                 } else {
                     // 匹配值在SCC中，表示变量论域至少两个值，且至少有一个值在SCC中
                     partition.setCurrentConnected();

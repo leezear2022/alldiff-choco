@@ -53,12 +53,16 @@ public class testAllDiff {
 //                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
 //                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0020-m1.xml",
 //                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-06.xml",
+//                "/Users/leezear/exp/AllDiffBench/ColouredQueens/ColouredQueens-06.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
-//                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-14-a3.xml",
+//                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-11-a3.xml",
+//                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
-                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml"
+                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml",
+//                "/Users/leezear/exp/AllDiffBench/CostasArray/CostasArray-13.xml"
+//                "/Users/leezear/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P04.xml"
 //                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
 
@@ -93,9 +97,10 @@ public class testAllDiff {
 ////                "AC_ZHANG",
 //        };
         String[] algorithms = new String[]{
-//                "AC",
-                "ACFair",
-                "AC_REGIN",
+                "AC",
+//                "AC_ZHANG",
+//                "ACFair",
+//                "AC_REGIN",
 //                "ACChen",
 //                "ACZhang20Bit",
 //                "ACChen20",
@@ -127,9 +132,11 @@ public class testAllDiff {
 //                "ACNaive",
 //                "ACNaiveR",
 //                "ACNaiveNew",
-                "ACSimple",
-                "ACSimpleGent",
-//                "ACSimpleGentFree",
+//                "ACSimple",
+//                "ACSimpleRegin",
+//                "ACSimpleGent",
+//                "ACSimpleGentZhang18",
+                "ACSimpleGentZhang20",
         };
 //        String[] algorithms = new String[]{
 //                "ACNaive",
@@ -159,8 +166,10 @@ public class testAllDiff {
                     Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                     Solver solver = model.getSolver();
 //                    solver.setSearch(Search.defaultSearch(model));
-                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
-//                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.RAND.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.DOM.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
 //                    solver.setSearch(Search.minDomLBSearch(decVars));
 //                    solver.setSearch(new ImpactBased(decVars, true));

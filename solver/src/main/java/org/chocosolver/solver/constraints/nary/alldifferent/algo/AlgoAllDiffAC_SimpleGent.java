@@ -605,7 +605,7 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
                     filter |= v.instantiateTo(k, aCause);
                     instantiateTo(varIdx, matchedVal);
                     partition.removeCurrentToTail();
-                    break;
+                    continue;
                     // System.out.println("instantiate  : " + v.getName() + ", " + k);
                 } else {
                     partition.setCurrentConnected();
@@ -656,7 +656,7 @@ public class AlgoAllDiffAC_SimpleGent extends AlgoAllDiffAC_Simple {
                     instantiateTo(varIdx, matchedVal);
                     partition.removeCurrentToTail();
                     System.out.println("instantiate  : " + varIdx + ", " + matchedVal);
-                    break;
+                    continue;
                 } else {
                     // 匹配值在SCC中，表示变量论域至少两个值，且至少有一个值在SCC中
                     partition.setCurrentConnected();

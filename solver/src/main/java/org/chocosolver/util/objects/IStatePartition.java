@@ -222,6 +222,15 @@ public abstract class IStatePartition {
         }
     }
 
+    public int getSCCSizeByStartIndex(int index) {
+        return getSCCEndIndex(index) - index + 1;
+    }
+
+    public int getSCCSizeByElement(int e) {
+        int index = sparse[e];
+        return getSCCEndIndex(index) - getSCCStartIndex(index) + 1;
+    }
+
     public boolean isSingletonByElement(int e) {
         return isSingletonByStartIndex(sparse[e]);
     }
@@ -234,6 +243,7 @@ public abstract class IStatePartition {
         lastRet = INDEX_OVER_OVERFLOW;
         sccEndIndex = INDEX_OVERFLOW;
         sccStartIndex = INDEX_OVERFLOW;
+        gammaEndIndex = INDEX_OVER_OVER_OVERFLOW;
         movedIndex = INDEX_OVER_OVER_OVERFLOW;
     }
 
@@ -241,6 +251,7 @@ public abstract class IStatePartition {
         this.sccStartIndex = start;
         this.cursor = start;
         this.unknownIndex = start;
+        this.gammaEndIndex = INDEX_OVER_OVER_OVERFLOW;
         this.movedIndex = INDEX_OVER_OVER_OVERFLOW;
         this.sccEndIndex = getSCCEndIndex(start);
     }
@@ -414,7 +425,7 @@ public abstract class IStatePartition {
             dense[index] = tmp;
             dense[gammaEndIndex] = e;
         }
-        --gammaEndIndex;
+//        ++gammaEndIndex;
     }
 
     public void disposeMoved() {

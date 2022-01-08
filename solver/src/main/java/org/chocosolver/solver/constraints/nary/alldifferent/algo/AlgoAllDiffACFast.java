@@ -107,6 +107,7 @@ public class AlgoAllDiffACFast extends AlgoAllDiffAC{
                 int j = map.get(k);
                 if (!distinction.get(j)) {
                     if (distinction.get(i)) { // Remove type 1 redundant edges between Γ(A) and Dc-A.
+                        Measurer.enterP1();
                         ++Measurer.numDelValuesP1;
                         filter |= v.removeValue(k, aCause);
                         digraph.removeArc(i, j);

@@ -58,7 +58,9 @@ public class AllDifferent extends Constraint {
     public static final String ACNaive = "ACNaive";
     public static final String ACSimple = "ACSimple";
     public static final String ACSimpleGent = "ACSimpleGent";
-    public static final String ACSimpleGentFree = "ACSimpleGentFree";
+    public static final String ACSimpleRegin = "ACSimpleRegin";
+    public static final String ACSimpleGentZhang18 = "ACSimpleGentZhang18";
+    public static final String ACSimpleGentZhang20 = "ACSimpleGentZhang20";
 
     public AllDifferent(IntVar[] vars, String type) {
         super(ConstraintsName.ALLDIFFERENT, createPropagators(vars, type));
@@ -116,10 +118,14 @@ public class AllDifferent extends Constraint {
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Zhang18M(VARS)};
             case ACSimple:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Simple(VARS)};
+            case ACSimpleRegin:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_SimpleRegin(VARS)};
             case ACSimpleGent:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_SimpleGent(VARS)};
-            case ACSimpleGentFree:
-                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_SimpleGentFree(VARS)};
+            case ACSimpleGentZhang18:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_SimpleGentZhang18(VARS)};
+          case ACSimpleGentZhang20:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_SimpleGentZhang20(VARS)};
             case ACNaive:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
             case ACNaiveR:

@@ -354,8 +354,6 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
     private boolean filter() throws ContradictionException {
         boolean filter = false;
         findAllSCC();
-//        System.out.println(Arrays.toString(varSCC));
-//        System.out.println(Arrays.toString(valSCC));
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {

@@ -11,8 +11,8 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleGent;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleGentFree;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleGentZhang18;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
@@ -34,13 +34,13 @@ import org.chocosolver.util.ESat;
  * @author Jia'nan Chen
  */
 
-public class PropAllDiffAC_SimpleGentFree extends Propagator<IntVar> {
+public class PropAllDiffAC_SimpleGentZhang18 extends Propagator<IntVar> {
 
     //***********************************************************************************0
     // VARIABLES
     //***********************************************************************************
 
-    protected AlgoAllDiffAC_SimpleGentFree filter;
+    protected AlgoAllDiffAC_SimpleGentZhang18 filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -52,7 +52,7 @@ public class PropAllDiffAC_SimpleGentFree extends Propagator<IntVar> {
      *
      * @param variables array of integer variables
      */
-    public PropAllDiffAC_SimpleGentFree(IntVar[] variables) {
+    public PropAllDiffAC_SimpleGentZhang18(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
 
 //        Measurer.maxAllDiffArity = Math.max(Measurer.maxAllDiffArity, vars.length);
@@ -62,7 +62,7 @@ public class PropAllDiffAC_SimpleGentFree extends Propagator<IntVar> {
 //        } else if (vars.length <= 64) {
 //            this.filter = new AlgoAllDiffAC_Naive64(variables, this);
 //        } else {
-        this.filter = new AlgoAllDiffAC_SimpleGentFree(variables, this, getModel());
+        this.filter = new AlgoAllDiffAC_SimpleGentZhang18(variables, this, getModel());
 //        }
 //        Measurer.numAllDiff++;
     }

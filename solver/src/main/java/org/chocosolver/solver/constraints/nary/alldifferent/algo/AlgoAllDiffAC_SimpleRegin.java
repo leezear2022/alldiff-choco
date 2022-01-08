@@ -31,26 +31,21 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
     // VARIABLES
     //***********************************************************************************
     // 约束的个数
-    static public int num = 0;
+//    static public int num = 0;
     // 约束的编号
-    private int id;
-    private static long numCall = -1;
-
-    private int arity;
-    private IntVar[] vars;
-    private ICause aCause;
-
+    static long numCall = -1;
+    static private int num = 0;
     // 自由值集合
     private SparseSet freeNode;
     private SimpleBitSet freeNodes;
 
     // 以下是bit版本所需数据结构========================
-    // numValue是二部图中取值编号的个数，numBit是二部图的最大边数
-    private int numValue;
+    // numValues是二部图中取值编号的个数，numBit是二部图的最大边数
+//    private int numValues;
     // 值到索引
-    private int[] idx2Val;
+//    private int[] idx2Val;
     // 索引到值
-    private TIntIntHashMap val2Idx;
+//    private TIntIntHashMap val2Idx;
 
     // Xc-Γ(A)
     private SparseSet notGamma;
@@ -90,34 +85,11 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
     public AlgoAllDiffAC_SimpleRegin(IntVar[] variables, ICause cause) {
         super(variables, cause);
         id = num++;
-        this.vars = variables;
-        aCause = cause;
-        arity = vars.length;
-        val2Idx = new TIntIntHashMap();
-        IntVar v;
-        // 统计所有变量论域中不同值的个数
-        for (int i = 0; i < arity; ++i) {
-            v = vars[i];
-            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-                if (!val2Idx.containsKey(j)) {
-                    val2Idx.put(j, val2Idx.size());
-                }
-            }
-        }
-
-        numValue = val2Idx.size();
-        idx2Val = new int[numValue];
-        TIntIntIterator it = val2Idx.iterator();
-        while (it.hasNext()) {
-            it.advance();
-            idx2Val[it.value()] = it.key();
-        }
-
 //        System.out.println("-----------idx2Val-----------");
 //        System.out.println(Arrays.toString(idx2Val));
 
-        valMask = new SimpleBitSet[numValue];
-        for (int i = 0; i < numValue; ++i) {
+        valMask = new SimpleBitSet[numValues];
+        for (int i = 0; i < numValues; ++i) {
             valMask[i] = new SimpleBitSet(arity);
         }
 
@@ -126,23 +98,23 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
         variable_visited_ = new SimpleBitSet(arity);
         // 变量的前驱变量，若前驱变量是-1，则表示无前驱变量，就是第一个变量
         variable_visited_from_ = new int[arity];
-        value_visited_ = new SimpleBitSet(numValue);
+        value_visited_ = new SimpleBitSet(numValues);
 
         var2Val = new int[arity];
-        val2Var = new int[numValue];
+        val2Var = new int[numValues];
         for (int i = 0; i < arity; ++i) {
             var2Val[i] = -1;
         }
-        for (int i = 0; i < numValue; ++i) {
+        for (int i = 0; i < numValues; ++i) {
             val2Var[i] = -1;
         }
 
-        freeNode = new SparseSet(numValue);
-        freeNodes = new SimpleBitSet(numValue);
+        freeNode = new SparseSet(numValues);
+        freeNodes = new SimpleBitSet(numValues);
         gammaFrontier = new SimpleBitSet(arity);
         gammaMask = new SimpleBitSet(arity);
         notGamma = new SparseSet(arity);
-        notA = new SparseSet(numValue);
+        notA = new SparseSet(numValues);
 
         graphLinkedMatrix = new SimpleBitSet[arity];
         graphLinkedFrontier = new SimpleBitSet[arity];
@@ -164,10 +136,13 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
         System.out.println("matching: " + Arrays.toString(var2Val));
-//        System.out.println("matching: " + Arrays.toString(var2Val));
         startTime = System.nanoTime();
+
         boolean filter = filter();
         Measurer.filterTime += System.nanoTime() - startTime;
+        if (numCall == 683) {
+            printDomains();
+        }
         return filter;
     }
 
@@ -255,7 +230,7 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
 
     private void findMaximumMatching() throws ContradictionException {
         // !! 可做增量
-        for (int i = 0; i < numValue; ++i) {
+        for (int i = 0; i < numValues; ++i) {
             valMask[i].clear();
         }
 
@@ -345,13 +320,18 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
         notA.fill();
         gammaMask.clear();
 
-        freeNode.iterateValid();
-        while (freeNode.hasNextValid()) {
+//        freeNode.iterateValid();
+//        while (freeNode.hasNextValid()) {
+        for (int valIdx = freeNodes.nextSetBit(0);
+             valIdx >= 0; valIdx = freeNodes.nextSetBit(valIdx + 1)) {
             // 每个freeNode的值拿出来
 //            System.out.println(i);
-            int valIdx = freeNode.next();
+//            int valIdx = freeNode.next();
             notA.remove(valIdx);
             gammaMask.or(valMask[valIdx]);
+//            if (numCall == 2) {
+//                System.out.println("add " + valIdx + ": " + gammaMask);
+//            }
         }
         gammaFrontier.set(gammaMask);
 
@@ -365,7 +345,7 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
             gammaFrontier.clear(varIdx);
             // gamma 扩展
             gammaMask.or(valMask[valIdx]);
-            freeNodes.set(valIdx);
+//            freeNodes.set(valIdx);
 
             notGamma.remove(varIdx);
             notA.remove(valIdx);
@@ -376,6 +356,7 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
     private void initiateMatrix() {
         // 重置两个矩阵
         // 只重置notGamma的变量
+        System.out.println("gamma: " + gammaMask);
         notGamma.iterateValid();
         while (notGamma.hasNextValid()) {
             int varIdx = notGamma.next();
@@ -385,19 +366,18 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
                 graphLinkedMatrix[varIdx].clear(varIdx);
                 graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
 
-//                System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
-//                System.out.println(graphLinkedMatrix[varIdx]);
-//                System.out.println(graphLinkedFrontier[varIdx]);
+//                if (numCall == 106) {
+//                    System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
+//                    System.out.println(graphLinkedMatrix[varIdx]);
+//                    System.out.println(graphLinkedFrontier[varIdx]);
+//                }
             }
         }
     }
 
     private boolean filter() throws ContradictionException {
+        System.out.println("freeNodes: " + freeNodes);
         distinguish();
-//        System.out.println(gammaMask);
-//        System.out.println(freeNodes);
-//        System.out.println(notGamma);
-//        System.out.println(notA);
         initiateMatrix();
         // 这里判断一下，如果notGamma为空则不用进行如下步骤
         boolean filter = false;
@@ -410,7 +390,7 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
                         ++Measurer.numDelValuesP1;
                         Measurer.enterP1();
                         filter |= v.removeValue(k, aCause);
-                        System.out.println("first delete: " + varIdx + ", " + k);
+                        System.out.println("first delete: " + varIdx + ", " + valIdx);
                     } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         if (!checkSCC(varIdx, valIdx)) {
                             Measurer.enterP2();
@@ -418,11 +398,11 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
                                 int valNum = v.getDomainSize();
                                 Measurer.numDelValuesP2 += valNum - 1;
                                 filter |= v.instantiateTo(k, aCause);
-                                System.out.println("instantiate  : " + varIdx + ", " + k);
+                                System.out.println("instantiate  : " + varIdx + ", " + valIdx);
                             } else {
                                 ++Measurer.numDelValuesP2;
                                 filter |= v.removeValue(k, aCause);
-                                System.out.println("second delete: " + varIdx + ", " + k);
+                                System.out.println("second delete: " + varIdx + ", " + valIdx);
                             }
                         }
                     }
@@ -465,7 +445,7 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
     }
 
 //    private void printBitDomains() {
-//        for (int i = 0; i < numValues; ++i) {
+//        for (int i = 0; i < numValuess; ++i) {
 //            System.out.println("val " + "i: " + B[i]);
 //        }
 //
