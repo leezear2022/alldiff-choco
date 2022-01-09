@@ -53,7 +53,7 @@ public class testAllDiff {
 //                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
 //                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0020-m1.xml",
 //                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-06.xml",
-//                "/Users/leezear/exp/AllDiffBench/ColouredQueens/ColouredQueens-06.xml",
+                "/Users/leezear/exp/AllDiffBench/ColouredQueens/ColouredQueens-06.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-11-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
@@ -61,9 +61,9 @@ public class testAllDiff {
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml",
-//                "/Users/leezear/exp/AllDiffBench/CostasArray/CostasArray-13.xml"
-//                "/Users/leezear/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P03.xml",
-                "C:/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P03.xml",
+//                "/Users/leezear/exp/AllDiffBench/CostasArray/CostasArray-12.xml",
+//                "/Users/leezear/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P04.xml",
+//                "C:/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P03.xml",
 //                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
 
@@ -98,7 +98,7 @@ public class testAllDiff {
 ////                "AC_ZHANG",
 //        };
         String[] algorithms = new String[]{
-                "AC",
+
 //                "AC_ZHANG",
 //                "ACFair",
 //                "AC_REGIN",
@@ -133,11 +133,12 @@ public class testAllDiff {
 //                "ACNaive",
 //                "ACNaiveR",
 //                "ACNaiveNew",
-//                "ACSimple",
+                "ACSimple",
 //                "ACSimpleRegin",
 //                "ACSimpleGent",
-                "ACSimpleGentZhang18",
+//                "ACSimpleGentZhang18",
 //                "ACSimpleGentZhang20",
+                "AC",
         };
 //        String[] algorithms = new String[]{
 //                "ACNaive",

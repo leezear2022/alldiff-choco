@@ -11,7 +11,7 @@ public class IStateLongPartition extends IStatePartition {
     private static final int BIT_INDEX_MASK = BITS_PER_WORD - 1;
 //    long currentValue;currentValue
 
-    IStateLongPartition(int arity, IEnvironment e) {
+    public IStateLongPartition(int arity, IEnvironment e) {
         super(arity);
         sccMask = e.makeLong();
         //1000,0100
@@ -61,7 +61,7 @@ public class IStateLongPartition extends IStatePartition {
         if (e < 0)
             return -1;
         long currentValue = sccMask.get() & (WORD_MASK >>> -(e + 1));
-        return (currentValue == 0) ? INDEX_OVERFLOW : Long.numberOfLeadingZeros(currentValue);
+        return (currentValue == 0) ? INDEX_OVERFLOW : Long.numberOfTrailingZeros(currentValue);
     }
 
     @Override

@@ -11,14 +11,16 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
+import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_Simple;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleGentZhang18;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleRegin;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.*;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
+import org.chocosolver.util.objects.IStateBitSetPartition;
+import org.chocosolver.util.objects.IStateLongPartition;
+import org.chocosolver.util.objects.IStatePartition;
 
 /**
  * Propagator for AllDifferent AC constraint for integer variables
@@ -65,11 +67,18 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
 //        } else if (vars.length <= 64) {
 //            this.filter = new AlgoAllDiffAC_Naive64(variables, this);
 //        } else {
+//        System.out.println("------");
+//        System.out.println(this.getId() + ": ");
+//
+//        for (var v : variables) {
+//            System.out.println(v);
+//        }
+//        System.out.println("------");
 
         if (variables.length == hashValues(variables))
-            this.filter = new AlgoAllDiffAC_SimpleRegin(variables, this);
+            this.filter = new AlgoAllDiffAC_SimpleGentZhang20(variables, this, getModel());
         else {
-            this.filter = new AlgoAllDiffAC_SimpleGentZhang18(variables, this, getModel());
+            this.filter = new AlgoAllDiffAC_SimpleGentZhang1820(variables, this, getModel());
         }
 //        }
 //        Measurer.numAllDiff++;
@@ -113,7 +122,7 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-//        System.out.println("----------------" + (Measurer.numProp) + ", " + this.getId() + " propagate----------------");
+//        System.out.println("----------------" + this.getId() + " propagate----------------");
         filter.propagate();
     }
 
@@ -121,5 +130,8 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
     public ESat isEntailed() {
         return ESat.TRUE; // redundant propagator (used with PropAllDiffInst)
     }
+
+
+
 
 }

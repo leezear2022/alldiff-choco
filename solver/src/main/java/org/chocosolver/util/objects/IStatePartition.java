@@ -476,7 +476,7 @@ public abstract class IStatePartition {
         return index < sccStartIndex || index > sccEndIndex;
     }
 
-    public boolean canMoveToTmp(int e) {
+    public boolean canMove(int e) {
         int index = sparse[e];
         // lastRet不能处理
         // lastRet = INDEX_OVER_OVERFLOW;

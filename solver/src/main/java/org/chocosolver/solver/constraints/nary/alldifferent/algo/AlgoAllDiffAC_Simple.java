@@ -6,6 +6,9 @@ import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
+import org.chocosolver.util.objects.IStateBitSetPartition;
+import org.chocosolver.util.objects.IStateLongPartition;
+import org.chocosolver.util.objects.IStatePartition;
 
 public abstract class AlgoAllDiffAC_Simple {
     // 约束的个数
@@ -45,7 +48,6 @@ public abstract class AlgoAllDiffAC_Simple {
     }
 
     public AlgoAllDiffAC_Simple(IntVar[] variables, ICause cause, IEnvironment e) {
-
         env = e;
         vars = variables;
         aCause = cause;
@@ -88,6 +90,14 @@ public abstract class AlgoAllDiffAC_Simple {
         }
 
         return numValues;
+    }
+
+    protected IStatePartition makePartition(int size, IEnvironment e) {
+        if (size <= 64) {
+            return new IStateLongPartition(size, e);
+        } else {
+            return new IStateBitSetPartition(size, e);
+        }
     }
 
     public abstract boolean propagate() throws ContradictionException;

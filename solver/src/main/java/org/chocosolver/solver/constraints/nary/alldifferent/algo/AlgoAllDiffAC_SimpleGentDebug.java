@@ -1111,7 +1111,7 @@ public class AlgoAllDiffAC_SimpleGentDebug extends AlgoAllDiffAC_Simple {
                             ++Measurer.numDelValuesP2;
                             filter |= v.removeValue(k, aCause);
                             removeValue(varIdx, valIdx);
-                            if (partition.canMoveToTmp(varIdx2)) {
+                            if (partition.canMove(varIdx2)) {
                                 // varIdx2未分裂，将varIdx2移入tmp分区中
                                 partition.addMoved(varIdx2);
                             }
