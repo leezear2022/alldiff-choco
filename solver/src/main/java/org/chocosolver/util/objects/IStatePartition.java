@@ -232,7 +232,7 @@ public abstract class IStatePartition {
     }
 
     public boolean isSingletonByElement(int e) {
-        return isSingletonByStartIndex(sparse[e]);
+        return maskGet(sparse[e]) && isSingletonByStartIndex(sparse[e]);
     }
 
     // iterator actions

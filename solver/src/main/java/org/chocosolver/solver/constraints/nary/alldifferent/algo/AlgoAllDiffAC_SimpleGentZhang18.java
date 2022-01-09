@@ -239,7 +239,7 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
 //        System.out.println(partition);
         if (initialPropagation) {
 //            triggeringVals.fill();
-            triggeringVars.fill();
+//            triggeringVars.fill();
 //            updatedVars.fill();
 //            updatedVals.fill();
             startTime = System.nanoTime();
@@ -430,7 +430,7 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             if (var2ValR[varIdx].get() == -1) {
                 visitedValues.clear();
-                unVisitedVariables.set(0, arity);
+                unVisitedVariables.set();
                 MakeAugmentingPath(varIdx);
             }
             if (var2ValR[varIdx].get() == -1) {
@@ -454,7 +454,7 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
             if (valIdx == -1 || !RD[varIdx].get(valIdx)) {
                 var2ValR[varIdx].set(-1);
                 visitedValues.clear();
-                unVisitedVariables.set(0, arity);
+                unVisitedVariables.set();
                 MakeAugmentingPath(varIdx);
             }
 
@@ -470,13 +470,10 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
         boolean res = false;
         IntVar x, y;
         // 匹配值清空
-
         changedSCCStartIndex.clear();
-//        System.out.println(partition);
         triggeringVars.iterateValid();
         while (triggeringVars.hasNextValid()) {
             int xIdx = triggeringVars.next();
-//            updateBitDom(xIdx);
             int valIdx = var2ValR[xIdx].get();
 
             int sccStartIdx = partition.getSCCStartIndexByElement(xIdx);
@@ -489,7 +486,6 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
 
             if (x.isInstantiated() && !partition.isSingletonByStartIndex(sccStartIdx)) {
                 valIdx = var2ValR[xIdx].get();
-//                updateBitBel(valIdx);
                 int xVal = idx2Val[valIdx];
                 if (changedSCCStartIndex.contains(sccStartIdx)) {
                     changedSCCStartIndex.remove(sccStartIdx);
@@ -502,7 +498,6 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                 partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
                 while (partition.hasNext()) {
                     int yIdx = partition.next();
-//                    updateBitDom(yIdx);
                     if (RD[yIdx].get(valIdx)) {
                         y = vars[yIdx];
                         res |= y.removeValue(xVal, aCause);
@@ -510,7 +505,6 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                         deletedValues[yIdx].add(valIdx);
                     }
                 }
-
                 partition.disposeSCCIterator();
 
                 if (!partition.isSingletonByStartIndex(sccStartIdx)) {

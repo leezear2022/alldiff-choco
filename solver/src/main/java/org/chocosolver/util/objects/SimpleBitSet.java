@@ -81,6 +81,8 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
      */
     public transient int wordsInUse = 0;
 
+    public transient int longSize = 0;
+
     /**
      * Whether the size of "words" is user-specified.  If so, we assume
      * the user knows what he's doing and try harder to preserve it.
@@ -149,7 +151,8 @@ public class SimpleBitSet implements Cloneable, java.io.Serializable {
     }
 
     public void initWords(int nbits) {
-        words = new long[wordIndex(nbits - 1) + 1];
+        longSize = wordIndex(nbits - 1) + 1;
+        words = new long[longSize];
     }
 
     /**

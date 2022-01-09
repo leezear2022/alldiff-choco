@@ -60,9 +60,10 @@ public class testAllDiff {
 //                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
-                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml",
+//                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml",
 //                "/Users/leezear/exp/AllDiffBench/CostasArray/CostasArray-13.xml"
-//                "/Users/leezear/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P04.xml"
+//                "/Users/leezear/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P03.xml",
+                "C:/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P03.xml",
 //                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
 
@@ -135,8 +136,8 @@ public class testAllDiff {
 //                "ACSimple",
 //                "ACSimpleRegin",
 //                "ACSimpleGent",
-//                "ACSimpleGentZhang18",
-                "ACSimpleGentZhang20",
+                "ACSimpleGentZhang18",
+//                "ACSimpleGentZhang20",
         };
 //        String[] algorithms = new String[]{
 //                "ACNaive",

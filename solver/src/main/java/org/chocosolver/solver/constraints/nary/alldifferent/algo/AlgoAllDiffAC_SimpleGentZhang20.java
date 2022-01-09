@@ -2,7 +2,6 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
 
-import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.memory.IEnvironment;
@@ -41,20 +40,14 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
     // VARIABLES
     //***********************************************************************************
     // 约束的个数
-    static public int num = 0;
-    static public int INDEX_OVERFLOW = -1;
-    static long numCall = -1;
+    static private int num = 0;
+    static private long numCall = -1;
     // 约束的编号
-    private int id;
-    private int arity;
-    private IntVar[] vars;
-    private ICause aCause;
     // 新增一点（视为变量）
     // 自由值集合
     private SparseSet freeNode;
     // 以下是bit版本所需数据结构========================
     // numValue是二部图中取值编号的个数，numBit是二部图的最大边数
-    private int numValues;
     // 值到索引
     private int[] idx2Val;
     // 索引到值
@@ -126,43 +119,6 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
     public AlgoAllDiffAC_SimpleGentZhang20(IntVar[] variables, ICause cause, Model model) {
         super(variables, cause, model.getEnvironment());
         id = num++;
-        env = model.getEnvironment();
-        vars = variables;
-        aCause = cause;
-        arity = vars.length;
-        val2Idx = new TIntIntHashMap();
-
-        // 先将从0开始的变量论域进行编码，只编一个变量
-        for (int i = 0; i < arity; ++i) {
-            IntVar v = vars[i];
-            if (v.getLB() == 0) {
-                for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-                    if (!val2Idx.containsKey(j)) {
-                        val2Idx.put(j, val2Idx.size());
-                    }
-                }
-                break;
-            }
-        }
-
-        // 全部从头编码
-        for (int i = 0; i < arity; ++i) {
-            IntVar v = vars[i];
-            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-                if (!val2Idx.containsKey(j)) {
-                    val2Idx.put(j, val2Idx.size());
-                }
-            }
-        }
-
-        numValues = val2Idx.size();
-        idx2Val = new int[numValues];
-        TIntIntIterator it = val2Idx.iterator();
-        while (it.hasNext()) {
-            it.advance();
-            idx2Val[it.value()] = it.key();
-        }
-
         // System.out.println("-----------idx2Val-----------");
         // System.out.println(Arrays.toString(idx2Val));
         // for backtracking
@@ -295,8 +251,6 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
         System.out.println("----------------" + id + " propagate: " + (++numCall) + "----------------");
         printDomains();
         boolean filter = false;
-        if (numCall == 24)
-            System.out.println(partition);
         Measurer.enterProp();
 //        System.out.println(partition);
         if (initialPropagation) {
@@ -469,7 +423,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             if (var2ValR[varIdx].get() == -1) {
                 visitedValues.clear();
-                unVisitedVariables.set(0, arity);
+                unVisitedVariables.set();
                 MakeAugmentingPath(varIdx);
             }
             if (var2ValR[varIdx].get() == -1) {
@@ -484,6 +438,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 
     protected void repairMatching(int SCCStartIndex) throws ContradictionException {
         // repair max matching.
+
         partition.setIteratorIndexBySCCStartIndex(SCCStartIndex);
         while (partition.hasNext()) {
             int varIdx = partition.next();
@@ -493,7 +448,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
             if (valIdx == -1 || !RD[varIdx].get(valIdx)) {
                 var2ValR[varIdx].set(-1);
                 visitedValues.clear();
-                unVisitedVariables.set(0, arity);
+                unVisitedVariables.set();
                 MakeAugmentingPath(varIdx);
             }
 
