@@ -3,19 +3,21 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 //import org.chocosolver.amtf.Measurer;
 
 import gnu.trove.list.array.TIntArrayList;
-import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.memory.IStateInt;
+import org.chocosolver.memory.IStateLong;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.util.iterators.DisposableValueIterator;
-import org.chocosolver.util.objects.*;
+import org.chocosolver.util.objects.IStatePartition;
+import org.chocosolver.util.objects.Measurer;
+import org.chocosolver.util.objects.SimpleBitSet;
+import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
-import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -30,35 +32,21 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
+public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiffAC_Simple {
 
     //***********************************************************************************
     // VARIABLES
     //***********************************************************************************
-    // 约束的个数
+    static long numCall = -1;
     static private int num = 0;
-    static private long numCall = -1;
-    // 约束的编号
-    // 新增一点（视为变量）
-    // 自由值集合
-    private SparseSet freeNode;
-    // 以下是bit版本所需数据结构========================
-    // numValue是二部图中取值编号的个数，numBit是二部图的最大边数
-    // 值到索引
-    // 索引到值
-    // Xc-Γ(A)
-//    private SparseSet notGamma;
-    // Dc-A
-//    private SparseSet notA;
-//    // 与值相连的变量
-//    private SimpleBitSet[] B;
-//    private SimpleBitSet[] D;
+    private long varLastMask;
+    private long valLastMask;
 
     // 已访问过的变量和值
-    private SimpleBitSet unVisitedVariables;
-    private BitSet visitedValues;
-    private IStateBitSet matchedValuesR;
-    private SimpleBitSet freeNodes;
+//    private SimpleBitSet unVisitedVariables;
+//    private BitSet visitedValues;
+    private long unVisitedVariables;
+    private long visitedValues;
     // matching
     private IStateInt[] val2VarR;
     private IStateInt[] var2ValR;
@@ -68,13 +56,13 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 
     // 变量到变量的连通性
     // 对于惰性算法，记录是否知道-变量到变量的连通性
-    private SimpleBitSet[] graphLinkedMatrix;
-    private SimpleBitSet[] graphLinkedFrontier;
+    private long[] graphLinkedMatrix;
+    private long[] graphLinkedFrontier;
 
     // !! 记录gamma的前沿
-    private SimpleBitSet gammaFrontier;
+    private long gammaFrontier;
     // 记录gamma的bitset
-    private SimpleBitSet gammaMask;
+    private long gammaMask;
 
     // 记录scc
     protected boolean initialPropagation = true;
@@ -84,51 +72,51 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
     private IIntDeltaMonitor[] monitors;
     private UnaryIntProcedure<Integer> onValRem;
     private SparseSet[] deletedValues;
-    //    protected SparseSet varsTmp;
+    protected SparseSet varsTmp;
     private SparseSet changedSCCStartIndex;
     protected boolean unconnected = false;
     protected boolean isSkiped = false;
+
+    long startTime;
+
+    IStateLong[] RB;
+    IStateLong[] RD;
+    // if all a in var x val2Idx[a] = a then DomIsRagular[x] = true
+    boolean[] domIsRegular;
+
+    // for Zhang18
+    private IStateLong matchedValuesR;
+    private IStateLong validValuesR;
+    private long A;
+    private final IStateLong freeNodesR;
+
     // for early detect
     private TIntArrayList sccTriggeringVars;
     private int numSCCDeleteValues;
     private int numSCCValues;
 
-
-    // 懒计算域更新
-//    private SparseSet updatedVars;
-//    private SparseSet updatedVals;
-
-    long startTime;
-    //    // for backtrack
-    IStateBitSet[] RB;
-    IStateBitSet[] RD;
-    // if all a in var x val2Idx[a] = a then DomIsRagular[x] = true
-    boolean[] domIsRegular;
-
-
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_SimpleGentZhang20(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64(IntVar[] variables, ICause cause, Model model) {
         super(variables, cause, model.getEnvironment());
         id = num++;
-//        System.out.println("id: " + id + " Zhang20");
-        // System.out.println("-----------idx2Val-----------");
-        // System.out.println(Arrays.toString(idx2Val));
-        // for backtracking
-//        B = new SimpleBitSet[numValues];
-        RB = new IStateBitSet[numValues];
+        varLastMask = initLastMask(arity);
+        valLastMask = initLastMask(numValues);
+//        System.out.println("id: " + id + " Zhang1820");
+//        RB = new IStateBitSet[numValues];
+//        for (int i = 0; i < numValues; ++i) {
+//            RB[i] = env.makeBitSet(arity);
+//        }
+        RB = new IStateLong[numValues];
         for (int i = 0; i < numValues; ++i) {
-//            B[i] = new SimpleBitSet(arity);
-            RB[i] = env.makeBitSet(arity);
+            RB[i] = env.makeLong();
         }
 
-//        D = new SimpleBitSet[arity];
-        RD = new IStateBitSet[arity];
+        RD = new IStateLong[arity];
         domIsRegular = new boolean[arity];
         for (int i = 0; i < arity; i++) {
-//            D[i] = new SimpleBitSet(numValues);
-            RD[i] = env.makeBitSet(numValues);
+            RD[i] = env.makeLong();
         }
 
         for (int i = 0; i < arity; ++i) {
@@ -140,23 +128,37 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                 int valIdx = val2Idx.get(val);
                 if (domIsRegular[i] && val != valIdx)
                     domIsRegular[i] = false;
-                RB[valIdx].set(i);
-//                B[valIdx].set(i);
-                RD[i].set(valIdx);
-//                D[i].set(valIdx);
+//                RB[valIdx]. (i);
+//                RD[i].set(valIdx);
+                set(RB[valIdx], i);
+                set(RD[i], valIdx);
             }
             vit.dispose();
         }
 
         // 记录访问过的变量
         visiting_ = new int[arity];
-        unVisitedVariables = new SimpleBitSet(arity);
+//        unVisitedVariables = new SimpleBitSet(arity);
+        unVisitedVariables = 0;
         // 变量的前驱变量，若前驱变量是-1，则表示无前驱变量，就是第一个变量
         variable_visited_from_ = new int[arity];
-        visitedValues = new BitSet(numValues);
-//        matchedValues = new SimpleBitSet(numValues);
-        matchedValuesR = env.makeBitSet(numValues);
+//        visitedValues = new BitSet(numValues);
+//        matchedValuesR = env.makeBitSet(numValues);
+//        validValuesR = env.makeBitSet(numValues);
+//        A = new SimpleBitSet(numValues);
+//        freeNodesR = env.makeBitSet(numValues);
 
+        visitedValues = 0;
+        matchedValuesR = env.makeLong();
+        validValuesR = env.makeLong();
+        freeNodesR = env.makeLong();
+        A = 0;
+//        for (int i = 0; i < numValues; i++) {
+//            validValuesR.set(i);
+//            freeNodesR.set(i);
+//        }
+        validValuesR.set(valLastMask);
+        freeNodesR.set(valLastMask);
         var2ValR = new IStateInt[arity];
         val2VarR = new IStateInt[numValues];
 
@@ -167,27 +169,25 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
             val2VarR[i] = env.makeInt(-1);
         }
 
-        freeNode = new SparseSet(numValues);
-        gammaFrontier = new SimpleBitSet(arity);
-        gammaMask = new SimpleBitSet(arity);
-//        notGamma = new SparseSet(arity);
-//        notA = new SparseSet(numValues);
-
-        graphLinkedMatrix = new SimpleBitSet[arity];
-        graphLinkedFrontier = new SimpleBitSet[arity];
-        for (int i = 0; i < arity; ++i) {
-            graphLinkedMatrix[i] = new SimpleBitSet(arity);
-            graphLinkedFrontier[i] = new SimpleBitSet(arity);
-        }
+//        gammaFrontier = new SimpleBitSet(arity);
+//        gammaMask = new SimpleBitSet(arity);
+//
+//        graphLinkedMatrix = new SimpleBitSet[arity];
+//        graphLinkedFrontier = new SimpleBitSet[arity];
+//        for (int i = 0; i < arity; ++i) {
+//            graphLinkedMatrix[i] = new SimpleBitSet(arity);
+//            graphLinkedFrontier[i] = new SimpleBitSet(arity);
+//        }
+        graphLinkedMatrix = new long[arity];
+        graphLinkedFrontier = new long[arity];
+        gammaFrontier = 0;
+        gammaMask = 0;
 
         // for Gent algorithm
         partition = makePartition(arity, env);
         triggeringVars = new SparseSet(arity);
-//        triggeringVals = new SparseSet(numValues);
         // 已懒更新的变量/值
-//        updatedVars = new SparseSet(arity);
-//        updatedVals = new SparseSet(numValues);
-//        varsTmp = new SparseSet(arity);
+        varsTmp = new SparseSet(arity);
         changedSCCStartIndex = new SparseSet(arity);
         monitors = new IIntDeltaMonitor[vars.length];
         for (int i = 0; i < vars.length; i++) {
@@ -224,13 +224,23 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                 if (valIdx == matchedVal) {
                     var2ValR[varIdx].set(-1);
                     val2VarR[valIdx].set(-1);
-                    matchedValuesR.clear(valIdx);
+//                    matchedValuesR.clear(valIdx);
+//                    freeNodesR.set(valIdx);
+                    clear(matchedValuesR, valIdx);
+                    setBit(freeNodesR, valIdx);
                 }
 
                 deletedValues[varIdx].add(valIdx);
-//                RB[valIdx].clear(varIdx);
-//                RD[varIdx].clear(valIdx);
                 removeValue(varIdx, valIdx);
+
+                // bel删空表示该值失效
+                if (RB[valIdx].get() == 0) {
+//                    validValuesR.clear(valIdx);
+//                    freeNodesR.clear(valIdx);
+                    clear(validValuesR, valIdx);
+                    clear(freeNodesR, valIdx);
+                }
+
 //                System.out.println("delta: " + varIdx + ", " + valIdx);
             }
         };
@@ -245,37 +255,58 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 //        System.out.println("----------------" + id + " propagate: " + (++numCall) + "----------------");
 //        printDomains();
         boolean filter = false;
+//        instVar.clear();
+//        if (numCall == 24)
+//            System.out.println(partition);
         Measurer.enterProp();
 //        System.out.println(partition);
         if (initialPropagation) {
 //            triggeringVals.fill();
-            triggeringVars.fill();
+//            triggeringVars.fill();
 //            updatedVars.fill();
 //            updatedVals.fill();
             startTime = System.nanoTime();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
 //            System.out.println("matching: " + Arrays.toString(var2ValR));
+
             startTime = System.nanoTime();
-            initiateMatrix(0);
-            filter = filterDomainsPartition(0);
+
+            // for Zhang18
+            // 有freeNodes才执行。在gamma区中过滤
+//            A.set(freeNodesR);
+            A = freeNodesR.get();
+            if (freeNodesR.get() == 0) {
+                initiateMatrixOrdinary(0);
+                filter |= filterDomainsPartition(0);
+            } else {
+                int newSCCStart = distinguish();
+//                System.out.println("gamma: " + gammaMask);
+                if (newSCCStart != -1) {
+                    filter |= filterDomainsGamma();
+                    // gamma分裂区中建图过滤
+                    initiateMatrixAfterGamma(newSCCStart);
+//                    filter |= filterDomainsAfterGamma(newSCCStart);
+                    filter |= filterDomainsPartition(newSCCStart);
+                }
+            }
             Measurer.filterTime += System.nanoTime() - startTime;
 //            System.out.println(partition);
             initialPropagation = false;
         } else {
             deltaUpdate();
-//            System.out.println("--------");
-//            printDomains();
             startTime = System.nanoTime();
             filter |= propagate_SCC_Match();
-//            if (numCall == 24)
-//                System.out.println(partition);
 //            System.out.println("matching: " + Arrays.toString(var2ValR));
             Measurer.matchingTime += System.nanoTime() - startTime;
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
             Measurer.filterTime += System.nanoTime() - startTime;
         }
+
+//        if (numCall == 683) {
+//            printDomains();
+//        }
 //        System.out.println(partition);
         return filter;
     }
@@ -331,7 +362,6 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
         // num_to_visit指向它的end()。要在发现不匹配的值时切换到扩展路径，
         // 我们需要记住variable_visited_from_中的BFS树
         //
-//        System.out.println("------" + start + "------");
         int num_to_visit = 0;
         int num_visited = 0;
         // Enqueue start.
@@ -339,7 +369,8 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
         visiting_[num_to_visit++] = start;
 //        variable_visited_[start] = true;
 //        variable_visited_.set(start);
-        unVisitedVariables.clear(start);
+//        unVisitedVariables.clear(start);
+        unVisitedVariables &= (~(1 << start));
         variable_visited_from_[start] = -1;
 
         while (num_visited < num_to_visit) {
@@ -348,15 +379,17 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 //            updateBitDom(node);
 //            needVisitValues.setAfterAnd(D[node], unVisitedValues);
 //            for (int valIdx = needVisitValues.firstSetBit(); valIdx != unVisitedValues.end(); valIdx = needVisitValues.nextSetBit(valIdx + 1)) {
-//            System.out.println(RD[node]);
-            for (int valIdx = RD[node].nextSetBit(0); valIdx >= 0; valIdx = RD[node].nextSetBit(valIdx + 1)) {
-//                System.out.println(visitedValues);
-                if (visitedValues.get(valIdx)) continue;
-//                System.out.println("out:" + node + "," + valIdx);
-                visitedValues.set(valIdx);
+//            for (int valIdx = RD[node].nextSetBit(0); valIdx >= 0; valIdx = RD[node].nextSetBit(valIdx + 1)) {
+            for (int valIdx = nextSetBitNew(RD[node], 0); valIdx != BITS_PER_WORD;
+                 valIdx = nextSetBitNew(RD[node], valIdx + 1)) {
+//                if (visitedValues.get(valIdx)) continue;
+                if (get(visitedValues, valIdx)) continue;
+//                visitedValues.set(valIdx);
+                visitedValues |= (1 << valIdx);
 //                updateBitBel(valIdx);
 //                if (val2Var[valIdx] == -1) {
-                if (!matchedValuesR.get(valIdx)) {
+//                if (!matchedValuesR.get(valIdx)) {
+                if (!get(matchedValuesR, valIdx)) {
                     // value_to_variable_[valIdx] ， value这个值未分配到变量，即是一个free
                     // !! 这里可以改用bitSet 求原数据bitDom (successor_)
                     // 与matching的余集(matching_bitVector[a]，表示a是否已matching出去了) 再按1取未匹配值，
@@ -388,11 +421,13 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                         // 由于这个变量传递下去是连贯的，可以检查连通生，做为下一个阶段的记录
                         path_value = old_value;
                     }
-
-//                    freeNode.clear(valIdx);
-                    freeNode.remove(valIdx);
-                    matchedValuesR.set(valIdx);
+//                    freeNodesR.clear(valIdx);
+//                    freeNode.remove(valIdx);
+//                    matchedValuesR.set(valIdx);
 //                    System.out.println(valIdx + " is not free");
+                    set(matchedValuesR, valIdx);
+                    clear(freeNodesR, valIdx);
+
                     return;
                 } else {
                     // Enqueue node matched to valIdx.
@@ -400,30 +435,34 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 
                     // 先拿到这个值的匹配变量
 //                    int next_node = val2Var[valIdx];
-//                    System.out.println("xixi");
                     int next_node = val2VarR[valIdx].get();
-//                    System.out.println("nextNode: " + next_node);
 //                    variable_visited_.set(next_node);
-                    unVisitedVariables.clear(next_node);
+//                    unVisitedVariables.clear(next_node);
+                    unVisitedVariables &= (~(1 << next_node));
 //                    System.out.println(num_to_visit + "," + next_node);
                     // 把这个变量加入队列中
                     visiting_[num_to_visit++] = next_node;
                     variable_visited_from_[next_node] = node;
-//                    freeNode.clear(valIdx);
-                    freeNode.remove(valIdx);
-                    matchedValuesR.set(valIdx);
+//                    freeNodesR.clear(valIdx);
+                    clear(freeNodesR, valIdx);
+//                    freeNode.remove(valIdx);
+                    set(matchedValuesR, valIdx);
                 }
             }
         }
     }
 
+    // 第一次调用
     private void findMaximumMatching() throws ContradictionException {
 //        // !! 可做增量
-        freeNode.fill();
+//        freeNode.fill();
         for (int varIdx = 0; varIdx < arity; varIdx++) {
             if (var2ValR[varIdx].get() == -1) {
-                visitedValues.clear();
-                unVisitedVariables.set();
+//                visitedValues.clear();
+//                unVisitedVariables.set();
+                visitedValues = 0;
+//                set(unVisitedVariables);
+                unVisitedVariables = valLastMask;
                 MakeAugmentingPath(varIdx);
             }
             if (var2ValR[varIdx].get() == -1) {
@@ -438,17 +477,19 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 
     protected void repairMatching(int SCCStartIndex) throws ContradictionException {
         // repair max matching.
-
         partition.setIteratorIndexBySCCStartIndex(SCCStartIndex);
         while (partition.hasNext()) {
             int varIdx = partition.next();
 //            updateBitDom(varIdx);
             int valIdx = var2ValR[varIdx].get();
             // 值失效
-            if (valIdx == -1 || !RD[varIdx].get(valIdx)) {
+//            if (valIdx == -1 || !RD[varIdx].get(valIdx)) {
+            if (valIdx == -1 || !get(RD[varIdx], valIdx)) {
                 var2ValR[varIdx].set(-1);
-                visitedValues.clear();
-                unVisitedVariables.set();
+//                visitedValues.clear();
+//                unVisitedVariables.set();
+                visitedValues = 0;
+                unVisitedVariables = valLastMask;
                 MakeAugmentingPath(varIdx);
             }
 
@@ -464,26 +505,23 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
         boolean res = false;
         IntVar x, y;
         // 匹配值清空
-
         changedSCCStartIndex.clear();
-//        System.out.println(partition);
         triggeringVars.iterateValid();
         while (triggeringVars.hasNextValid()) {
             int xIdx = triggeringVars.next();
-//            updateBitDom(xIdx);
             int valIdx = var2ValR[xIdx].get();
 
             int sccStartIdx = partition.getSCCStartIndexByElement(xIdx);
             x = vars[xIdx];
 
             // valIdx失效
-            if (valIdx == -1 || !RD[xIdx].get(valIdx)) {
+//            if (valIdx == -1 || !RD[xIdx].get(valIdx)) {
+            if (valIdx == -1 || !get(RD[xIdx], valIdx)) {
                 repairMatching(sccStartIdx);
             }
 
             if (x.isInstantiated() && !partition.isSingletonByStartIndex(sccStartIdx)) {
                 valIdx = var2ValR[xIdx].get();
-//                updateBitBel(valIdx);
                 int xVal = idx2Val[valIdx];
                 if (changedSCCStartIndex.contains(sccStartIdx)) {
                     changedSCCStartIndex.remove(sccStartIdx);
@@ -496,15 +534,14 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                 partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
                 while (partition.hasNext()) {
                     int yIdx = partition.next();
-//                    updateBitDom(yIdx);
-                    if (RD[yIdx].get(valIdx)) {
+//                    if (RD[yIdx].get(valIdx)) {
+                    if (get(RD[yIdx], valIdx)) {
                         y = vars[yIdx];
                         res |= y.removeValue(xVal, aCause);
                         removeValue(yIdx, valIdx);
                         deletedValues[yIdx].add(valIdx);
                     }
                 }
-
                 partition.disposeSCCIterator();
 
                 if (!partition.isSingletonByStartIndex(sccStartIdx)) {
@@ -522,20 +559,40 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 
     protected boolean propagate_SCC_filter() throws ContradictionException {
         boolean filter = false;
+//        System.out.println("changed: " + changedSCCStartIndex);
+//        System.out.println("freeNodes: " + freeNodesR);
+//        System.out.println("gamma: " + gammaMask);
+//        System.out.println("A: " + A);
+        // for Zhang18
+        // 带gamma的分区总在第0个分区中，
+        // 若第0个分区changed并且freenode不为空。
+//        if (changedSCCStartIndex.contains(0) && !freeNodesR.isEmpty()) {
+        if (changedSCCStartIndex.contains(0) && !(freeNodesR.get() == 0)) {
+            // 有freeNodes才执行。在gamma区中过滤
+            int newSCCStart = distinguish();
+            // newSCCStart == -1 表示Gamma占据当前全部scc
+            if (newSCCStart != INDEX_OVERFLOW) {
+                filter |= filterDomainsGamma();
+
+                // gamma分裂区中建图过滤
+                initiateMatrixAfterGamma(newSCCStart);
+                if (numSCCValues >= (numSCCDeleteValues << 1)) {
+                    if (!earlyDetection()) {
+                        Measurer.enterSkip();
+                        filter |= filterDomainsPartition(newSCCStart);
+                    }
+                } else {
+                    filter |= filterDomainsPartition(newSCCStart);
+                }
+            }
+            changedSCCStartIndex.remove(0);
+        }
+
         changedSCCStartIndex.iterateValid();
         while (changedSCCStartIndex.hasNextValid()) {
             int sccStartIndex = changedSCCStartIndex.next();
-            initiateMatrix(sccStartIndex);
-//            if (!earlyDetection()) {
-//                Measurer.enterSkip();
-//                filter |= filterDomainsPartition(sccStartIndex);
-//            }
-
-//            if (!earlyDetection()) {
-//                Measurer.enterSkip();
-//                filter |= filterDomainsPartition(sccStartIndex);
-//            }
-
+            initiateMatrixOrdinary(sccStartIndex);
+//            filter |= filterDomainsPartition(sccStartIndex);
             if (numSCCValues >= (numSCCDeleteValues << 1)) {
                 if (!earlyDetection()) {
                     Measurer.enterSkip();
@@ -547,28 +604,122 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
         }
         return filter;
     }
+
     //***********************************************************************************
     // PRUNING
     //***********************************************************************************
+    // 只有changedSCCStartIndex包括索引0才会触发这个传播,反回除去gamma的新scc
+    // 返回新SCCStartIndex，如果返回-1表示该SCC全部为gamma
+    private int distinguish() {
+//        notGamma.fill();
+//        notA.fill();
+        int numBit;
+        gammaMask = 0;
+//        gammaMask.set;
+//        freeNodesR.generateBitSet(A);
+//        A.set(freeNodesR);
+        A = freeNodesR.get();
+//        System.out.println("A: " + Long.toBinaryString(A));
+//        // freeNode
+//        if (!freeNodesR.isEmpty())
+//            return ;
+        int firstSCCSize = partition.getSCCSizeByStartIndex(0);
+//        for (int i = A.nextSetBit(0); i >= 0; i = A.nextSetBit(i + 1)) {
+        for (int i = nextSetBitNew(A, 0); i != BITS_PER_WORD; i = nextSetBitNew(A, i + 1)) {
+//            notA.remove(i);
+//            numBit = gammaMask.orCount(RB[i]);
+//            System.out.println("RB: " + Long.toBinaryString(RB[i].get()));
+            gammaMask |= RB[i].get();
+//            numBit = gammaMask.orCount(RB[i]);
+            // 若notGamma为空，不需后续 直接退出
+//            if (numCall == 2) {
+//                System.out.println("add " + i + ": " + gammaMask);
+//            }
+            if (Long.bitCount(gammaMask) == firstSCCSize)
+                return INDEX_OVERFLOW;
+        }
+//        gammaFrontier.set(gammaMask);
+        gammaFrontier = gammaMask;
 
-    private void initiateMatrix(int sccStartIdx) {
-        // 重置两个矩阵
-        // 只重置notGamma的变量
+
+        for (int varIdx = nextSetBitNew(gammaFrontier, 0);
+             varIdx != BITS_PER_WORD; varIdx = nextSetBitNew(gammaFrontier, 0)) {
+            // !! 这里可以将Extended改成Frontier，只记录前沿，记录方法是三个BitSet比较，
+            // frontier 扩展，从valMask中去掉gammaMask已记录的变量
+            int valIdx = var2ValR[varIdx].get();
+//            gammaFrontier.orAfterMinus(RB[valIdx], gammaMask);
+            gammaFrontier |= RB[valIdx].get() & ~gammaMask;
+//            // 除去第i个变量
+//            gammaFrontier.clear(varIdx);
+            gammaFrontier &= (~(1 << varIdx));
+            // gamma 扩展
+//            numBit = gammaMask.orCount(RB[valIdx]);
+            gammaMask |= RB[valIdx].get();
+            // 若notGamma为空，表示scc全部都在gamma，不需后续计算SCC，直接退出
+            if (Long.bitCount(gammaMask) == firstSCCSize)
+                return INDEX_OVERFLOW;
+//            A.set(valIdx);
+            A |= (1 << valIdx);
+        }
+//        System.out.println("gamma: " + Long.toBinaryString(gammaMask));
+        // 直接分裂SCCs,返回新SCC的StartIndex
+//        int i = gammaMask.nextSetBit(0);
+//        int sccStart = partition.getSCCStartIndexByElement(i);
+        partition.setIteratorIndexBySCCStartIndex(0);
+//        for (int i = gammaMask.nextSetBit(0); i >= 0; i = gammaMask.nextSetBit(i + 1)) {
+        for (int i = nextSetBitNew(gammaMask, 0); i != BITS_PER_WORD;
+             i = nextSetBitNew(gammaMask, i + 1)) {
+            partition.addGamma(i);
+        }
+        int newStart = partition.splitGamma();
+        partition.disposeSCCIterator();
+        return newStart;
+    }
+
+//    // 带Gamma的SCC才如下建模
+//    private void initiateMatrixGamma() {
+//        // 重置两个矩阵
+//        // 不包括gamma子分区
+//        partition.setIteratorIndexAfterGamma();
+//        while (partition.hasNext()) {
+//            int varIdx = partition.next();
+////            updateBitDom(varIdx);
+//            // 从变量id拿到匹配值再拿到该值所能到达的变量mask
+//            int valIdx = var2ValR[varIdx].get();
+////            updateBitBel(valIdx);
+//            graphLinkedMatrix[varIdx].setAfterMinus(RB[valIdx], gammaMask);
+//            graphLinkedMatrix[varIdx].clear(varIdx);
+//            graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
+////            System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
+////            System.out.println(graphLinkedMatrix[varIdx]);
+////            System.out.println(graphLinkedFrontier[varIdx]);
+//        }
+//
+//        partition.disposeSCCIterator();
+//    }
+
+
+    // 分裂gamma后
+    private void initiateMatrixAfterGamma(int sccStartIdx) {
         sccTriggeringVars.clear();
         numSCCDeleteValues = 0;
         numSCCValues = 0;
-
+        // 重置两个矩阵
+        // 只重置notGamma的变量
         partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
         while (partition.hasNext()) {
-
             int varIdx = partition.next();
 //            updateBitDom(varIdx);
             // 从变量id拿到匹配值再拿到该值所能到达的变量mask
             int valIdx = var2ValR[varIdx].get();
 //            updateBitBel(valIdx);
-            graphLinkedMatrix[varIdx].set(RB[valIdx]);
-            graphLinkedMatrix[varIdx].clear(varIdx);
-            graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
+//            graphLinkedMatrix[varIdx].setAfterMinus(RB[valIdx], gammaMask);
+//            graphLinkedMatrix[varIdx].clear(varIdx);
+//            graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
+
+            graphLinkedMatrix[varIdx] = RB[valIdx].get() & ~gammaMask;
+            graphLinkedMatrix[varIdx] &= (~(1 << varIdx));
+            graphLinkedFrontier[varIdx] = graphLinkedMatrix[varIdx];
 
             // 初始化本scc的deletedVars
             if (triggeringVars.contains(varIdx)) {
@@ -576,59 +727,48 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                 numSCCDeleteValues += deletedValues[varIdx].validSize();
             }
             numSCCValues += vars[varIdx].getDomainSize();
+
 //            System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
 //            System.out.println(graphLinkedMatrix[varIdx]);
 //            System.out.println(graphLinkedFrontier[varIdx]);
         }
-
+        partition.disposeSCCIterator();
     }
 
-    private boolean filterDomains(int sccStartIndex) throws ContradictionException {
-        boolean filter = false;
-        partition.setIteratorIndexBySCCStartIndex(sccStartIndex);
+    private void initiateMatrixOrdinary(int sccStartIdx) {
+        sccTriggeringVars.clear();
+        numSCCDeleteValues = 0;
+        numSCCValues = 0;
+        // 重置两个矩阵
+        // 只重置notGamma的变量
+        partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
         while (partition.hasNext()) {
-            int varIdx = partition.nextAndSplitWhenMeetingUnknownAndMoved();
-            IntVar v = vars[varIdx];
-            if (!v.isInstantiated()) {
+            int varIdx = partition.next();
+            // 从变量id拿到匹配值再拿到该值所能到达的变量mask
+            int valIdx = var2ValR[varIdx].get();
+//            graphLinkedMatrix[varIdx].set(RB[valIdx]);
+//            graphLinkedMatrix[varIdx].clear(varIdx);
+//            graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
 
-                int matchedVal = var2ValR[varIdx].get();
-                int k = idx2Val[matchedVal];
-                // 先验证匹配值，再验证其它值
-                if (!checkSCC(varIdx, matchedVal)) {
-                    int valNum = v.getDomainSize();
-                    Measurer.numDelValuesP2 += valNum - 1;
-                    filter |= v.instantiateTo(k, aCause);
-                    instantiateTo(varIdx, matchedVal);
-                    partition.removeCurrentToTail();
-                    continue;
-                    // System.out.println("instantiate  : " + v.getName() + ", " + k);
-                } else {
-                    partition.setCurrentConnected();
-                    // 再验证其它值
-                    for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
-                        int varIdx2 = val2VarR[valIdx].get();
-                        if (valIdx != varIdx2) {
-                            k = idx2Val[valIdx];
-                            if (!checkSCC(varIdx, varIdx2)) {
-                                Measurer.enterP2();
-                                ++Measurer.numDelValuesP2;
-                                filter |= v.removeValue(k, aCause);
-                                removeValue(varIdx, valIdx);
-                                if (partition.canMove(varIdx2)) {
-                                    // varIdx2未分裂，将varIdx2移入tmp分区中
-                                    partition.addMoved(varIdx2);
-                                }
-                                // System.out.println("second delete: " + v.getName() + ", " + k);
-                            } else {
-                                partition.addConnected(varIdx2);
-                            }
-                        }
-                    }
-                }
+            graphLinkedMatrix[varIdx] = RB[valIdx].get();
+            // graphLinkedMatrix[varIdx].clear(varIdx);
+            graphLinkedMatrix[varIdx] &= (~(1 << varIdx));
+            // graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
+            graphLinkedFrontier[varIdx] = graphLinkedMatrix[varIdx];
+
+            // 初始化本scc的deletedVars
+            if (triggeringVars.contains(varIdx)) {
+                sccTriggeringVars.add(varIdx);
+                numSCCDeleteValues += deletedValues[varIdx].validSize();
             }
+            numSCCValues += vars[varIdx].getDomainSize();
+//            if (numCall == 106) {
+//                System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
+//                System.out.println(graphLinkedMatrix[varIdx]);
+//                System.out.println(graphLinkedFrontier[varIdx]);
+//            }
         }
         partition.disposeSCCIterator();
-        return filter;
     }
 
     /**
@@ -641,14 +781,44 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
             del.iterateValid();
             while (del.hasNextValid()) {
                 int valIdx = del.next();
-                // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
-                if (!checkSCC(varIdx, valIdx) ||
-                        !checkSCC(val2VarR[valIdx].get(), var2ValR[varIdx].get())) {
-                    return false;
+//                System.out.println("ED: check: " + varIdx + ", " + valIdx);
+                if (!get(A, valIdx) && get(validValuesR, valIdx)) {
+                    // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
+                    if (!checkSCC(varIdx, valIdx) ||
+                            !checkSCC(val2VarR[valIdx].get(), var2ValR[varIdx].get())) {
+                        return false;
+                    }
                 }
             }
         }
         return true;
+    }
+
+    // 只用来过滤带有Gamma的SCC，全程不用算scc
+    private boolean filterDomainsGamma() throws ContradictionException {
+        boolean filter = false;
+        partition.setIteratorIndexBySCCStartIndex(0);
+        while (partition.hasNext()) {
+            int varIdx = partition.next();
+            // varIdx 只可能在两个子分区中，checked和unknown
+            IntVar v = vars[varIdx];
+//            for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
+            for (int valIdx = nextSetBitNew(RD[varIdx], 0);
+                 valIdx != BITS_PER_WORD; valIdx = nextSetBitNew(RD[varIdx], valIdx + 1)) {
+//                if (!A.get(valIdx)) {
+                if (!get(A, valIdx)) {
+                    // 变量在Gamma,值不在A
+                    ++Measurer.numDelValuesP1;
+                    Measurer.enterP1();
+                    int k = idx2Val[valIdx];
+                    filter |= v.removeValue(k, aCause);
+                    removeValue(varIdx, valIdx);
+//                    System.out.println("first delete1: " + varIdx + ", " + valIdx);
+                }
+            }
+        }
+        partition.disposeSCCIterator();
+        return filter;
     }
 
     private boolean filterDomainsPartition(int sccStartIndex) throws ContradictionException {
@@ -667,8 +837,8 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                     Measurer.enterP2();
                     int valNum = v.getDomainSize();
                     Measurer.numDelValuesP2 += valNum - 1;
-                    filter |= v.instantiateTo(k, aCause);
-                    instantiateTo(varIdx, matchedVal);
+//                    filter |= v.instantiateTo(k, aCause);
+                    filter |= instantiateTo(varIdx, matchedVal, v, k);
                     partition.removeCurrentToTail();
 //                    System.out.println("instantiate  : " + varIdx + ", " + matchedVal);
                     continue;
@@ -676,7 +846,9 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                     // 匹配值在SCC中，表示变量论域至少两个值，且至少有一个值在SCC中
                     partition.setCurrentConnected();
                     // 再验证其它值
-                    for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
+//                    for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
+                    for (int valIdx = nextSetBitNew(RD[varIdx], 0); valIdx != BITS_PER_WORD;
+                         valIdx = nextSetBitNew(RD[varIdx], valIdx + 1)) {
                         // valIdx 可能在三个子分区内：connected，unknown和moved
                         // 在connected分区中不用验证，
                         // 在unknown分区中的需要检测scc
@@ -692,8 +864,10 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                                     ++Measurer.numDelValuesP2;
                                     filter |= v.removeValue(k, aCause);
                                     removeValue(varIdx, valIdx);
+//                                    if (partition.canMove(varIdx2)) {
                                     // varIdx2未分裂，将varIdx2移入tmp分区中
                                     partition.addMoved(varIdx2);
+//                                    }
 //                                    System.out.println("second delete1: " + varIdx + ", " + valIdx);
                                 } else {
                                     partition.addConnected(varIdx2);
@@ -706,16 +880,22 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
                                 removeValue(varIdx, valIdx);
 //                                System.out.println("second delete2: " + varIdx + ", " + valIdx);
 
-                                // varIdx2未分裂，将varIdx2移入tmp分区中
+//                                if (partition.canMove(varIdx2)) {
+//                                    // varIdx2未分裂，将varIdx2移入tmp分区中
+//                                    partition.addMoved(varIdx2);
+//                                }
                             } else if (partition.varNotInSameSCC(varIdx2)) {
                                 // var2在moved子分区,
                                 Measurer.enterP2();
                                 ++Measurer.numDelValuesP2;
                                 filter |= v.removeValue(k, aCause);
 //                                System.out.println("second delete3: " + varIdx + ", " + valIdx);
+
                                 removeValue(varIdx, valIdx);
                             }
+
                             // 如果在Connected分区或在其它SCC中，跳过该值
+
                         }
                     }
                 }
@@ -725,18 +905,43 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
         return filter;
     }
 
+//    private boolean checkSCC(int x, int a) {
+//        int y = val2VarR[a].get();
+//        if (graphLinkedMatrix[x].get(y)) {
+//            return true;
+//        }
+//        for (int i = graphLinkedFrontier[x].nextSetBit(0);
+//             i >= 0; i = graphLinkedFrontier[x].nextSetBit(0)) {
+//            // frontier扩张，除掉变量i 因为变量i已被扩展。
+//            graphLinkedFrontier[x].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[x]);
+//            graphLinkedFrontier[x].clear(i);
+//            graphLinkedMatrix[x].or(graphLinkedMatrix[i]);
+//            if (graphLinkedMatrix[x].get(y)) {
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
+
     private boolean checkSCC(int x, int a) {
         int y = val2VarR[a].get();
-        if (graphLinkedMatrix[x].get(y)) {
+//        if (graphLinkedMatrix[x].get(y)) {
+        if (get(graphLinkedMatrix[x], y)) {
             return true;
         }
-        for (int i = graphLinkedFrontier[x].nextSetBit(0);
-             i >= 0; i = graphLinkedFrontier[x].nextSetBit(0)) {
+//        for (int i = graphLinkedFrontier[x].nextSetBit(0); i >= 0; i = graphLinkedFrontier[x].nextSetBit(0)) {
+        for (int i = nextSetBitNew(graphLinkedFrontier[x], 0); i != BITS_PER_WORD;
+             i = nextSetBitNew(graphLinkedFrontier[x], 0)) {
             // frontier扩张，除掉变量i 因为变量i已被扩展。
-            graphLinkedFrontier[x].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[x]);
-            graphLinkedFrontier[x].clear(i);
-            graphLinkedMatrix[x].or(graphLinkedMatrix[i]);
-            if (graphLinkedMatrix[x].get(y)) {
+//            graphLinkedFrontier[x].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[x]);
+//            graphLinkedFrontier[x].clear(i);
+//            graphLinkedMatrix[x].or(graphLinkedMatrix[i]);
+
+            graphLinkedFrontier[x] |= graphLinkedMatrix[i] & ~graphLinkedMatrix[x];
+//            clear(graphLinkedFrontier[x], i);
+            graphLinkedFrontier[x] &= (~(1 << i));
+            graphLinkedMatrix[x] |= graphLinkedMatrix[i];
+            if (get(graphLinkedMatrix[x], y)) {
                 return true;
             }
         }
@@ -744,22 +949,16 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
     }
 
     void removeValue(int varIdx, int valIdx) {
-//        D[varIdx].clear(valIdx);
-        RD[varIdx].clear(valIdx);
-//        B[valIdx].clear(varIdx);
-        RB[valIdx].clear(varIdx);
+        clear(RD[varIdx], valIdx);
+        clear(RB[valIdx], varIdx);
     }
 
-    void instantiateTo(int varIdx, int valIdx) {
-//        D[varIdx].clear();
-        RD[varIdx].clear();
-//        D[varIdx].set(valIdx);
-        RD[varIdx].set(valIdx);
-
-//        B[valIdx].clear();
-        RB[valIdx].clear();
-//        B[valIdx].set(varIdx);
-        RB[valIdx].set(varIdx);
+    boolean instantiateTo(int varIdx, int valIdx, IntVar v, int k) throws ContradictionException {
+        clear(RD[varIdx]);
+        set(RD[varIdx], valIdx);
+        clear(RB[valIdx]);
+        set(RB[valIdx], varIdx);
+        return v.instantiateTo(k, aCause);
     }
 
 

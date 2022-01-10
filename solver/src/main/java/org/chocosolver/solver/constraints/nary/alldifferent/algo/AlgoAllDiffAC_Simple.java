@@ -3,6 +3,7 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.memory.IEnvironment;
+import org.chocosolver.memory.IStateLong;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
@@ -12,8 +13,12 @@ import org.chocosolver.util.objects.IStatePartition;
 
 public abstract class AlgoAllDiffAC_Simple {
     // 约束的个数
-
     static public int INDEX_OVERFLOW = -1;
+
+    public static final int ADDRESS_BITS_PER_WORD = 6;
+    public static final int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
+    public static final int BIT_INDEX_MASK = BITS_PER_WORD - 1;
+    public static final long WORD_MASK = 0xffffffffffffffffL;
 
     // 约束的编号
     protected int id;
@@ -101,4 +106,86 @@ public abstract class AlgoAllDiffAC_Simple {
     }
 
     public abstract boolean propagate() throws ContradictionException;
+
+
+//    protected static void set(IStateLong a) {
+//        a.set(lastMask);
+//    }
+
+    protected static void clear(IStateLong a) {
+        a.set(0);
+    }
+
+    protected static void set(IStateLong a, int e) {
+        a.set(a.get() | (1 << e));
+    }
+
+    protected static void set(IStateLong a, Integer e) {
+        a.set(a.get() | (1 << e));
+    }
+
+
+    protected static void setBit(IStateLong a, int e) {
+        a.set(a.get() | (1 << e));
+    }
+
+    protected static void setBit(IStateLong a, Integer e) {
+        a.set(a.get() | (1 << e));
+    }
+
+    protected static void clear(IStateLong a, int e) {
+        a.set(a.get() & (~(1 << e)));
+    }
+
+
+//    protected static void clear(long a) {
+//        a = 0;
+//    }
+//
+//    protected static void set(long a) {
+//        a = lastMask;
+//    }
+//
+//    protected static void set(long a, int e) {
+//        a |= (1 << e);
+//    }
+//
+//    protected static void clear(long a, int e) {
+//        a &= (~(1 << e));
+//    }
+
+    protected static boolean get(IStateLong a, int e) {
+        return (a.get() & (1L << e)) != 0;
+    }
+
+    protected static boolean get(long a, int e) {
+        return (a & (1L << e)) != 0;
+    }
+
+    protected static int nextSetBit(IStateLong a, int e) {
+        if (e >= BITS_PER_WORD)
+            return INDEX_OVERFLOW;
+        long currentValue = a.get() & (WORD_MASK << e);
+        return (currentValue == 0) ? INDEX_OVERFLOW : Long.numberOfTrailingZeros(currentValue);
+    }
+
+    protected static int nextSetBit(long a, int e) {
+        if (e >= BITS_PER_WORD)
+            return INDEX_OVERFLOW;
+        long currentValue = a & (WORD_MASK << e);
+        return (currentValue == 0) ? INDEX_OVERFLOW : Long.numberOfTrailingZeros(currentValue);
+    }
+
+    protected static int nextSetBitNew(long word, int pos) {
+        return Long.numberOfTrailingZeros(word & -1L << pos);
+    }
+
+    protected static int nextSetBitNew(IStateLong word, int pos) {
+        return Long.numberOfTrailingZeros(word.get() & -1L << pos);
+    }
+
+    protected static long initLastMask(int size) {
+        return WORD_MASK >>> (BITS_PER_WORD - (size % BITS_PER_WORD));
+    }
+
 }

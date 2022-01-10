@@ -74,12 +74,29 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
 //            System.out.println(v);
 //        }
 //        System.out.println("------");
+        int arity = variables.length;
+        int numValues = hashValues(variables);
 
-        if (variables.length == hashValues(variables))
-            this.filter = new AlgoAllDiffAC_SimpleGentZhang20(variables, this, getModel());
-        else {
-            this.filter = new AlgoAllDiffAC_SimpleGentZhang1820(variables, this, getModel());
+        if (arity <= 64 && numValues <= 64) {
+            if (arity < numValues) {
+                filter = new AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64(variables, this, getModel());
+            } else {
+                filter = new AlgoAllDiffAC_SimpleGentZhang20Single64(variables, this, getModel());
+            }
+        } else if (arity <= 64) {
+            if (arity < numValues) {
+                filter = new AlgoAllDiffAC_SimpleGentZhang1820Single64(variables, this, getModel());
+            } else {
+                filter = new AlgoAllDiffAC_SimpleGentZhang20Single64(variables, this, getModel());
+            }
+        } else {
+            if (arity < numValues) {
+                this.filter = new AlgoAllDiffAC_SimpleGentZhang1820(variables, this, getModel());
+            } else {
+                this.filter = new AlgoAllDiffAC_SimpleGentZhang20(variables, this, getModel());
+            }
         }
+
 //        }
 //        Measurer.numAllDiff++;
     }
@@ -130,8 +147,6 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
     public ESat isEntailed() {
         return ESat.TRUE; // redundant propagator (used with PropAllDiffInst)
     }
-
-
 
 
 }
