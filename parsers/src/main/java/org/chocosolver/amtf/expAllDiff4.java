@@ -61,8 +61,8 @@ public class expAllDiff4 {
 //                "WordRam"
 //        };
         String[] algorithms = new String[]{
-                "AC",
-                "WordRamGent",
+//                "AC",
+//                "WordRamGent",
                 "WordRamWordRam",
                 "ACZhang18",
                 "WordRamZhang20",
@@ -153,6 +153,7 @@ public class expAllDiff4 {
 //                                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
 //                                    break;
 //                            }
+
                             solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
 //                            solver.setSearch(Search.defaultSearch(model));
                             solver.solve();
