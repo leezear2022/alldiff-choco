@@ -36,7 +36,7 @@ public class expAllDiff4 {
 //        String[] HeuNames = {"ABS", "IBS", "WDEG", "CHS", "DEFAULT"};
         assert args.length == 1;
         Bench_File File_Benchmark = new Bench_File(args[0]);
-        int heuIdx = Integer.parseInt(args[1]);
+//        int heuIdx = Integer.parseInt(args[1]);
 //        String HeuName = HeuNames[heuIdx];
 //        File_Benchmark.Print();
         String inputFolder = File_Benchmark.path_in;
@@ -67,6 +67,7 @@ public class expAllDiff4 {
                 "ACZhang18",
                 "WordRamZhang20",
                 "Simple",
+                "BC",
         };
 
         int runNum = 1;
@@ -152,7 +153,6 @@ public class expAllDiff4 {
 //                                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
 //                                    break;
 //                            }
-
                             solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
 //                            solver.setSearch(Search.defaultSearch(model));
                             solver.solve();
@@ -179,7 +179,7 @@ public class expAllDiff4 {
 
                         }
                         bw.write("," + algorithm + "," + node + "," + time + "," + matchingTime + "," + filterTime + "," + numDelValuesP1 + "," + numDelValuesP2 + "," + numProp
-                                + "," + numNone + "," + numSkip + "," + numP1 + "," + numP2 + "," + numP1AndP2 + "," + numP1AndP2 + "," + maxArity);
+                                + "," + numNone + "," + numSkip + "," + numP1 + "," + numP2 + "," + numP1AndP2 + "," + maxArity);
 //                        System.out.println("," + algorithm + "," + node + "," + time + "," + matchingTime + "," + filterTime + "," + numDelValuesP1 + "," + numDelValuesP2 + "," + numProp
 //                                + "," + numNone + "," + numSkip + "," + numP1 + "," + numP2 + "," + numP1AndP2 + "," + numP1AndP2 + "," + maxArity);
 //                        bw.write("," + node + "," + time);

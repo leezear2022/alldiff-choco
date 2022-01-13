@@ -36,7 +36,8 @@ public class AlgoAllDiffAC_Fair {
     static public int num = 0;
     // 约束的编号
     private int id;
-    private long xixi = 0;
+    //for debug
+    static private long numCall = -1;
 
     private int arity;
     private IntVar[] vars;
@@ -79,8 +80,6 @@ public class AlgoAllDiffAC_Fair {
     private StrongConnectivityFinderR SCCfinder;
     private long startTime;
 
-    //for debug
-    private long numCall = -1;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -146,23 +145,23 @@ public class AlgoAllDiffAC_Fair {
     //***********************************************************************************
     // PROPAGATION
     //***********************************************************************************
-    void printDoms() {
+    void printDomains() {
+//        for (var v : vars) {
+//            System.out.print(v.getId() + "\t\t: ");
+//            for (int k = v.getLB(), ub = v.getUB(); k <= ub; k = v.nextValue(k)) {
+//                System.out.print(k + " ");
+//            }
+//            System.out.println();
+//        }
+        // 填充B和D
         for (var v : vars) {
-            System.out.print(v.getId() + "\t\t: ");
-            for (int k = v.getLB(), ub = v.getUB(); k <= ub; k = v.nextValue(k)) {
-                System.out.print(k + " ");
-            }
-            System.out.println();
+            System.out.println(v);
         }
     }
 
     public boolean propagate() throws ContradictionException {
-        numCall++;
-//        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
-//        if (id == 30 && numCall == 68) {
-//            printDoms();
-//        }
-
+//        System.out.println(" propagate: " + (++numCall) + "----------------");
+//        printDomains();
         Measurer.enterProp();
 //        if (id == 30 && numCall == 68) {
 //            System.out.println("before repair: " + Arrays.toString(var2Val));
@@ -422,12 +421,12 @@ public class AlgoAllDiffAC_Fair {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
 //                            if (id == 30 && numCall == 68)
-//                                System.out.println("instantiate  : " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            System.out.println("instantiate:\t" + varIdx + ", " + valIdx);
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
 //                            if (id == 30 && numCall == 68)
-//                                System.out.println("second delete: " + v.getId() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            System.out.println("second delete:\t" + varIdx + ", " + valIdx);
                             filter |= v.removeValue(k, aCause);
                         }
                     }

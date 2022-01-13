@@ -10,16 +10,19 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.IStateBitSetPartition;
 import org.chocosolver.util.objects.IStateLongPartition;
 import org.chocosolver.util.objects.IStatePartition;
+import org.chocosolver.util.objects.SparseSet;
+
+import java.util.BitSet;
 
 public abstract class AlgoAllDiffAC_Simple {
     // 约束的个数
-    static public int INDEX_OVERFLOW = -1;
-
-    public static final int ADDRESS_BITS_PER_WORD = 6;
-    public static final int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
-    public static final int BIT_INDEX_MASK = BITS_PER_WORD - 1;
-    public static final long WORD_MASK = 0xffffffffffffffffL;
-
+    protected static int INDEX_OVERFLOW = -1;
+    protected static final int ADDRESS_BITS_PER_WORD = 6;
+    protected static final int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
+    protected static final int BIT_INDEX_MASK = BITS_PER_WORD - 1;
+    protected static final long WORD_MASK = 0xffffffffffffffffL;
+    protected static int num = 0;
+    protected static long numCall = -1;
     // 约束的编号
     protected int id;
     protected int arity;
@@ -44,6 +47,13 @@ public abstract class AlgoAllDiffAC_Simple {
 //    private SimpleBitSet[] D;
     protected IEnvironment env;
 
+    // 需赋值或删值的变量，保证这些事件顺序进行，每轮需重置
+    protected BitSet changedVars;
+    // 0=删值 1=赋值
+    protected BitSet changedType;
+    // 待处理的值
+    protected BitSet[] changedVals;
+
     public AlgoAllDiffAC_Simple(IntVar[] variables, ICause cause) {
         vars = variables;
         aCause = cause;
@@ -60,6 +70,12 @@ public abstract class AlgoAllDiffAC_Simple {
         val2Idx = new TIntIntHashMap();
         hashValues();
 
+        changedVars = new BitSet(arity);
+        changedType = new BitSet(arity);
+        changedVals = new BitSet[arity];
+        for (int i = 0; i < arity; i++) {
+            changedVals[i] = new BitSet(numValues);
+        }
     }
 
     public int hashValues() {
@@ -107,6 +123,49 @@ public abstract class AlgoAllDiffAC_Simple {
 
     public abstract boolean propagate() throws ContradictionException;
 
+    protected abstract void removeValueR(int varIdx, int valIdx);
+
+    protected abstract void instantiateToR(int varIdx, int valIdx);
+
+    // for keep prop Q same order with Regin algo
+    protected void recordRemoveVal(int varIdx, int valIdx) {
+        if (!changedVars.get(varIdx)) {
+            changedVals[varIdx].clear();
+        }
+        changedVars.set(varIdx);
+        changedType.clear(varIdx);
+        changedVals[varIdx].set(valIdx);
+        removeValueR(varIdx, valIdx);
+    }
+
+    // for keep prop Q same order with Regin algo
+    protected void recordInstVar(int varIdx, int valIdx) {
+        changedVars.set(varIdx);
+        changedType.set(varIdx);
+        changedVals[varIdx].clear();
+        changedVals[varIdx].set(valIdx);
+        instantiateToR(varIdx, valIdx);
+    }
+
+    protected void dealChanges() throws ContradictionException {
+        for (int i = changedVars.nextSetBit(0); i >= 0;
+             i = changedVars.nextSetBit(i + 1)) {
+            IntVar v = vars[i];
+            if (changedType.get(i)) {
+                // inst val
+                int valIdx = changedVals[i].nextSetBit(0);
+                v.instantiateTo(idx2Val[valIdx], aCause);
+//                System.out.println("instantiate  : " + i + ", " + valIdx);
+            } else {
+                // rem val
+                for (int j = changedVals[i].nextSetBit(0); j > 0;
+                     j = changedVals[i].nextSetBit(j + 1)) {
+                    v.removeValue(idx2Val[j], aCause);
+//                    System.out.println("second delete1: " + i + ", " + j);
+                }
+            }
+        }
+    }
 
 //    protected static void set(IStateLong a) {
 //        a.set(lastMask);

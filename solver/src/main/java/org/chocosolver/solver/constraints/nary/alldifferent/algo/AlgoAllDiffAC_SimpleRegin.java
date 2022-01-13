@@ -443,6 +443,13 @@ public class AlgoAllDiffAC_SimpleRegin extends AlgoAllDiffAC_Simple {
             System.out.println(v);
         }
     }
+    @Override
+    protected void removeValueR(int varIdx, int valIdx) {
+    }
+
+    @Override
+    protected void instantiateToR(int varIdx, int valIdx) {
+    }
 
 //    private void printBitDomains() {
 //        for (int i = 0; i < numValuess; ++i) {

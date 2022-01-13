@@ -53,14 +53,14 @@ public class testAllDiff {
 //                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
 //                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0020-m1.xml",
 //                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-06.xml",
-//                "/Users/leezear/exp/AllDiffBench/ColouredQueens/ColouredQueens-06.xml",
+                "/Users/leezear/exp/AllDiffBench/ColouredQueens/ColouredQueens-08.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-11-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
-                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml",
+//                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0004-m1.xml",
 //                "/Users/leezear/exp/AllDiffBench/CostasArray/CostasArray-12.xml",
 //                "/Users/leezear/exp/AllDiffBench/GracefulGraph/GracefulGraph-K03-P04.xml",
 //                "C:/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P03.xml",
@@ -98,7 +98,7 @@ public class testAllDiff {
 ////                "AC_ZHANG",
 //        };
         String[] algorithms = new String[]{
-
+                "AC",
 //                "AC_ZHANG",
 //                "ACFair",
 //                "AC_REGIN",
@@ -138,7 +138,7 @@ public class testAllDiff {
 //                "ACSimpleGent",
 //                "ACSimpleGentZhang18",
 //                "ACSimpleGentZhang20",
-                "ACSimpleGentZhang20Single64",
+//                "ACSimpleGentZhang20Single64",
 //                "AC",
         };
 //        String[] algorithms = new String[]{

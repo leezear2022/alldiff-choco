@@ -175,6 +175,12 @@ public class PropagationEngine {
             manageModifications();
             for (int i = nextNotEmpty(); i > -1; i = nextNotEmpty()) {
                 assert !pro_queue[i].isEmpty() : "try to pop a propagator from an empty queue";
+
+//                for (int j = 0; j < pro_queue[i].size(); j++) {
+//                    System.out.print(pro_queue[i].get(j).getId() + " ");
+//                }
+//                System.out.println(", size = " + pro_queue[i].size());
+
                 lastProp = pro_queue[i].pollFirst();
                 if (pro_queue[i].isEmpty()) {
                     notEmpty &= ~(1 << i);

@@ -59,24 +59,10 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
      */
     public PropAllDiffAC_Simple(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-
-//        Measurer.maxAllDiffArity = Math.max(Measurer.maxAllDiffArity, vars.length);
-
-//        if (vars.length <= 32) {
-//            this.filter = new AlgoAllDiffAC_Naive32(variables, this);
-//        } else if (vars.length <= 64) {
-//            this.filter = new AlgoAllDiffAC_Naive64(variables, this);
-//        } else {
-//        System.out.println("------");
-//        System.out.println(this.getId() + ": ");
-//
-//        for (var v : variables) {
-//            System.out.println(v);
-//        }
 //        System.out.println("------");
         int arity = variables.length;
         int numValues = hashValues(variables);
-
+//
         if (arity <= 64 && numValues <= 64) {
             if (arity < numValues) {
                 filter = new AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64(variables, this, getModel());
@@ -139,7 +125,7 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
 
     @Override
     public void propagate(int evtmask) throws ContradictionException {
-//        System.out.println("----------------" + this.getId() + " propagate----------------");
+//        System.out.print("----------------" + this.getId());
         filter.propagate();
     }
 

@@ -48,7 +48,8 @@ public class DecisionPath extends DecisionMaker implements Serializable {
 
     /**
      * Create a decision path
-     * @param environment    backtracking environment
+     *
+     * @param environment backtracking environment
      */
     public DecisionPath(IEnvironment environment) {
         this.decisions = new ArrayList<>();
@@ -61,7 +62,7 @@ public class DecisionPath extends DecisionMaker implements Serializable {
      */
     public void buildNext() {
         int p = last.get();
-        if(p == decisions.size()-1) {
+        if (p == decisions.size() - 1) {
             decisions.get(p).buildNext();
         }
     }
@@ -74,7 +75,9 @@ public class DecisionPath extends DecisionMaker implements Serializable {
      */
     public void apply() throws ContradictionException {
         int p = last.get();
-        if(p == decisions.size()-1) {
+//        System.out.println("*****");
+        if (p == decisions.size() - 1) {
+//            System.out.println(decisions.get(p));
             decisions.get(p).apply();
             last.add(1);
         }
@@ -88,11 +91,11 @@ public class DecisionPath extends DecisionMaker implements Serializable {
     public void pushDecision(Decision decision) {
         int p = last.get();
         decision.setPosition(p);
-        if(decisions.size() == p){
+        if (decisions.size() == p) {
             decisions.add(decision);
-        }else if(decisions.size() == p + 1) {
+        } else if (decisions.size() == p + 1) {
             decisions.set(p, decision);
-        }else throw new SolverException("Cannot add decision to decision path");
+        } else throw new SolverException("Cannot add decision to decision path");
     }
 
     /**
@@ -108,6 +111,7 @@ public class DecisionPath extends DecisionMaker implements Serializable {
      * Synchronizes the decision path after a backtrack.
      * Removes all decisions with level greater or equal to the current level.
      * Recall that the very first decision, {@link RootDecision#ROOT}, can not be removed from this.
+     *
      * @param free set to <i>true</i> to synchronize <b>and</b> free out-dated decisions
      */
     public void synchronize(boolean free) {
@@ -115,7 +119,7 @@ public class DecisionPath extends DecisionMaker implements Serializable {
             int t = last.get();
             for (int f = decisions.size() - 1; f >= t; f--) {
                 Decision d = decisions.remove(f);
-                if(free)d.free();
+                if (free) d.free();
             }
         }
     }
@@ -148,7 +152,7 @@ public class DecisionPath extends DecisionMaker implements Serializable {
      * @param i index of the decision to return
      * @return the decision in position <i>i</i> in this decision path
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         (<tt>index &lt; 0 || index &gt;= size()</tt>)
+     *                                   (<tt>index &lt; 0 || index &gt;= size()</tt>)
      */
     public Decision getDecision(int i) {
         if (i < 0 || i >= decisions.size()) {
@@ -190,7 +194,7 @@ public class DecisionPath extends DecisionMaker implements Serializable {
     public String toString() {
         StringBuilder sb = new StringBuilder(String.format("Path[%s]: ", decisions.size()));
         sb.append(decisions.get(0));
-        for(int i = 1; i < decisions.size(); i++){
+        for (int i = 1; i < decisions.size(); i++) {
             sb.append(", ").append(decisions.get(i));
         }
         return sb.toString();

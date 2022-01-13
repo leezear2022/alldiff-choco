@@ -11,7 +11,7 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
-import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleGentFree;
+//import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleGentFree;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleGentZhang18;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;

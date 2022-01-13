@@ -61,7 +61,7 @@ public class IStateLongPartition extends IStatePartition {
         if (e < 0)
             return -1;
         long currentValue = sccMask.get() & (WORD_MASK >>> -(e + 1));
-        return (currentValue == 0) ? INDEX_OVERFLOW : Long.numberOfTrailingZeros(currentValue);
+        return (currentValue == 0) ? INDEX_OVERFLOW : BITS_PER_WORD - 1 - Long.numberOfLeadingZeros(currentValue);
     }
 
     @Override
