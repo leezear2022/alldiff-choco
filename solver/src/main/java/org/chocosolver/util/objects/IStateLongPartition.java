@@ -22,12 +22,12 @@ public class IStateLongPartition extends IStatePartition {
     //for bitwise operation
     @Override
     void maskSet(int e) {
-        sccMask.set(sccMask.get() | (1 << e));
+        sccMask.set(sccMask.get() | (1l << e));
     }
 
     @Override
     void maskClear(int e) {
-        sccMask.set(sccMask.get() & (~(1 << e)));
+        sccMask.set(sccMask.get() & (~(1l << e)));
     }
 
     @Override

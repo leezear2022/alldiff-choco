@@ -405,7 +405,7 @@ public abstract class IStatePartition {
             dense[index] = tmp;
             dense[movedIndex] = e;
         }
-        --movedIndex;
+//        --movedIndex;
     }
 
     public void addGamma(int e) {

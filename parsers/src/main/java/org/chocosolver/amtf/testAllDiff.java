@@ -51,9 +51,9 @@ public class testAllDiff {
 //                "F:\\X3Benchmarks\\alldiff\\Queens-m1-s1\\Queens-0008-m1.xml"
 //                "D:/AllDiffBench/ColouredQueens/ColouredQueens-07.xml",
 //                "D:/AllDiffBench-1/Queens-m1-s1/Queens-0008-m1.xml",
-//                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0020-m1.xml",
+//                "C:/exp/AllDiffBench-1/Queens-m1-s1/Queens-0030-m1.xml",
 //                "C:\\exp\\AllDiffBench\\ColouredQueens\\ColouredQueens-06.xml",
-                "/Users/leezear/exp/AllDiffBench/ColouredQueens/ColouredQueens-08.xml",
+//                "/Users/leezear/exp/AllDiffBench/ColouredQueens/ColouredQueens-08.xml",
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-11-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
@@ -62,10 +62,12 @@ public class testAllDiff {
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0004-m1.xml",
 //                "/Users/leezear/exp/AllDiffBench/CostasArray/CostasArray-12.xml",
+//                "C:\\exp\\AllDiffBench\\CostasArray\\CostasArray-10.xml",
 //                "/Users/leezear/exp/AllDiffBench/GracefulGraph/GracefulGraph-K03-P04.xml",
 //                "C:/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P03.xml",
 //                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
-//                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml"
+//                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml",
+                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-09-a3.xml",
 
         };
         XCSPParser parser = new XCSPParser();
@@ -100,7 +102,7 @@ public class testAllDiff {
         String[] algorithms = new String[]{
                 "AC",
 //                "AC_ZHANG",
-//                "ACFair",
+                "ACFair",
 //                "AC_REGIN",
 //                "ACChen",
 //                "ACZhang20Bit",
@@ -170,7 +172,7 @@ public class testAllDiff {
                     Solver solver = model.getSolver();
 //                    solver.setSearch(Search.defaultSearch(model));
 //                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.RAND.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.DOM.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
@@ -178,7 +180,7 @@ public class testAllDiff {
 //                    solver.setSearch(new ImpactBased(decVars, true));
 //                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
-//                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
 //                  solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
 //                  solver.setSearch(intVarSearch();

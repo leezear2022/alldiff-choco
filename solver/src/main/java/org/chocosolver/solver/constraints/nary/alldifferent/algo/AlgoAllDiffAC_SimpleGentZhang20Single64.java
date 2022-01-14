@@ -16,6 +16,8 @@ import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
+import java.util.Arrays;
+
 /**
  * Algorithm of Alldifferent with AC
  * <p>
@@ -248,6 +250,8 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
             Measurer.filterTime += System.nanoTime() - startTime;
         }
         dealChanges();
+
+//        printDomains();
         return filter;
     }
 
@@ -630,9 +634,9 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
 
     private boolean filterDomainsPartition(int sccStartIndex) throws ContradictionException {
         boolean filter = false;
-        if (numCall == 328) {
-            System.out.println(partition);
-        }
+//        if (numCall == 328) {
+//            System.out.println(partition);
+//        }
         partition.setIteratorIndexBySCCStartIndex(sccStartIndex);
         while (partition.hasNext()) {
             // 分为三个分区：sccStart,checked,unknown,moved,sccEnd

@@ -10,7 +10,6 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.IStateBitSetPartition;
 import org.chocosolver.util.objects.IStateLongPartition;
 import org.chocosolver.util.objects.IStatePartition;
-import org.chocosolver.util.objects.SparseSet;
 
 import java.util.BitSet;
 
@@ -155,13 +154,13 @@ public abstract class AlgoAllDiffAC_Simple {
                 // inst val
                 int valIdx = changedVals[i].nextSetBit(0);
                 v.instantiateTo(idx2Val[valIdx], aCause);
-//                System.out.println("instantiate  : " + i + ", " + valIdx);
+//                System.out.println("instantiate:\t" + i + ", " + valIdx);
             } else {
                 // rem val
                 for (int j = changedVals[i].nextSetBit(0); j > 0;
                      j = changedVals[i].nextSetBit(j + 1)) {
                     v.removeValue(idx2Val[j], aCause);
-//                    System.out.println("second delete1: " + i + ", " + j);
+//                    System.out.println("second delete:\t" + i + ", " + j);
                 }
             }
         }
@@ -176,24 +175,24 @@ public abstract class AlgoAllDiffAC_Simple {
     }
 
     protected static void set(IStateLong a, int e) {
-        a.set(a.get() | (1 << e));
+        a.set(a.get() | (1l << e));
     }
 
     protected static void set(IStateLong a, Integer e) {
-        a.set(a.get() | (1 << e));
+        a.set(a.get() | (1l << e));
     }
 
 
     protected static void setBit(IStateLong a, int e) {
-        a.set(a.get() | (1 << e));
+        a.set(a.get() | (1l << e));
     }
 
     protected static void setBit(IStateLong a, Integer e) {
-        a.set(a.get() | (1 << e));
+        a.set(a.get() | (1l << e));
     }
 
     protected static void clear(IStateLong a, int e) {
-        a.set(a.get() & (~(1 << e)));
+        a.set(a.get() & (~(1l << e)));
     }
 
 

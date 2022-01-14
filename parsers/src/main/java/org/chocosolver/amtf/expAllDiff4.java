@@ -66,7 +66,7 @@ public class expAllDiff4 {
                 "WordRamWordRam",
                 "ACZhang18",
                 "WordRamZhang20",
-                "Simple",
+                "ACSimple",
                 "BC",
         };
 

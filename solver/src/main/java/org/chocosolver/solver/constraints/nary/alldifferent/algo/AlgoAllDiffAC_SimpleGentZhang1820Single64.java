@@ -122,6 +122,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //                RB[valIdx]. (i);
                 set(RB[valIdx], i);
                 RD[i].set(valIdx);
+//                System.out.println(domIsRegular[i] + "," + i + "," + valIdx + "," + Long.toBinaryString(RB[valIdx].get()) + "," + Long.bitCount(RB[valIdx].get()) + "," + RD[i]);
             }
             vit.dispose();
         }
@@ -303,6 +304,10 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
         for (var v : vars) {
             System.out.println(v);
         }
+
+//        for (int i = 0; i < numValues; i++) {
+//            System.out.println(Long.bitCount(RB[i].get()) + " " + Long.toBinaryString(RB[i].get()));
+//        }
 //
 //        // 填充B和D
 //        for (int i = 0; i < arity; ++i) {

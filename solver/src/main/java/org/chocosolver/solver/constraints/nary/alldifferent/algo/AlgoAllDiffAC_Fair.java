@@ -13,6 +13,8 @@ import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -170,6 +172,7 @@ public class AlgoAllDiffAC_Fair {
         startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
+//        System.out.println("matching: "+ Arrays.toString(var2Val));
 //        if (id == 30 && numCall == 68)
 //            System.out.println("after repair: " + Arrays.toString(var2Val));
 ////        System.out.println("-----final matching-----");
@@ -185,6 +188,7 @@ public class AlgoAllDiffAC_Fair {
         startTime = System.nanoTime();
         boolean filter = filter();
         Measurer.filterTime += System.nanoTime() - startTime;
+//        printDomains();
         return filter;
     }
 
