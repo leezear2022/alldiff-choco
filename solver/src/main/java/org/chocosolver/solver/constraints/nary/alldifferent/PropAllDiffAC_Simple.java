@@ -9,18 +9,13 @@
  */
 package org.chocosolver.solver.constraints.nary.alldifferent;
 
-import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
-import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.*;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.ESat;
-import org.chocosolver.util.objects.IStateBitSetPartition;
-import org.chocosolver.util.objects.IStateLongPartition;
-import org.chocosolver.util.objects.IStatePartition;
 
 /**
  * Propagator for AllDifferent AC constraint for integer variables
@@ -77,6 +72,7 @@ public class PropAllDiffAC_Simple extends Propagator<IntVar> {
             }
         } else {
             if (arity < numValues) {
+//                filter = new AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64(variables, this, getModel());
                 this.filter = new AlgoAllDiffAC_SimpleGentZhang1820(variables, this, getModel());
             } else {
                 this.filter = new AlgoAllDiffAC_SimpleGentZhang20(variables, this, getModel());

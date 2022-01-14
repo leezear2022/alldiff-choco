@@ -220,12 +220,13 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-//        System.out.println("----------------" + id + " propagate: " + (++numCall) + "----------------");
+//        System.out.println(" propagate: " + (++numCall) + "----------------");
 //        printDomains();
         boolean filter = false;
 //        instVar.clear();
 //        if (numCall == 24)
 //            System.out.println(partition);
+        changedVars.clear();
         Measurer.enterProp();
 //        System.out.println(partition);
         if (initialPropagation) {
@@ -234,6 +235,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
 //            updatedVars.fill();
 //            updatedVals.fill();
             startTime = System.nanoTime();
+            deltaUpdate();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
 //            System.out.println("matching: " + Arrays.toString(var2ValR));
@@ -267,8 +269,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
 //            System.out.println(partition);
             initialPropagation = false;
         } else {
-            deltaUpdate();
             startTime = System.nanoTime();
+            deltaUpdate();
             filter |= propagate_SCC_Match();
 //            System.out.println("matching: " + Arrays.toString(var2ValR));
             Measurer.matchingTime += System.nanoTime() - startTime;
@@ -519,6 +521,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
 //        System.out.println("freeNodes: " + freeNodesR);
 //        System.out.println("gamma: " + gammaMask);
 //        System.out.println("A: " + A);
+//        System.out.println("trigger: " + triggeringVars);
         // for Zhang18
         // 带gamma的分区总在第0个分区中，
         // 若第0个分区changed并且freenode不为空。

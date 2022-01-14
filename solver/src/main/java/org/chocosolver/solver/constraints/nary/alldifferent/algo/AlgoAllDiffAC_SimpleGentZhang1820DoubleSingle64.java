@@ -18,6 +18,7 @@ import org.chocosolver.util.objects.SimpleBitSet;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -259,7 +260,6 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 //        printDomains();
         boolean filter = false;
         changedVars.clear();
-
         Measurer.enterProp();
 //        System.out.println(partition);
         if (initialPropagation) {
@@ -267,7 +267,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 //            triggeringVars.fill();
 //            updatedVars.fill();
 //            updatedVals.fill();
+            triggeringVars.fill();
             startTime = System.nanoTime();
+            deltaUpdate();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
 //            System.out.println("matching: " + Arrays.toString(var2ValR));
@@ -296,8 +298,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 //            System.out.println(partition);
             initialPropagation = false;
         } else {
-            deltaUpdate();
+
             startTime = System.nanoTime();
+            deltaUpdate();
             filter |= propagate_SCC_Match();
 //            System.out.println("matching: " + Arrays.toString(var2ValR));
             Measurer.matchingTime += System.nanoTime() - startTime;
@@ -562,6 +565,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 //        System.out.println("freeNodes: " + freeNodesR);
 //        System.out.println("gamma: " + gammaMask);
 //        System.out.println("A: " + A);
+//        System.out.println("trigger: " + triggeringVars);
         // for Zhang18
         // 带gamma的分区总在第0个分区中，
         // 若第0个分区changed并且freenode不为空。

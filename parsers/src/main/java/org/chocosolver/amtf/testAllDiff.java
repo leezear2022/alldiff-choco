@@ -67,8 +67,8 @@ public class testAllDiff {
 //                "C:/exp/AllDiffBench/GracefulGraph/GracefulGraph-K02-P03.xml",
 //                "C:/exp/AllDiffBench/GolombRuler/NumberPartitioning-032.xml",
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml",
-                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-09-a3.xml",
-
+//                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-09-a3.xml",
+                "C:\\exp\\AllDiffBench\\Kakuro\\Kakuro-hard-038-sumdiff.xml",
         };
         XCSPParser parser = new XCSPParser();
 //        String[] algorithms = new String[]{
@@ -102,7 +102,7 @@ public class testAllDiff {
         String[] algorithms = new String[]{
                 "AC",
 //                "AC_ZHANG",
-                "ACFair",
+//                "ACFair",
 //                "AC_REGIN",
 //                "ACChen",
 //                "ACZhang20Bit",

@@ -237,7 +237,6 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //        printDomains();
         boolean filter = false;
         changedVars.clear();
-
         Measurer.enterProp();
 //        System.out.println(partition);
         if (initialPropagation) {
@@ -245,7 +244,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //            triggeringVars.fill();
 //            updatedVars.fill();
 //            updatedVals.fill();
+            triggeringVars.fill();
             startTime = System.nanoTime();
+            deltaUpdate();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
 //            System.out.println("matching: " + Arrays.toString(var2ValR));
@@ -279,8 +280,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //            System.out.println(partition);
             initialPropagation = false;
         } else {
-            deltaUpdate();
             startTime = System.nanoTime();
+            deltaUpdate();
             filter |= propagate_SCC_Match();
 //            System.out.println("matching: " + Arrays.toString(var2ValR));
             Measurer.matchingTime += System.nanoTime() - startTime;
