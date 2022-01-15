@@ -2,8 +2,6 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
 
-import gnu.trove.list.array.TIntArrayList;
-import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.memory.IStateInt;
 import org.chocosolver.memory.IStateLong;
 import org.chocosolver.solver.ICause;
@@ -14,12 +12,8 @@ import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
 import org.chocosolver.util.iterators.DisposableValueIterator;
 import org.chocosolver.util.objects.IStatePartition;
 import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.objects.SimpleBitSet;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
-
-import java.util.Arrays;
-import java.util.BitSet;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -245,7 +239,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
                     clear(freeNodesR, valIdx);
                 }
 
-//                System.out.println("delta: " + varIdx + ", " + valIdx);
+
+//                if (numCall == 1087)
+//                    System.out.println("delta: " + varIdx + ", " + valIdx);
             }
         };
     }
@@ -371,7 +367,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 //        variable_visited_[start] = true;
 //        variable_visited_.set(start);
 //        unVisitedVariables.clear(start);
-        unVisitedVariables &= (~(1 << start));
+        unVisitedVariables &= (~(1l << start));
         variable_visited_from_[start] = -1;
 
         while (num_visited < num_to_visit) {
@@ -386,7 +382,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 //                if (visitedValues.get(valIdx)) continue;
                 if (get(visitedValues, valIdx)) continue;
 //                visitedValues.set(valIdx);
-                visitedValues |= (1 << valIdx);
+                visitedValues |= (1l << valIdx);
 //                updateBitBel(valIdx);
 //                if (val2Var[valIdx] == -1) {
 //                if (!matchedValuesR.get(valIdx)) {
@@ -439,7 +435,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
                     int next_node = val2VarR[valIdx].get();
 //                    variable_visited_.set(next_node);
 //                    unVisitedVariables.clear(next_node);
-                    unVisitedVariables &= (~(1 << next_node));
+                    unVisitedVariables &= (~(1l << next_node));
 //                    System.out.println(num_to_visit + "," + next_node);
                     // 把这个变量加入队列中
                     visiting_[num_to_visit++] = next_node;
@@ -561,11 +557,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 
     protected boolean propagate_SCC_filter() throws ContradictionException {
         boolean filter = false;
-//        System.out.println("changed: " + changedSCCStartIndex);
-//        System.out.println("freeNodes: " + freeNodesR);
-//        System.out.println("gamma: " + gammaMask);
-//        System.out.println("A: " + A);
-//        System.out.println("trigger: " + triggeringVars);
+        gammaMask = 0;
+        A = freeNodesR.get();
         // for Zhang18
         // 带gamma的分区总在第0个分区中，
         // 若第0个分区changed并且freenode不为空。
@@ -616,12 +609,12 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
     private int distinguish() {
 //        notGamma.fill();
 //        notA.fill();
-        int numBit;
-        gammaMask = 0;
-//        gammaMask.set;
-//        freeNodesR.generateBitSet(A);
-//        A.set(freeNodesR);
-        A = freeNodesR.get();
+//        int numBit;
+//        gammaMask = 0;
+////        gammaMask.set;
+////        freeNodesR.generateBitSet(A);
+////        A.set(freeNodesR);
+//        A = freeNodesR.get();
 //        System.out.println("A: " + Long.toBinaryString(A));
 //        // freeNode
 //        if (!freeNodesR.isEmpty())
@@ -654,7 +647,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
             gammaFrontier |= RB[valIdx].get() & ~gammaMask;
 //            // 除去第i个变量
 //            gammaFrontier.clear(varIdx);
-            gammaFrontier &= (~(1 << varIdx));
+            gammaFrontier &= (~(1l << varIdx));
             // gamma 扩展
 //            numBit = gammaMask.orCount(RB[valIdx]);
             gammaMask |= RB[valIdx].get();
@@ -662,7 +655,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
             if (Long.bitCount(gammaMask) == firstSCCSize)
                 return INDEX_OVERFLOW;
 //            A.set(valIdx);
-            A |= (1 << valIdx);
+            A |= (1l << valIdx);
         }
 //        System.out.println("gamma: " + Long.toBinaryString(gammaMask));
         // 直接分裂SCCs,返回新SCC的StartIndex
@@ -721,7 +714,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 //            graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
 
             graphLinkedMatrix[varIdx] = RB[valIdx].get() & ~gammaMask;
-            graphLinkedMatrix[varIdx] &= (~(1 << varIdx));
+            graphLinkedMatrix[varIdx] &= (~(1l << varIdx));
             graphLinkedFrontier[varIdx] = graphLinkedMatrix[varIdx];
 
             // 初始化本scc的deletedVars
@@ -755,7 +748,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 
             graphLinkedMatrix[varIdx] = RB[valIdx].get();
             // graphLinkedMatrix[varIdx].clear(varIdx);
-            graphLinkedMatrix[varIdx] &= (~(1 << varIdx));
+            graphLinkedMatrix[varIdx] &= (~(1l << varIdx));
             // graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
             graphLinkedFrontier[varIdx] = graphLinkedMatrix[varIdx];
 
@@ -788,6 +781,10 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
             while (del.hasNextValid()) {
                 int valIdx = del.next();
 //                System.out.println("ED: check: " + varIdx + ", " + valIdx);
+                // 值彻底没有了，所有的图都需要重新计算
+                if (!get(validValuesR, valIdx)) {
+                    return false;
+                }
                 if (!get(A, valIdx) && get(validValuesR, valIdx)) {
                     // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
                     if (!checkSCC(varIdx, valIdx) ||
@@ -948,7 +945,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 //            graphLinkedMatrix[x].or(graphLinkedMatrix[i]);
 
             graphLinkedFrontier[x] |= graphLinkedMatrix[i] & ~graphLinkedMatrix[x];
-            graphLinkedFrontier[x] &= (~(1 << i));
+            graphLinkedFrontier[x] &= (~(1l << i));
             graphLinkedMatrix[x] |= graphLinkedMatrix[i];
             if (get(graphLinkedMatrix[x], y)) {
                 return true;

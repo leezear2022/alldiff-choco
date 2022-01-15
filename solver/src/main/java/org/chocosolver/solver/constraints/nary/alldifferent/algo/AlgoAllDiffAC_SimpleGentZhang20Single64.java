@@ -317,7 +317,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
 //        variable_visited_.set(start);
 //        unVisitedVariables.clear(start);
 //        clear(unVisitedVariables, start);
-        unVisitedVariables &= (~(1 << start));
+        unVisitedVariables &= (~(1l << start));
         variable_visited_from_[start] = -1;
 
         while (num_visited < num_to_visit) {
@@ -333,7 +333,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
                 if (get(visitedValues, valIdx)) continue;
 //                System.out.println("out:" + node + "," + valIdx);
 //                set(visitedValues, valIdx);
-                visitedValues |= (1 << valIdx);
+                visitedValues |= (1l << valIdx);
 //                updateBitBel(valIdx);
 //                if (val2Var[valIdx] == -1) {
                 if (!get(matchedValuesR, valIdx)) {
@@ -384,7 +384,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
 //                    System.out.println("nextNode: " + next_node);
 //                    variable_visited_.set(next_node);
 //                    clear(unVisitedVariables, next_node);
-                    unVisitedVariables &= (~(1 << next_node));
+                    unVisitedVariables &= (~(1l << next_node));
 //                    clear(unVisitedVariables, );
 //                    System.out.println(num_to_visit + "," + next_node);
                     // 把这个变量加入队列中
@@ -410,6 +410,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
             }
             if (var2ValR[varIdx].get() == -1) {
                 // No augmenting path exists.
+//                System.out.println("error: "+varIdx);
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
         }
@@ -544,7 +545,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
             // graphLinkedMatrix[varIdx].set(RB[valIdx]);
             graphLinkedMatrix[varIdx] = RB[valIdx].get();
             // graphLinkedMatrix[varIdx].clear(varIdx);
-            graphLinkedMatrix[varIdx] &= (~(1 << varIdx));
+            graphLinkedMatrix[varIdx] &= (~(1l << varIdx));
             // graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
             graphLinkedFrontier[varIdx] = graphLinkedMatrix[varIdx];
 
@@ -730,7 +731,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
 
             graphLinkedFrontier[x] |= graphLinkedMatrix[i] & ~graphLinkedMatrix[x];
 //            clear(graphLinkedFrontier[x], i);
-            graphLinkedFrontier[x] &= (~(1 << i));
+            graphLinkedFrontier[x] &= (~(1l << i));
             graphLinkedMatrix[x] |= graphLinkedMatrix[i];
             if (get(graphLinkedMatrix[x], y)) {
                 return true;

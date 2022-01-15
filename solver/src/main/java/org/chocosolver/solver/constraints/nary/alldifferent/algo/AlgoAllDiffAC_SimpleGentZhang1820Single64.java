@@ -530,6 +530,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 
     protected boolean propagate_SCC_filter() throws ContradictionException {
         boolean filter = false;
+        gammaMask = 0;
+        A.set(freeNodesR);
 //        System.out.println("changed: " + changedSCCStartIndex);
 //        System.out.println("freeNodes: " + freeNodesR);
 //        System.out.println("gamma: " + gammaMask);
@@ -586,11 +588,10 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
     private int distinguish() {
 //        notGamma.fill();
 //        notA.fill();
-        int numBit;
         gammaMask = 0;
+        A.set(freeNodesR);
 //        gammaMask.set;
 //        freeNodesR.generateBitSet(A);
-        A.set(freeNodesR);
 //        System.out.println("A: " + A);
 //        // freeNode
 //        if (!freeNodesR.isEmpty())
@@ -622,7 +623,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
             gammaFrontier |= RB[valIdx].get() & ~gammaMask;
 //            // 除去第i个变量
 //            gammaFrontier.clear(varIdx);
-            gammaFrontier &= (~(1 << varIdx));
+            gammaFrontier &= (~(1l << varIdx));
             // gamma 扩展
 //            numBit = gammaMask.orCount(RB[valIdx]);
             gammaMask |= RB[valIdx].get();
@@ -687,7 +688,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //            graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
 
             graphLinkedMatrix[varIdx] = RB[valIdx].get() & ~gammaMask;
-            graphLinkedMatrix[varIdx] &= (~(1 << varIdx));
+            graphLinkedMatrix[varIdx] &= (~(1l << varIdx));
             graphLinkedFrontier[varIdx] = graphLinkedMatrix[varIdx];
 
             // 初始化本scc的deletedVars
@@ -723,7 +724,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 ////            graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
 //
 //            graphLinkedMatrix[varIdx] = RB[valIdx].get() & ~gammaMask;
-//            graphLinkedMatrix[varIdx] &= (~(1 << varIdx));
+//            graphLinkedMatrix[varIdx] &= (~(1l << varIdx));
 //            graphLinkedFrontier[varIdx] = graphLinkedMatrix[varIdx];
 //
 //            // 初始化本scc的deletedVars
@@ -757,7 +758,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 
             graphLinkedMatrix[varIdx] = RB[valIdx].get();
             // graphLinkedMatrix[varIdx].clear(varIdx);
-            graphLinkedMatrix[varIdx] &= (~(1 << varIdx));
+            graphLinkedMatrix[varIdx] &= (~(1l << varIdx));
             // graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
             graphLinkedFrontier[varIdx] = graphLinkedMatrix[varIdx];
 
@@ -786,6 +787,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
             del.iterateValid();
             while (del.hasNextValid()) {
                 int valIdx = del.next();
+                if (!validValuesR.get(valIdx)) {
+                    return false;
+                }
 //                System.out.println("ED: check: " + varIdx + ", " + valIdx);
                 if (!A.get(valIdx) && validValuesR.get(valIdx)) {
                     // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
@@ -943,7 +947,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 
             graphLinkedFrontier[x] |= graphLinkedMatrix[i] & ~graphLinkedMatrix[x];
 //            clear(graphLinkedFrontier[x], i);
-            graphLinkedFrontier[x] &= (~(1 << i));
+            graphLinkedFrontier[x] &= (~(1l << i));
             graphLinkedMatrix[x] |= graphLinkedMatrix[i];
             if (get(graphLinkedMatrix[x], y)) {
                 return true;

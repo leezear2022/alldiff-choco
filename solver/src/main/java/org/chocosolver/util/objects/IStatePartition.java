@@ -12,6 +12,7 @@ public abstract class IStatePartition {
     int size;
     int limit;
     int maxIndex;
+    int lastIndex;
     int lastRet = INDEX_OVER_OVERFLOW;
     int cursor = INDEX_OVER_OVERFLOW;
     int sccEndIndex = INDEX_OVERFLOW;
@@ -25,6 +26,7 @@ public abstract class IStatePartition {
         maxIndex = nbit - 1;
         dense = new int[size];
         sparse = new int[size];
+        lastIndex = size - 1;
         for (int i = 0; i < size; i++) {
             dense[i] = i;
             sparse[i] = i;
@@ -215,7 +217,7 @@ public abstract class IStatePartition {
 
     // size
     public boolean isSingletonByStartIndex(int index) {
-        if (index == size) {
+        if (index == lastIndex) {
             return maskGet(index);
         } else {
             return maskGet(index) && maskGet(index + 1);

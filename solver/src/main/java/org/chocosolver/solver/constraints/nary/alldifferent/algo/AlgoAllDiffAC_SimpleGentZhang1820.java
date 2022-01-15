@@ -517,6 +517,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
 
     protected boolean propagate_SCC_filter() throws ContradictionException {
         boolean filter = false;
+        gammaMask.clear();
+//        freeNodesR.generateBitSet(A);
+        A.set(freeNodesR);
 //        System.out.println("changed: " + changedSCCStartIndex);
 //        System.out.println("freeNodes: " + freeNodesR);
 //        System.out.println("gamma: " + gammaMask);
@@ -719,6 +722,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
             del.iterateValid();
             while (del.hasNextValid()) {
                 int valIdx = del.next();
+                if (!validValuesR.get(valIdx)) {
+                    return false;
+                }
 //                System.out.println("ED: check: " + varIdx + ", " + valIdx);
                 if (!A.get(valIdx) && validValuesR.get(valIdx)) {
                     // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
