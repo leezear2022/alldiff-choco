@@ -8,7 +8,6 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
 
-import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -38,7 +37,7 @@ public class AlgoAllDiffAC_Chen {
     private ICause aCause;
 
     // numValue是二部图中取值编号的个数
-    private int numValue;
+    private int numValues;
 
     // 索引到值
     private int[] idx2Val;
@@ -61,7 +60,7 @@ public class AlgoAllDiffAC_Chen {
     private SparseSet[] valUnmatchedVar;
 
     // 自由值集合
-    private SparseSet freeNode;
+    private SparseSet freeNodes;
 
     // 新增一点（视为变量）
     private int addArity;
@@ -95,16 +94,16 @@ public class AlgoAllDiffAC_Chen {
             }
         }
 
-        numValue = val2Idx.size();
-        idx2Val = new int[numValue];
+        numValues = val2Idx.size();
+        idx2Val = new int[numValues];
         TIntIntIterator it = val2Idx.iterator();
         while (it.hasNext()) {
             it.advance();
             idx2Val[it.value()] = it.key();
         }
 
-        valUnmatchedVar = new SparseSet[numValue];
-        for (int i = 0; i < numValue; ++i) {
+        valUnmatchedVar = new SparseSet[numValues];
+        for (int i = 0; i < numValues; ++i) {
             valUnmatchedVar[i] = new SparseSet(addArity);
         }
 
@@ -113,22 +112,22 @@ public class AlgoAllDiffAC_Chen {
         variable_visited_ = new BitSet(arity);
         // 变量的前驱变量，若前驱变量是-1，则表示无前驱变量，就是第一个变量
         variable_visited_from_ = new int[arity];
-        value_visited_ = new BitSet(numValue);
+        value_visited_ = new BitSet(numValues);
 
         var2Val = new int[arity];
         for (int i = 0; i < arity; ++i) {
             var2Val[i] = -1;
         }
-        val2Var = new int[numValue];
-        for (int i = 0; i < numValue; ++i) {
+        val2Var = new int[numValues];
+        for (int i = 0; i < numValues; ++i) {
             val2Var[i] = -1;
         }
 
         // freeNode区分匹配点和非匹配点(正好是新增变量的取值范围）
-        freeNode = new SparseSet(numValue);
+        freeNodes = new SparseSet(numValues);
 
         // SCC
-        n = addArity + numValue;
+        n = addArity + numValues;
         nodeSCC = new int[n];
 
         stack = new int[n];
@@ -221,7 +220,7 @@ public class AlgoAllDiffAC_Chen {
                         path_value = old_value;
                     }
 
-                    freeNode.remove(valIdx);
+                    freeNodes.remove(valIdx);
 //                    System.out.println(valIdx + " is not free");
                     return;
                 } else {
@@ -235,18 +234,18 @@ public class AlgoAllDiffAC_Chen {
                     // 把这个变量加入队列中
                     visiting_[num_to_visit++] = next_node;
                     variable_visited_from_[next_node] = node;
-                    freeNode.remove(valIdx);
+                    freeNodes.remove(valIdx);
                 }
             }
         }
     }
 
     private void findMaximumMatching() throws ContradictionException {
-        for (int i = 0; i < numValue; ++i) {
+        for (int i = 0; i < numValues; ++i) {
             valUnmatchedVar[i].clear();
             valUnmatchedVar[i].add(arity);
         }
-        freeNode.fill();
+        freeNodes.fill();
         // 增量检查
         // matching 有效性检查
         for (int varIdx = 0; varIdx < arity; varIdx++) {
@@ -269,7 +268,7 @@ public class AlgoAllDiffAC_Chen {
 
                 val2Var[valIdx] = varIdx;
                 var2Val[varIdx] = valIdx;
-                freeNode.remove(valIdx);
+                freeNodes.remove(valIdx);
             } else {
                 // 检查原匹配是否失效
                 int oldMatchingIndex = var2Val[varIdx];
@@ -279,7 +278,7 @@ public class AlgoAllDiffAC_Chen {
                         val2Var[oldMatchingIndex] = -1;
                         var2Val[varIdx] = -1;
                     } else {
-                        freeNode.remove(oldMatchingIndex);
+                        freeNodes.remove(oldMatchingIndex);
 //                    System.out.println(oldMatchingIndex + " is free");
                     }
                 }
@@ -331,9 +330,9 @@ public class AlgoAllDiffAC_Chen {
         restriction.clear();
         restriction.flip(0, addArity);
         // 除去自由值对新增变量的指向
-        freeNode.iterateValid();
-        while (freeNode.hasNextValid()) {
-            int valIdx = freeNode.next();
+        freeNodes.iterateValid();
+        while (freeNodes.hasNextValid()) {
+            int valIdx = freeNodes.next();
             valUnmatchedVar[valIdx].remove(arity);
             valUnmatchedVar[valIdx].iterateValid();
             nodeSCC[valIdx + addArity] = -1;
@@ -349,7 +348,7 @@ public class AlgoAllDiffAC_Chen {
         }
         // 新增变量初始化
         nodeSCC[arity] = -1;
-        freeNode.iterateValid();
+        freeNodes.iterateValid();
 
         // 开始
         int first = restriction.nextSetBit(0);
@@ -393,9 +392,9 @@ public class AlgoAllDiffAC_Chen {
                     }
                 }
             }
-            else if (i == arity && freeNode.hasNextValid()) {// i代表的是新增变量
+            else if (i == arity && freeNodes.hasNextValid()) {// i代表的是新增变量
                 // j是新增变量指向的自由值，必然不在栈中
-                j = freeNode.next() + addArity;
+                j = freeNodes.next() + addArity;
                 stepForward(i, j);
                 i = j;
             }

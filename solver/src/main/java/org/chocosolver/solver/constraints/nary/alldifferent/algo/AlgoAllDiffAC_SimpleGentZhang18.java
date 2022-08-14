@@ -229,8 +229,8 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-        System.out.println("----------------" + id + " propagate: " + (++numCall) + "----------------");
-        printDomains();
+//        System.out.println("----------------" + id + " propagate: " + (++numCall) + "----------------");
+//        printDomains();
         boolean filter = false;
 //        instVar.clear();
 //        if (numCall == 24)
@@ -245,7 +245,7 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
             startTime = System.nanoTime();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
-            System.out.println("matching: " + Arrays.toString(var2ValR));
+//            System.out.println("matching: " + Arrays.toString(var2ValR));
 
             startTime = System.nanoTime();
 
@@ -279,13 +279,13 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
             deltaUpdate();
             startTime = System.nanoTime();
             filter |= propagate_SCC_Match();
-            System.out.println("matching: " + Arrays.toString(var2ValR));
+//            System.out.println("matching: " + Arrays.toString(var2ValR));
             Measurer.matchingTime += System.nanoTime() - startTime;
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
             Measurer.filterTime += System.nanoTime() - startTime;
         }
-        dealChanges();
+//        dealChanges();
         return filter;
     }
 
@@ -498,8 +498,8 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                     if (RD[yIdx].get(valIdx)) {
                         y = vars[yIdx];
 //                        res |= y.removeValue(xVal, aCause);
-//                        removeValue(yIdx, valIdx);
-                        recordRemoveVal(yIdx, valIdx);
+                        removeValueR(yIdx, valIdx);
+//                        recordRemoveVal(yIdx, valIdx);
                         deletedValues[yIdx].add(valIdx);
                     }
                 }
@@ -699,8 +699,8 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                     Measurer.enterP1();
                     int k = idx2Val[valIdx];
 //                    filter |= v.removeValue(k, aCause);
-//                    removeValue(varIdx, valIdx);
-                    recordRemoveVal(varIdx, valIdx);
+                    removeValueR(varIdx, valIdx);
+//                    recordRemoveVal(varIdx, valIdx);
                     System.out.println("first delete1: " + varIdx + ", " + valIdx);
                 }
             }
@@ -725,9 +725,10 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                     Measurer.enterP2();
                     int valNum = v.getDomainSize();
                     Measurer.numDelValuesP2 += valNum - 1;
-//                    filter |= v.instantiateTo(k, aCause);
+                    filter |= v.instantiateTo(k, aCause);
 //                    filter |= instantiateTo(varIdx, matchedVal, v, k);
-                    recordInstVar(varIdx, matchedVal);
+                    instantiateToR(varIdx, matchedVal);
+//                    recordInstVar(varIdx, matchedVal);
                     partition.removeCurrentToTail();
                     System.out.println("instantiate  : " + varIdx + ", " + matchedVal);
                     continue;
@@ -758,8 +759,8 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                                     Measurer.enterP2();
                                     ++Measurer.numDelValuesP2;
 //                                    filter |= v.removeValue(k, aCause);
-//                                    removeValue(varIdx, valIdx);
-                                    recordRemoveVal(varIdx, valIdx);
+                                    removeValueR(varIdx, valIdx);
+//                                    recordRemoveVal(varIdx, valIdx);
 //                                    if (partition.canMove(varIdx2)) {
                                     // varIdx2未分裂，将varIdx2移入tmp分区中
                                     partition.addMoved(varIdx2);
@@ -773,8 +774,8 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                                 Measurer.enterP2();
                                 ++Measurer.numDelValuesP2;
 //                                filter |= v.removeValue(k, aCause);
-//                                removeValue(varIdx, valIdx);
-                                recordRemoveVal(varIdx, valIdx);
+                                removeValueR(varIdx, valIdx);
+//                                recordRemoveVal(varIdx, valIdx);
                                 System.out.println("second delete2: " + varIdx + ", " + valIdx);
 //                                if (partition.canMove(varIdx2)) {
 //                                    // varIdx2未分裂，将varIdx2移入tmp分区中
@@ -785,8 +786,8 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                                 Measurer.enterP2();
                                 ++Measurer.numDelValuesP2;
 //                                filter |= v.removeValue(k, aCause);
-//                                removeValue(varIdx, valIdx);
-                                recordRemoveVal(varIdx, valIdx);
+                                removeValueR(varIdx, valIdx);
+//                                recordRemoveVal(varIdx, valIdx);
                                 System.out.println("second delete3: " + varIdx + ", " + valIdx);
                             }
 
@@ -817,9 +818,10 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                     Measurer.enterP2();
                     int valNum = v.getDomainSize();
                     Measurer.numDelValuesP2 += valNum - 1;
-//                    filter |= v.instantiateTo(k, aCause);
+                    filter |= v.instantiateTo(k, aCause);
 //                    filter |= instantiateTo(varIdx, matchedVal, v, k);
-                    recordInstVar(varIdx, matchedVal);
+                    instantiateToR(varIdx,matchedVal);
+//                    recordInstVar(varIdx, matchedVal);
                     partition.removeCurrentToTail();
                     System.out.println("instantiate  : " + varIdx + ", " + matchedVal);
                     continue;
@@ -841,9 +843,9 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                                 if (!checkSCC(varIdx, valIdx)) {
                                     Measurer.enterP2();
                                     ++Measurer.numDelValuesP2;
-//                                    filter |= v.removeValue(k, aCause);
-//                                    removeValue(varIdx, valIdx);
-                                    recordRemoveVal(varIdx, valIdx);
+                                    filter |= v.removeValue(k, aCause);
+                                    removeValueR(varIdx, valIdx);
+//                                    recordRemoveVal(varIdx, valIdx);
 //                                    if (partition.canMove(varIdx2)) {
                                     // varIdx2未分裂，将varIdx2移入tmp分区中
                                     partition.addMoved(varIdx2);
@@ -856,9 +858,9 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                                 // var2在moved子分区,
                                 Measurer.enterP2();
                                 ++Measurer.numDelValuesP2;
-//                                filter |= v.removeValue(k, aCause);
-//                                removeValue(varIdx, valIdx);
-                                recordRemoveVal(varIdx, valIdx);
+                                filter |= v.removeValue(k, aCause);
+                                removeValueR(varIdx, valIdx);
+//                                recordRemoveVal(varIdx, valIdx);
                                 System.out.println("second delete2: " + varIdx + ", " + valIdx);
 
 //                                if (partition.canMove(varIdx2)) {
@@ -869,9 +871,9 @@ public class AlgoAllDiffAC_SimpleGentZhang18 extends AlgoAllDiffAC_Simple {
                                 // var2在moved子分区,
                                 Measurer.enterP2();
                                 ++Measurer.numDelValuesP2;
-//                                filter |= v.removeValue(k, aCause);
-//                                removeValue(varIdx, valIdx);
-                                recordRemoveVal(varIdx, valIdx);
+                                filter |= v.removeValue(k, aCause);
+                                removeValueR(varIdx, valIdx);
+//                                recordRemoveVal(varIdx, valIdx);
                                 System.out.println("second delete3: " + varIdx + ", " + valIdx);
                             }
 

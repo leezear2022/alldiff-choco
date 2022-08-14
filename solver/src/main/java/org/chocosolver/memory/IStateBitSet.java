@@ -64,7 +64,6 @@ public interface IStateBitSet {
     boolean get(int bitIndex);
 
 
-
     /**
      * Returns the index of the first bit that is set to <code>true</code>
      * that occurs on or after the specified starting index. If no such
@@ -135,5 +134,9 @@ public interface IStateBitSet {
     void set(INaiveBitSet a);
 
     int getWordsInUse();
+
+    int firstSetIndex();
+
+    int lastSetIndex();
 
 }

@@ -36,7 +36,6 @@ public class PropAllDiffBC extends Propagator<IntVar> {
         super(variables, PropagatorPriority.LINEAR, false);
         filter = new AlgoAllDiffBC(this);
         filter.reset(vars);
-        Measurer.numAllDiff++;
     }
 
     @Override

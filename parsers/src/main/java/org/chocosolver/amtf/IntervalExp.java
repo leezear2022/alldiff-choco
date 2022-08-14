@@ -4,7 +4,7 @@ import gnu.trove.list.array.TLongArrayList;
 import org.chocosolver.util.objects.BitIntervalSet;
 import org.chocosolver.util.objects.IntInterval;
 import org.chocosolver.util.objects.IntIntervalSet;
-import org.chocosolver.util.objects.IntTuple2;
+import org.chocosolver.util.objects.IntPair;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -13,7 +13,7 @@ public class IntervalExp {
     private static int INT_SIZE = 32;
     //    private TLongArrayStack DE;
     private static TLongArrayList cycles = new TLongArrayList(1000);
-    private static IntTuple2 nodePair = new IntTuple2(-1, -1);
+    private static IntPair nodePair = new IntPair(-1, -1);
 
     public static void main(String[] args) {
         float IN_MSEC = 1000 * 1000f;
@@ -176,7 +176,7 @@ public class IntervalExp {
         return c << INT_SIZE | a;
     }
 
-    public static void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
+    public static void getIntTuple2(IntPair vvp, long vvpIdx) {
         vvp.a = (int) (vvpIdx >> INT_SIZE);
         vvp.b = (int) vvpIdx;
     }

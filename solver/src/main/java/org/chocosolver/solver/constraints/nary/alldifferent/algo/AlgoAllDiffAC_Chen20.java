@@ -6,7 +6,7 @@ import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.solver.variables.delta.IIntDeltaMonitor;
-import org.chocosolver.util.objects.IntTuple2;
+import org.chocosolver.util.objects.IntPair;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.procedure.UnaryIntProcedure;
@@ -81,11 +81,11 @@ public class AlgoAllDiffAC_Chen20 {
     // for early detection
     protected IIntDeltaMonitor[] monitors;
     private UnaryIntProcedure<Integer> onValRem;
-    private Stack<IntTuple2> DE;
+    private Stack<IntPair> DE;
     private boolean initialProp = true;
     private boolean unconnected = false;
-    private ArrayList<IntTuple2> cycles;
-    private IntTuple2 tt;
+    private ArrayList<IntPair> cycles;
+    private IntPair tt;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -177,7 +177,7 @@ public class AlgoAllDiffAC_Chen20 {
 
             @Override
             public void execute(int i) throws ContradictionException {
-                DE.push(new IntTuple2(var, val2Idx.get(i) + addArity));
+                DE.push(new IntPair(var, val2Idx.get(i) + addArity));
 //                IntVar v = vars[var];
 //                System.out.println(vars[var].getName() + "," + var + ", " + i + " = " + v.contains(i) + ", size = " + v.getDomainSize());
             }
@@ -587,10 +587,10 @@ public class AlgoAllDiffAC_Chen20 {
                 return;
             }
         }
-        cycles.add(new IntTuple2(a, b));
+        cycles.add(new IntPair(a, b));
     }
 
-    private boolean inCycles(IntTuple2 t) {
+    private boolean inCycles(IntPair t) {
 //        IntTuple2 tt;
 //        System.out.println("inc:" + t.a + "," + t.b + "=" + DFSNum[t.a] + "," + DFSNum[t.b]);
         if (dfn[t.a] == -1 || dfn[t.b] == -1) {

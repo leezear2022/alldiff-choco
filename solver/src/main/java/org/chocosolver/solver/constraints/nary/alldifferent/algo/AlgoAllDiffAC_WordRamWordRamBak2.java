@@ -5,7 +5,6 @@ package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.memory.IEnvironment;
-import org.chocosolver.memory.IStateBitSet;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.exception.ContradictionException;
@@ -31,7 +30,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_WordRamWordRam {
+public class AlgoAllDiffAC_WordRamWordRamBak2 {
 
     //***********************************************************************************
     // VARIABLES
@@ -132,12 +131,11 @@ public class AlgoAllDiffAC_WordRamWordRam {
     //for bit
     protected INaiveBitSet[] B, D;
     protected INaiveBitSet needVisitValues;
-    protected IStateBitSet activeVars;
 
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_WordRamWordRam(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_WordRamWordRamBak2(IntVar[] variables, ICause cause, Model model) {
         id = num++;
         env = model.getEnvironment();
         this.vars = variables;
@@ -224,8 +222,7 @@ public class AlgoAllDiffAC_WordRamWordRam {
         }
 
         needVisitValues = INaiveBitSet.makeBitSet(numValues, true);
-        activeVars = env.makeBitSet(arity);
-        activeVars.set(0, arity);
+
 //        // for zhang20
 //        DE = new TLongArrayStack();
 //        deletedValues = new TIntArrayList[arity];
@@ -263,39 +260,33 @@ public class AlgoAllDiffAC_WordRamWordRam {
     protected void fillD() {
 //        IntVar v;
         // 填充B和D
-        for (int i = activeVars.nextSetBit(0); i >= 0; i = activeVars.nextSetBit(i + 1)) {
-//        for (int i = 0; i < arity; i++) {
+        for (int i = 0; i < arity; ++i) {
             D[i].clear();
             IntVar v = vars[i];
             for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
                 int valIdx = val2Idx.get(j);
                 D[i].set(valIdx);
             }
-
-            if (v.isInstantiated()) {
-                activeVars.clear(i);
-            }
         }
-
     }
 
-//    protected void fillBandD() {
-//        for (int i = 0; i < numValues; ++i) {
-//            B[i].clear();
-//        }
-//
-////        IntVar v;
-//        // 填充B和D
-//        for (int i = 0; i < arity; ++i) {
-//            D[i].clear();
-//            IntVar v = vars[i];
-//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-//                int valIdx = val2Idx.get(j);
-//                D[i].set(valIdx);
-//                B[valIdx].set(i);
-//            }
-//        }
-//    }
+    protected void fillBandD() {
+        for (int i = 0; i < numValues; ++i) {
+            B[i].clear();
+        }
+
+//        IntVar v;
+        // 填充B和D
+        for (int i = 0; i < arity; ++i) {
+            D[i].clear();
+            IntVar v = vars[i];
+            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
+                int valIdx = val2Idx.get(j);
+                D[i].set(valIdx);
+                B[valIdx].set(i);
+            }
+        }
+    }
 
     void printDoms() {
         for (var v : vars) {
@@ -330,8 +321,8 @@ public class AlgoAllDiffAC_WordRamWordRam {
 //        isSkiped = false;
         numCall++;
 //        if (numCall<20) {
-//        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
-//            printDomains();
+        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
+            printDomains();
 //        }
         boolean filter = false;
         Measurer.enterProp();
@@ -387,7 +378,7 @@ public class AlgoAllDiffAC_WordRamWordRam {
         IntVar x, y;
         prepareForMatching();
         changedSCCStartIndex.clear();
-//        System.out.println(partition);
+        System.out.println(partition);
         triggeringVars.iterateValid();
         while (triggeringVars.hasNextValid()) {
             int xIdx = triggeringVars.next();
@@ -411,8 +402,8 @@ public class AlgoAllDiffAC_WordRamWordRam {
 //                System.out.println(partition);
                 partition.remove(xIdx);
                 partition.remove(var2Val[xIdx] + addArity);
-//                System.out.println(xIdx + " is isInstantiated to: " + xVal);
-//                System.out.println(partition);
+                System.out.println(xIdx + " is isInstantiated to: " + xVal);
+                System.out.println(partition);
                 partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
                 do {
                     int yIdx = partition.getValid();

@@ -6,6 +6,7 @@ import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 
 public abstract class AlgoAllDiffAC_Naive {
+    protected static long numCall = -1;
 
     public AlgoAllDiffAC_Naive(IntVar[] variables, ICause cause) {
     }

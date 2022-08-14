@@ -1,15 +1,16 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
-
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.ICause;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.Measurer;
-import org.chocosolver.util.objects.NaiveBitSetOld;
+import org.chocosolver.util.objects.NaiveBitSet;
 import org.chocosolver.util.objects.SparseSet;
+
+import java.util.BitSet;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -55,7 +56,7 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
 
     // 已访问过的变量和值
     private long variable_visited_;
-    private NaiveBitSetOld value_visited_;
+    private BitSet value_visited_;
 
     // matching
     private int[] val2Var;
@@ -129,7 +130,7 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
         variable_visited_ = 0L;
         // 变量的前驱变量，若前驱变量是-1，则表示无前驱变量，就是第一个变量
         variable_visited_from_ = new int[arity];
-        value_visited_ = new NaiveBitSetOld(numValue);
+        value_visited_ = new BitSet(numValue);
 
         var2Val = new int[arity];
         val2Var = new int[numValue];
@@ -402,7 +403,7 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
                         filter |= v.removeValue(k, aCause);
                         //                System.out.println("first delete: " + v.getName() + ", " + k);
                     } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
-                        if (!checkSCC(varIdx, valIdx)) {
+                        if ((graphLinkedMatrix[varIdx] & 1L << val2Var[valIdx]) == 0L && !checkSCC(varIdx, valIdx)) {
                             Measurer.enterP2();
                             if (valIdx == var2Val[varIdx]) {
                                 int valNum = v.getDomainSize();
@@ -423,9 +424,6 @@ public class AlgoAllDiffAC_Naive64 extends AlgoAllDiffAC_Naive {
     }
 
     private boolean checkSCC(int varIdx, int valIdx) {
-        if ((graphLinkedMatrix[varIdx] & 1L << val2Var[valIdx]) == 1L) {
-            return true;
-        }
         for (int i = nextSetBit(graphLinkedFrontier[varIdx], 0);
              i != BITS_PER_WORD; i = nextSetBit(graphLinkedFrontier[varIdx], 0)) {
             graphLinkedFrontier[varIdx] |= graphLinkedMatrix[i] & ~graphLinkedMatrix[varIdx];

@@ -77,6 +77,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
     // if all a in var x val2Idx[a] = a then DomIsRagular[x] = true
     boolean[] domIsRegular;
 
+    private long lastMask;
+
     // for Zhang18
     private IStateBitSet matchedValuesR;
     private IStateBitSet validValuesR;
@@ -87,6 +89,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
     private TIntArrayList sccTriggeringVars;
     private int numSCCDeleteValues;
     private int numSCCValues;
+
+    private IStateLong activeVars;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -109,6 +113,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
         for (int i = 0; i < arity; i++) {
             RD[i] = env.makeBitSet(numValues);
         }
+
+        lastMask = initLastMask(arity);
 
         for (int i = 0; i < arity; ++i) {
             IntVar v = vars[i];
@@ -186,6 +192,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
         }
 
         sccTriggeringVars = new TIntArrayList(arity);
+        activeVars = env.makeLong(lastMask);
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -236,7 +243,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //        System.out.println(" propagate: " + (++numCall) + "----------------");
 //        printDomains();
         boolean filter = false;
-        changedVars.clear();
+//        changedVars.clear();
         Measurer.enterProp();
 //        System.out.println(partition);
         if (initialPropagation) {
@@ -289,7 +296,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
             filter |= propagate_SCC_filter();
             Measurer.filterTime += System.nanoTime() - startTime;
         }
-        dealChanges();
+//        dealChanges();
         return filter;
     }
 
@@ -323,7 +330,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //        updatedVars.clear();
 //        updatedVals.clear();
 
-        for (int varIdx = 0; varIdx < arity; varIdx++) {
+//        for (int varIdx = 0; varIdx < arity; varIdx++) {
+        for (int varIdx = nextSetBit(activeVars, 0); varIdx >= 0; varIdx = nextSetBit(activeVars, varIdx + 1)) {
             monitors[varIdx].freeze();
             int numDeltaSize = monitors[varIdx].sizeApproximation();
             if (numDeltaSize != 0) {
@@ -336,6 +344,10 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //                updatedVars.add(varIdx);
             }
             monitors[varIdx].unfreeze();
+
+            if (vars[varIdx].isInstantiated()) {
+                clear(activeVars, varIdx);
+            }
         }
     }
 
@@ -507,9 +519,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
                     int yIdx = partition.next();
                     if (RD[yIdx].get(valIdx)) {
                         y = vars[yIdx];
-//                        res |= y.removeValue(xVal, aCause);
-//                        removeValueR(yIdx, valIdx);
-                        recordRemoveVal(yIdx, valIdx);
+                        res |= y.removeValue(xVal, aCause);
+                        removeValueR(yIdx, valIdx);
+//                        recordRemoveVal(yIdx, valIdx);
                         deletedValues[yIdx].add(valIdx);
                     }
                 }
@@ -614,8 +626,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
         gammaFrontier = gammaMask;
 
 
-        for (int varIdx = nextSetBitNew(gammaFrontier, 0);
-             varIdx != BITS_PER_WORD; varIdx = nextSetBitNew(gammaFrontier, 0)) {
+        for (int varIdx = nextSetBit(gammaFrontier, 0);
+             varIdx >= 0; varIdx = nextSetBit(gammaFrontier, 0)) {
             // !! 这里可以将Extended改成Frontier，只记录前沿，记录方法是三个BitSet比较，
             // frontier 扩展，从valMask中去掉gammaMask已记录的变量
             int valIdx = var2ValR[varIdx].get();
@@ -639,8 +651,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //        int sccStart = partition.getSCCStartIndexByElement(i);
         partition.setIteratorIndexBySCCStartIndex(0);
 //        for (int i = gammaMask.nextSetBit(0); i >= 0; i = gammaMask.nextSetBit(i + 1)) {
-        for (int i = nextSetBitNew(gammaMask, 0); i != BITS_PER_WORD;
-             i = nextSetBitNew(gammaMask, i + 1)) {
+        for (int i = nextSetBit(gammaMask, 0); i >= 0;
+             i = nextSetBit(gammaMask, i + 1)) {
             partition.addGamma(i);
         }
         int newStart = partition.splitGamma();
@@ -787,17 +799,17 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
             del.iterateValid();
             while (del.hasNextValid()) {
                 int valIdx = del.next();
-                if (!validValuesR.get(valIdx)) {
+                if (!validValuesR.get(valIdx) || A.get(valIdx)) {
                     return false;
                 }
 //                System.out.println("ED: check: " + varIdx + ", " + valIdx);
-                if (!A.get(valIdx) && validValuesR.get(valIdx)) {
-                    // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
-                    if (!checkSCC(varIdx, valIdx) ||
-                            !checkSCC(val2VarR[valIdx].get(), var2ValR[varIdx].get())) {
-                        return false;
-                    }
+//                if (!A.get(valIdx) && validValuesR.get(valIdx)) {
+                // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
+                if (!checkSCC(varIdx, valIdx) ||
+                        !checkSCC(val2VarR[valIdx].get(), var2ValR[varIdx].get())) {
+                    return false;
                 }
+//                }
             }
         }
         return true;
@@ -817,9 +829,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
                     ++Measurer.numDelValuesP1;
                     Measurer.enterP1();
                     int k = idx2Val[valIdx];
-//                    filter |= v.removeValue(k, aCause);
-//                    removeValueR(varIdx, valIdx);
-                    recordRemoveVal(varIdx, valIdx);
+                    filter |= v.removeValue(k, aCause);
+                    removeValueR(varIdx, valIdx);
+//                    recordRemoveVal(varIdx, valIdx);
 //                    System.out.println("first delete1: " + varIdx + ", " + valIdx);
                 }
             }
@@ -845,11 +857,10 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
                     int valNum = v.getDomainSize();
                     Measurer.numDelValuesP2 += valNum - 1;
 //                    filter |= v.instantiateTo(k, aCause);
-//                    instantiateToR(varIdx, matchedVal);
-                    recordInstVar(varIdx, matchedVal);
+                    instantiateToR(varIdx, matchedVal);
+//                    recordInstVar(varIdx, matchedVal);
                     partition.removeCurrentToTail();
 //                    System.out.println("instantiate  : " + varIdx + ", " + matchedVal);
-                    continue;
                 } else {
                     // 匹配值在SCC中，表示变量论域至少两个值，且至少有一个值在SCC中
                     partition.setCurrentConnected();
@@ -868,13 +879,11 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
                                 if (!checkSCC(varIdx, valIdx)) {
                                     Measurer.enterP2();
                                     ++Measurer.numDelValuesP2;
-//                                    filter |= v.removeValue(k, aCause);
-//                                    removeValueR(varIdx, valIdx);
-//                                    if (partition.canMove(varIdx2)) {
+                                    filter |= v.removeValue(k, aCause);
+                                    removeValueR(varIdx, valIdx);
                                     // varIdx2未分裂，将varIdx2移入tmp分区中
-                                    recordRemoveVal(varIdx, valIdx);
+//                                    recordRemoveVal(varIdx, valIdx);
                                     partition.addMoved(varIdx2);
-//                                    }
 //                                    System.out.println("second delete1: " + varIdx + ", " + valIdx);
                                 } else {
                                     partition.addConnected(varIdx2);
@@ -883,9 +892,9 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
                                 // var2在moved子分区,
                                 Measurer.enterP2();
                                 ++Measurer.numDelValuesP2;
-//                                filter |= v.removeValue(k, aCause);
-//                                removeValueR(varIdx, valIdx);
-                                recordRemoveVal(varIdx, valIdx);
+                                filter |= v.removeValue(k, aCause);
+                                removeValueR(varIdx, valIdx);
+//                                recordRemoveVal(varIdx, valIdx);
 //                                System.out.println("second delete2: " + varIdx + ", " + valIdx);
 
 //                                if (partition.canMove(varIdx2)) {
@@ -896,10 +905,10 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
                                 // var2在moved子分区,
                                 Measurer.enterP2();
                                 ++Measurer.numDelValuesP2;
-//                                filter |= v.removeValue(k, aCause);
+                                filter |= v.removeValue(k, aCause);
 //                                System.out.println("second delete3: " + varIdx + ", " + valIdx);
-//                                removeValueR(varIdx, valIdx);
-                                recordRemoveVal(varIdx, valIdx);
+                                removeValueR(varIdx, valIdx);
+//                                recordRemoveVal(varIdx, valIdx);
                             }
 
                             // 如果在Connected分区或在其它SCC中，跳过该值
@@ -938,8 +947,8 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
             return true;
         }
 //        for (int i = graphLinkedFrontier[x].nextSetBit(0); i >= 0; i = graphLinkedFrontier[x].nextSetBit(0)) {
-        for (int i = nextSetBitNew(graphLinkedFrontier[x], 0); i != BITS_PER_WORD;
-             i = nextSetBitNew(graphLinkedFrontier[x], 0)) {
+        for (int i = nextSetBit(graphLinkedFrontier[x], 0); i >= 0;
+             i = nextSetBit(graphLinkedFrontier[x], 0)) {
             // frontier扩张，除掉变量i 因为变量i已被扩展。
 //            graphLinkedFrontier[x].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[x]);
 //            graphLinkedFrontier[x].clear(i);
@@ -965,11 +974,11 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 
     @Override
     protected void instantiateToR(int varIdx, int valIdx) {
+        for (int i = RD[varIdx].nextSetBit(0); i >= 0; i = RD[varIdx].nextSetBit(i + 1)) {
+            clear(RB[i], varIdx);
+        }
         RD[varIdx].clear();
         RD[varIdx].set(valIdx);
-
-//        RB[valIdx].clear();
-//        RB[valIdx].set(varIdx);
         clear(RB[valIdx]);
         set(RB[valIdx], varIdx);
     }
@@ -988,7 +997,7 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 //    }
 
 
-//    // for lazy update, 最早在matching时，最晚在initiateMatrix时检测
+//    // for lazy updateupdate, 最早在matching时，最晚在initiateMatrix时检测
 //    void updateBitBel(int valIdx) {
 //        // bit值未更新，此处更新
 //        if (!updatedVals.contains(valIdx)) {

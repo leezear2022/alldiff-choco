@@ -22,6 +22,7 @@ import java.util.List;
  * <p>
  * Created by cprudhom on 02/09/15.
  * Project: choco.
+ *
  * @author Charles Prud'homme
  * @since 3.3.1
  */
@@ -39,12 +40,13 @@ public class MoveBinaryDFS implements Move {
     /**
      * Create this move without any search strategy
      */
-    public MoveBinaryDFS(){
+    public MoveBinaryDFS() {
         this(null);
     }
 
     /**
      * Create this move with a search strategy
+     *
      * @param strategy a search strategy
      */
     public MoveBinaryDFS(AbstractStrategy strategy) {
@@ -60,6 +62,7 @@ public class MoveBinaryDFS implements Move {
     public boolean extend(Solver solver) {
         boolean extended = false;
         Decision current = strategy.getDecision();
+//        System.out.println("decision: " + current);
         if (current != null) { // null means there is no more decision
             solver.getDecisionPath().pushDecision(current);
             solver.getEnvironment().worldPush();
@@ -94,13 +97,14 @@ public class MoveBinaryDFS implements Move {
 
     @Override
     public void removeStrategy() {
-        if(this.strategy!=null){
+        if (this.strategy != null) {
             this.strategy.remove();
         }
     }
 
     /**
      * Go back in the search tree. Either refute a decision, or backtrack.
+     *
      * @param solver reference to the solver
      * @return {@code true} if a reparation has been found
      */
@@ -108,7 +112,7 @@ public class MoveBinaryDFS implements Move {
         boolean repaired = false;
         Decision head = solver.getDecisionPath().getLastDecision();
         while (!repaired && head.getPosition() != topDecisionPosition) {
-            solver.setJumpTo(solver.getJumpTo()-1);
+            solver.setJumpTo(solver.getJumpTo() - 1);
             if (solver.getJumpTo() <= 0 && head.hasNext()) {
                 solver.getEnvironment().worldPush();
                 repaired = true;
@@ -122,6 +126,7 @@ public class MoveBinaryDFS implements Move {
 
     /**
      * Backtrack in the search tree
+     *
      * @param solver reference to the solver
      */
     protected void prevDecision(Solver solver) {
@@ -140,7 +145,7 @@ public class MoveBinaryDFS implements Move {
 
     @Override
     public void setChildMoves(List<Move> someMoves) {
-        if(someMoves.size() > 0) {
+        if (someMoves.size() > 0) {
             throw new UnsupportedOperationException("This is a terminal Move. No child move can be attached to it.");
         }
     }

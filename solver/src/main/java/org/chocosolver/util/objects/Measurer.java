@@ -158,6 +158,7 @@ public class Measurer {
         numP1 = 0;
         numP2 = 0;
         numP1AndP2 = 0;
+        maxAllDiffArity = 0;
         resetPropState();
     }
 

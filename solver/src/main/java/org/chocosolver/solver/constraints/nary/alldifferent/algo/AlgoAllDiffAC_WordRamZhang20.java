@@ -126,7 +126,7 @@ public class AlgoAllDiffAC_WordRamZhang20 {
     private TLongArrayStack DE;
     private TLongArrayList cycles;
     protected boolean unconnected = false;
-    private IntTuple2 nodePair;
+    private IntPair nodePair;
     private static int INT_SIZE = 32;
     protected boolean isSkiped = false;
 
@@ -214,7 +214,7 @@ public class AlgoAllDiffAC_WordRamZhang20 {
             deletedValues[i] = new TIntArrayList(numValues);
         }
         cycles = new TLongArrayList(numNodes);
-        nodePair = new IntTuple2(-1, -1);
+        nodePair = new IntPair(-1, -1);
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -1097,7 +1097,7 @@ public class AlgoAllDiffAC_WordRamZhang20 {
         return c << INT_SIZE | a;
     }
 
-    public void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
+    public void getIntTuple2(IntPair vvp, long vvpIdx) {
         vvp.a = (int) (vvpIdx >> INT_SIZE);
         vvp.b = (int) vvpIdx;
     }

@@ -1,7 +1,6 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
-
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.ICause;
@@ -10,8 +9,6 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.NaiveBitSetOld;
 import org.chocosolver.util.objects.SparseSet;
-
-import java.util.Arrays;
 
 /**
  * Algorithm of Alldifferent with AC
@@ -34,7 +31,6 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
     static public int num = 0;
     // 约束的编号
     private int id;
-    private static long numCall = -1;
 
     private int arity;
     private IntVar[] vars;
@@ -80,8 +76,6 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
     private NaiveBitSetOld gammaFrontier;
     // 记录gamma的bitset
     private NaiveBitSetOld gammaMask;
-
-    long startTime;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -156,26 +150,15 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-        System.out.println("----------------" + id + " propagate: " + (++numCall) + "----------------");
-        printDomains();
         Measurer.enterProp();
-        startTime = System.nanoTime();
+        long startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
-        System.out.println("matching: " + Arrays.toString(var2Val));
+
         startTime = System.nanoTime();
         boolean filter = filter();
         Measurer.filterTime += System.nanoTime() - startTime;
         return filter;
-    }
-
-    private void printDomains() {
-        // 填充B和D
-        for (int i = 0; i < arity; ++i) {
-            IntVar v = vars[i];
-//            System.out.println(D[i]);
-            System.out.println(v);
-        }
     }
 
     //***********************************************************************************
@@ -216,8 +199,8 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                     // !! 这里可以改用bitSet 求原数据bitDom (successor_)
                     // 与matching的余集(matching_bitVector[a]，表示a是否已matching出去了) 再按1取未匹配值，
                     // 可以惰性取值，即先算两个集合的在特定位置的交：以matching_bv为长度foreach
-                    // （一般不会特别长两个数据结构可以用NaiveBitSet，如400皇后，|D|=400，只需要7个，
-                    // 做&后会得到一个或NaiveBitSet, LargeBitSet）
+                    // （一般不会特别长两个数据结构可以用NaiveBitSetOld，如400皇后，|D|=400，只需要7个，
+                    // 做&后会得到一个或NaiveBitSetOld, LargeBitSet）
                     // valIdx is not matched: change path from node to start, and return.
                     // 未匹配值
 
@@ -293,6 +276,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                 val2Var[valIdx] = varIdx;
                 var2Val[varIdx] = valIdx;
                 freeNode.remove(valIdx);
+
             } else {
                 // 检查原匹配是否失效
                 int oldMatchingIndex = var2Val[varIdx];
@@ -327,7 +311,6 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
             if (var2Val[varIdx] == -1) {
                 // No augmenting path exists.
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
-                Measurer.matchingTime += System.nanoTime() - startTime;
             }
         }
 //        if (id == 2) {
@@ -367,7 +350,7 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
             // frontier 扩展，从valMask中去掉gammaMask已记录的变量
             int valIdx = var2Val[varIdx];
             gammaFrontier.orAfterMinus(valMask[valIdx], gammaMask);
-//            // 除去第i个变量
+            // 除去第i个变量
             gammaFrontier.clear(varIdx);
             // gamma 扩展
             gammaMask.or(valMask[valIdx]);
@@ -380,7 +363,6 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
     private void initiateMatrix() {
         // 重置两个矩阵
         // 只重置notGamma的变量
-        System.out.println("gamma: " + gammaMask);
         notGamma.iterateValid();
         while (notGamma.hasNextValid()) {
             int varIdx = notGamma.next();
@@ -389,11 +371,10 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                 graphLinkedMatrix[varIdx].setAfterMinus(valMask[var2Val[varIdx]], gammaMask);
                 graphLinkedMatrix[varIdx].clear(varIdx);
                 graphLinkedFrontier[varIdx].set(graphLinkedMatrix[varIdx]);
-
-                System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
-                System.out.println(graphLinkedMatrix[varIdx]);
-                System.out.println(graphLinkedFrontier[varIdx]);
             }
+//                System.out.println("------graphLinkedMatrix[" + varIdx + "]------");
+//                System.out.println(graphLinkedMatrix[varIdx]);
+//                System.out.println(graphLinkedFrontier[varIdx]);
         }
     }
 
@@ -412,19 +393,19 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
                         ++Measurer.numDelValuesP1;
                         Measurer.enterP1();
                         filter |= v.removeValue(k, aCause);
-                        System.out.println("first delete: " + v.getName() + ", " + k);
+                        //                System.out.println("first delete: " + v.getName() + ", " + k);
                     } else if (notGamma.contains(varIdx) && notA.contains(valIdx)) {
-                        if (!checkSCC(varIdx, valIdx)) {
+                        if (!graphLinkedMatrix[varIdx].get(val2Var[valIdx]) && !checkSCC(varIdx, valIdx)) {
                             Measurer.enterP2();
                             if (valIdx == var2Val[varIdx]) {
                                 int valNum = v.getDomainSize();
                                 Measurer.numDelValuesP2 += valNum - 1;
                                 filter |= v.instantiateTo(k, aCause);
-                                System.out.println("instantiate  : " + v.getName() + ", " + k);
+//                            System.out.println("instantiate  : " + v.getName() + ", " + k);
                             } else {
                                 ++Measurer.numDelValuesP2;
                                 filter |= v.removeValue(k, aCause);
-                                System.out.println("second delete: " + v.getName() + ", " + k);
+//                            System.out.println("second delete: " + v.getName() + ", " + k);
                             }
                         }
                     }
@@ -438,12 +419,10 @@ public class AlgoAllDiffAC_NaiveBitSet extends AlgoAllDiffAC_Naive {
 //        System.out.println("check:" + varIdx + ", " + valIdx);
         // 若没有 就需要BFS一下Frontier没有，就表示不用扩展了
         // 注意一下return退出时frontier正确
-        if (graphLinkedMatrix[varIdx].get(val2Var[valIdx])) {
-            return true;
-        }
         for (int i = graphLinkedFrontier[varIdx].nextSetBit(0);
              i != -1; i = graphLinkedFrontier[varIdx].nextSetBit(0)) {
-            // frontier扩rontier[varIdx].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[varIdx]);
+            // frontier扩张，除掉变量i 因为变量i已被扩展。
+            graphLinkedFrontier[varIdx].orAfterMinus(graphLinkedMatrix[i], graphLinkedMatrix[varIdx]);
             graphLinkedFrontier[varIdx].clear(i);
             graphLinkedMatrix[varIdx].or(graphLinkedMatrix[i]);
             if (graphLinkedMatrix[varIdx].get(val2Var[valIdx])) {

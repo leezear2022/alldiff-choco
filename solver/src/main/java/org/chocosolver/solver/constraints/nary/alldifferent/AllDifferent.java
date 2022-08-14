@@ -40,12 +40,14 @@ public class AllDifferent extends Constraint {
     // 实验待测算法
     public static final String ACFair = "ACFair";
     public static final String ACChen = "ACChen";
+    public static final String ACLi = "ACLi";
     public static final String ACChen20 = "ACChen20";
     public static final String Gent = "Gent";
     public static final String WordRam = "WordRam";
     public static final String WordRamRegin = "WordRamRegin";
     public static final String WordRamGent = "WordRamGent";
     public static final String WordRamWordRam = "WordRamWordRam";
+    public static final String WordRamWordRam2 = "WordRamWordRam2";
     public static final String WordRamZhang20 = "WordRamZhang20";
     public static final String WordRamZhang20BIS = "WordRamZhang20BIS";
     public static final String WordRamZhang20IS = "WordRamZhang20IS";
@@ -146,6 +148,8 @@ public class AllDifferent extends Constraint {
 //                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_Naive(VARS)};
             case WordRamWordRam:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamWordRam(VARS)};
+            case WordRamWordRam2:
+                return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamWordRam2(VARS)};
             case WordRamZhang20:
                 return new Propagator[]{new PropAllDiffInst(VARS), new PropAllDiffAC_WordRamZhang20(VARS)};
             case WordRamZhang20BIS:

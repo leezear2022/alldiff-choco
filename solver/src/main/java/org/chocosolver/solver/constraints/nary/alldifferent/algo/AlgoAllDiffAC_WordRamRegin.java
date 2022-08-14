@@ -13,6 +13,8 @@ import org.chocosolver.util.objects.INaiveBitSet;
 import org.chocosolver.util.objects.Measurer;
 import org.chocosolver.util.objects.SparseSet;
 
+import java.util.Arrays;
+
 /**
  * Algorithm of Alldifferent with AC
  * <p>
@@ -25,7 +27,7 @@ import org.chocosolver.util.objects.SparseSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
+public class AlgoAllDiffAC_WordRamRegin {
 
     //***********************************************************************************
     // VARIABLES
@@ -36,7 +38,7 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
     // 约束的编号
     private int id;
     private long xixi = 0;
-
+    protected static long numCall = -1;
     private int arity;
     private IntVar[] vars;
     private ICause aCause;
@@ -45,7 +47,7 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
     private int addArity;
 
     // 自由值集合
-    private SparseSet freeNode;
+    private SparseSet freeNodes;
 
     // 以下是bit版本所需数据结构========================
     // numValue是二部图中取值编号的个数，numBit是二部图的最大边数
@@ -120,8 +122,10 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
     // CONSTRUCTORS
     //***********************************************************************************
     public AlgoAllDiffAC_WordRamRegin(IntVar[] variables, ICause cause, Model model) {
-        super(variables, cause);
         id = num++;
+        env = model.getEnvironment();
+        this.vars = variables;
+        aCause = cause;
         env = model.getEnvironment();
         this.vars = variables;
         aCause = cause;
@@ -188,7 +192,7 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
             val2Var[i] = -1;
         }
 
-        freeNode = new SparseSet(numValues);
+        freeNodes = new SparseSet(numValues);
     }
 
     //***********************************************************************************
@@ -196,15 +200,42 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
+        ++numCall;
+        System.out.printf("cid: %d, propagate: %d--------\n", id, numCall);
+//        if (numCall <= 696 && numCall >= 693) {
+            printDomains();
+//        }
+
         Measurer.enterProp();
         startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
-
+//        if (numCall == 694)
+//            System.out.println("matching: " + Arrays.toString(var2Val));
         startTime = System.nanoTime();
         boolean filter = filter();
         Measurer.filterTime += System.nanoTime() - startTime;
+//        if (numCall <= 696 && numCall >= 693) {
+//            System.out.println("----after----");
+//            printDomains();
+//        }
+
         return filter;
+    }
+
+    private void printDomains() {
+        // 填充B和D
+        System.out.println("****doms*****");
+        for (int i = 0; i < arity; ++i) {
+            IntVar v = vars[i];
+            System.out.println(v);
+        }
+        System.out.println("*************");
+//        // 填充B和D
+//        for (int i = 0; i < arity; ++i) {
+//            IntVar v = vars[i];
+//            System.out.println(RD[i]);
+//        }
     }
 
     //***********************************************************************************
@@ -245,7 +276,7 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
                     }
 
 //                    freeNode.clear(valIdx);
-                    freeNode.remove(valIdx);
+                    freeNodes.remove(valIdx);
                     matchedValues.set(valIdx);
 //                    System.out.println(valIdx + " is not free");
                     return;
@@ -262,7 +293,7 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
                     visiting_[num_to_visit++] = next_node;
                     variable_visited_from_[next_node] = node;
 //                    freeNode.clear(valIdx);
-                    freeNode.remove(valIdx);
+                    freeNodes.remove(valIdx);
                     matchedValues.set(valIdx);
                 }
             }
@@ -270,7 +301,7 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
     }
 
     private void findMaximumMatching() throws ContradictionException {
-        freeNode.fill();
+        freeNodes.fill();
         matchedValues.clear();
 
         // 增量检查
@@ -303,7 +334,7 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
                 val2Var[valIdx] = varIdx;
 //                unMatchedValues.clear(valIdx);
                 var2Val[varIdx] = valIdx;
-                freeNode.remove(valIdx);
+                freeNodes.remove(valIdx);
                 matchedValues.set(valIdx);
             } else {
                 // 检查原匹配是否失效
@@ -318,7 +349,7 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
                         var2Val[varIdx] = -1;
                     } else {
 //                        freeNode.clear(oldMatchingIndex);
-                        freeNode.remove(oldMatchingIndex);
+                        freeNodes.remove(oldMatchingIndex);
                         matchedValues.set(oldMatchingIndex);
 //                    System.out.println(oldMatchingIndex + " is free");
                     }
@@ -364,11 +395,13 @@ public class AlgoAllDiffAC_WordRamRegin extends AlgoAllDiffAC_Naive {
                         if (valIdx == var2Val[varIdx]) {
                             int valNum = v.getDomainSize();
                             Measurer.numDelValuesP2 += valNum - 1;
-//                            System.out.println("instantiate  : " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            if (numCall == 694)
+//                                System.out.println("instantiate  : " + valIdx + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.instantiateTo(k, aCause);
                         } else {
                             ++Measurer.numDelValuesP2;
-//                            System.out.println("second delete: " + v.getName() + ", " + k + " P2: " + Measurer.numDelValuesP2);
+//                            if (numCall == 694)
+//                                System.out.println("second delete: " + valIdx + ", " + k + " P2: " + Measurer.numDelValuesP2);
                             filter |= v.removeValue(k, aCause);
                         }
                     }

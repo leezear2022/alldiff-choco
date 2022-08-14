@@ -435,6 +435,16 @@ public class OneWordS32BitSet implements IStateBitSet {
 
     @Override
     public int getWordsInUse() {
-        return word.get() == 0l ? 0 : 1;
+        return word.get() == 0 ? 0 : 1;
+    }
+
+    @Override
+    public int firstSetIndex() {
+        return 0;
+    }
+
+    @Override
+    public int lastSetIndex() {
+        return 0;
     }
 }

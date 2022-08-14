@@ -1,6 +1,6 @@
 package org.chocosolver.util.graphOperations.connectivity;
 
-import org.chocosolver.util.objects.IntTuple2;
+import org.chocosolver.util.objects.IntPair;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
@@ -30,11 +30,11 @@ public class StrongConnectivityFinderR {
     private int[] DFSNum;
     private int[] lowLink;
     private boolean hasSCCSplit = false;
-    private Stack<IntTuple2> DE;
+    private Stack<IntPair> DE;
     private boolean unconnected = false;
 
-    private ArrayList<IntTuple2> cycles;
-    IntTuple2 tt;
+    private ArrayList<IntPair> cycles;
+    IntPair tt;
 
     private Iterator<Integer>[] iters;
     private int[] levelNodes;
@@ -43,7 +43,7 @@ public class StrongConnectivityFinderR {
     private int sccSize = 0;
     private int arity = 0;
     private int numValues = 0;
-    private Iterator<IntTuple2> iter;
+    private Iterator<IntPair> iter;
     private int cid;
 
 //    private int index = 0;
@@ -189,7 +189,7 @@ public class StrongConnectivityFinderR {
 //        System.out.println("fs: " + Arrays.toString(nodeSCC));
     }
 
-    public boolean findAllSCC_ED(Stack<IntTuple2> deleteEdge) {
+    public boolean findAllSCC_ED(Stack<IntPair> deleteEdge) {
         singleton.clear();
         DE = deleteEdge;
         ISet nodes = graph.getNodes();
@@ -499,10 +499,10 @@ public class StrongConnectivityFinderR {
 //                return;
 //            }
 //        }
-        cycles.add(new IntTuple2(a, b));
+        cycles.add(new IntPair(a, b));
     }
 
-    private boolean inCycles(IntTuple2 t) {
+    private boolean inCycles(IntPair t) {
 //        IntTuple2 tt;
 //        System.out.println("inc:" + t.a + "," + t.b + "=" + DFSNum[t.a] + "," + DFSNum[t.b]);
         if (DFSNum[t.a] == -1 || DFSNum[t.b] == -1) {

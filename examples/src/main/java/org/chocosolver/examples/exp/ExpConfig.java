@@ -11,11 +11,31 @@ public interface ExpConfig {
 //            "WordRamZhang20BitBIS2",
 //    };
 
+    //    String[] algorithms = new String[]{
+//            "WordRamGent",
+//            "WordRamWordRam",
+//            "ACZhang18",
+//            "WordRamZhang20",
+//            "ACSimple",
+//    };
     String[] algorithms = new String[]{
-            "WordRamGent",
+//            "AC_REGIN",
+//            "ACFair",
+//            "ACZhang18",
+//            "WordRamRegin",
+//            "WordRamRegin",
+//            "ACNaive",
+//            "WordRamZhang20",
+//            "WordRamWordRam2",
+            "ACSimple",
             "WordRamWordRam",
-            "ACZhang18",
-            "WordRamZhang20",
-            "Simple",
+//            "WordRamWordRam",
+            "ACSimple",
+//            "ACSimple",
+//            "ACNaive",
+//            "ACSimple",
+//            "BC",
+//            "BC",
+//            "BC",
     };
 }

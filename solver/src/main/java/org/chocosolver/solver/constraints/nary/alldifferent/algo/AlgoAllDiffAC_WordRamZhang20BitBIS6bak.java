@@ -127,7 +127,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS6bak {
     private TIntArrayList[] deletedValues;
     private TLongArrayStack DE;
     private BitIntervalSet cycles;
-    private IntTuple2 nodePair;
+    private IntPair nodePair;
     // !! 记录gamma的前沿
     private INaiveBitSet gammaFrontier;
     // 记录gamma的bitset
@@ -259,7 +259,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS6bak {
             deletedValues[i] = new TIntArrayList(numValues);
         }
         cycles = new BitIntervalSet(numNodes + 10);
-        nodePair = new IntTuple2(-1, -1);
+        nodePair = new IntPair(-1, -1);
 
         // for propagate free nodes
         notA = new SparseSet(numValues);
@@ -1696,7 +1696,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS6bak {
         return c << INT_SIZE | a;
     }
 
-    public void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
+    public void getIntTuple2(IntPair vvp, long vvpIdx) {
         vvp.a = (int) (vvpIdx >> INT_SIZE);
         vvp.b = (int) vvpIdx;
     }

@@ -125,7 +125,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
     private TLongArrayStack DE;
     private BitIntervalSet cycles;
     protected boolean unconnected = false;
-    private IntTuple2 nodePair;
+    private IntPair nodePair;
     private static int INT_SIZE = 32;
     protected boolean isSkiped = false;
 
@@ -231,7 +231,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
             deletedValues[i] = new TIntArrayList(numValues);
         }
         cycles = new BitIntervalSet(numNodes + 10);
-        nodePair = new IntTuple2(-1, -1);
+        nodePair = new IntPair(-1, -1);
     }
 
     protected UnaryIntProcedure<Integer> makeProcedure() {
@@ -1291,7 +1291,7 @@ public class AlgoAllDiffAC_WordRamZhang20BitBIS {
         return c << INT_SIZE | a;
     }
 
-    public void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
+    public void getIntTuple2(IntPair vvp, long vvpIdx) {
         vvp.a = (int) (vvpIdx >> INT_SIZE);
         vvp.b = (int) vvpIdx;
     }

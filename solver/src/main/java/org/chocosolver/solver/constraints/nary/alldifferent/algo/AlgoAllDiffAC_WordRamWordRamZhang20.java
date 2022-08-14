@@ -31,7 +31,7 @@ import java.util.BitSet;
  *
  * @author Jean-Guillaume Fages, Zhe Li, Jia'nan Chen
  */
-public class AlgoAllDiffAC_WordRamWordRam {
+public class AlgoAllDiffAC_WordRamWordRamZhang20 {
 
     //***********************************************************************************
     // VARIABLES
@@ -137,7 +137,7 @@ public class AlgoAllDiffAC_WordRamWordRam {
     //***********************************************************************************
     // CONSTRUCTORS
     //***********************************************************************************
-    public AlgoAllDiffAC_WordRamWordRam(IntVar[] variables, ICause cause, Model model) {
+    public AlgoAllDiffAC_WordRamWordRamZhang20(IntVar[] variables, ICause cause, Model model) {
         id = num++;
         env = model.getEnvironment();
         this.vars = variables;
@@ -411,8 +411,8 @@ public class AlgoAllDiffAC_WordRamWordRam {
 //                System.out.println(partition);
                 partition.remove(xIdx);
                 partition.remove(var2Val[xIdx] + addArity);
-//                System.out.println(xIdx + " is isInstantiated to: " + xVal);
-//                System.out.println(partition);
+                System.out.println(xIdx + " is isInstantiated to: " + xVal);
+                System.out.println(partition);
                 partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
                 do {
                     int yIdx = partition.getValid();

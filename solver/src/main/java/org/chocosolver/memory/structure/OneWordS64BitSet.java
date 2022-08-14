@@ -431,4 +431,14 @@ public class OneWordS64BitSet implements IStateBitSet {
     public int getWordsInUse() {
         return word.get() == 0 ? 0 : 1;
     }
+
+    @Override
+    public int firstSetIndex() {
+        return 0;
+    }
+
+    @Override
+    public int lastSetIndex() {
+        return 0;
+    }
 }

@@ -53,7 +53,7 @@ public class StrongConnectivityFinderR5 {
     //    private Iterator<IntTuple2> iter;
     private TLongIterator iter;
 
-    private IntTuple2 nodePair;
+    private IntPair nodePair;
     private static int INT_SIZE = 32;
 
     private RSetPartition partition;
@@ -87,7 +87,7 @@ public class StrongConnectivityFinderR5 {
         this.arity = arity;
         this.addArity = arity + 1;
         this.numValues = numValues;
-        nodePair = new IntTuple2(-1, -1);
+        nodePair = new IntPair(-1, -1);
 //        DE = new TIntArrayStack(n);
         DE = new TLongArrayStack(n);
 
@@ -117,7 +117,7 @@ public class StrongConnectivityFinderR5 {
         this.arity = arity;
         this.addArity = arity + 1;
         this.numValues = numValues;
-        nodePair = new IntTuple2(-1, -1);
+        nodePair = new IntPair(-1, -1);
 //        DE = new TIntArrayStack(n);
         DE = new TLongArrayStack(n);
         bitIS = new BitIntervalSet(n + 4);
@@ -848,7 +848,7 @@ public class StrongConnectivityFinderR5 {
         return false;
     }
 
-    public void getNodePair(IntTuple2 vvp, int vvpIdx) {
+    public void getNodePair(IntPair vvp, int vvpIdx) {
         vvp.a = vvpIdx / numValues;
         vvp.b = vvpIdx % numValues + addArity;
     }
@@ -857,13 +857,13 @@ public class StrongConnectivityFinderR5 {
         return x << +a;
     }
 
-    public void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
+    public void getIntTuple2(IntPair vvp, long vvpIdx) {
         vvp.a = (int) (vvpIdx >> INT_SIZE);
         vvp.b = (int) vvpIdx;
     }
 
-    public IntTuple2 getIntTuple2(long vvpIdx) {
-        return new IntTuple2((int) (vvpIdx >> INT_SIZE), (int) vvpIdx);
+    public IntPair getIntTuple2(long vvpIdx) {
+        return new IntPair((int) (vvpIdx >> INT_SIZE), (int) vvpIdx);
     }
 
     public long getIntTuple2Long(int x, int a) {

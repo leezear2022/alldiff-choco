@@ -1,6 +1,7 @@
 package org.chocosolver.solver.constraints.nary.alldifferent.algo;
 
 //import org.chocosolver.amtf.Measurer;
+
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 import org.chocosolver.solver.ICause;
@@ -12,6 +13,7 @@ import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.SetType;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -36,6 +38,7 @@ public class AlgoAllDiffAC_Zhang18 {
     // 约束的编号
     private int id;
 
+    protected static long numCall = -1;
     private int arity;
     private IntVar[] vars;
     private ICause aCause;
@@ -153,7 +156,7 @@ public class AlgoAllDiffAC_Zhang18 {
         distinction = new BitSet(n);
         graph = new DirectedGraph(n, SetType.BITSET, false);
 //        SCCfinder = new StrongConnectivityFinder(graph);
-        SCCfinder = new StrongConnectivityFinderR(graph,id);
+        SCCfinder = new StrongConnectivityFinderR(graph, id);
     }
 
     //***********************************************************************************
@@ -161,17 +164,23 @@ public class AlgoAllDiffAC_Zhang18 {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-//        System.out.println("----------------" + id + " propagate----------------");
-//        if (id == 2) {
+//        System.out.println("----------------id: " + id + " propagate, numCall:" + (++numCall) + "----------------");
+//        if (numCall == 41) {
 //            System.out.println("vars: ");
 //            for (IntVar v : vars) {
 //                System.out.println(v.toString());
 //            }
 //        }
+
         Measurer.enterProp();
         long startTime = System.nanoTime();
         findMaximumMatching();
         Measurer.matchingTime += System.nanoTime() - startTime;
+
+//        if (numCall == 41) {
+//            System.out.printf("matching: %s%n", Arrays.toString(var2Val));
+//            System.out.printf("matching: %s%n", Arrays.toString(val2Var));
+//        }
 
         startTime = System.nanoTime();
         boolean filter = filter();
@@ -437,6 +446,8 @@ public class AlgoAllDiffAC_Zhang18 {
                 int ub = v.getUB();
                 for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
                     int valIdx = val2Idx.get(k);
+//                    if (numCall == 41)
+//                        System.out.printf("detect: (%d, %d)\n", varIdx, valIdx);
 //                    System.out.println(varIdx + ", " + valIdx + ", " + notGamma.contains(varIdx) + ", " + notA.contains(valIdx));
                     if (!notGamma.contains(varIdx) && notA.contains(valIdx)) {
                         ++Measurer.numDelValuesP1;

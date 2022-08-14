@@ -81,31 +81,69 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
     /**
      * Define the possible actions of SearchLoop
      */
+//    public enum Action {
+//        /**
+//         * Initialization step
+//         */
+//        initialize,
+//        /**
+//         * propagation step
+//         */
+//        propagate,
+//        /**
+//         * fixpoint step
+//         */
+//        fixpoint,
+//        /**
+//         * extension step
+//         */
+//        extend,
+//        /**
+//         * validation step
+//         */
+//        validate,
+//        /**
+//         * reparation step
+//         */
+//        repair
+//    }
+
     public enum Action {
         /**
          * Initialization step
          */
-        initialize,
+        initialize("initialize"),
         /**
          * propagation step
          */
-        propagate,
+        propagate("propagate"),
         /**
          * fixpoint step
          */
-        fixpoint,
+        fixpoint("fixpoint"),
         /**
          * extension step
          */
-        extend,
+        extend("extend"),
         /**
          * validation step
          */
-        validate,
+        validate("validate"),
         /**
          * reparation step
          */
-        repair
+        repair("repair");
+        private final String action;
+
+        private Action(final String s) {
+            this.action = s;
+        }
+
+        @Override
+        public String toString() {
+            return action;
+        }
+
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -314,9 +352,9 @@ public class Solver implements ISolver, IMeasures, IOutputFactory {
         boolean solution = false;
         boolean left = true;
         Thread th = Thread.currentThread();
-//        int numIter = 0;
+        int numIter = 0;
         while (!stop) {
-//            System.out.println("*****" + (numIter++) + "*****");
+//            System.out.printf("*****%s: %s*****\n", (numIter++), action);
             stop = isStopCriterionMet();
             if (stop || th.isInterrupted()) {
                 if (stop) {

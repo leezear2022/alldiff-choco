@@ -6,7 +6,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.stack.array.TLongArrayStack;
 import org.chocosolver.util.objects.INaiveBitSet;
-import org.chocosolver.util.objects.IntTuple2;
+import org.chocosolver.util.objects.IntPair;
 import org.chocosolver.util.objects.RSetPartition;
 import org.chocosolver.util.objects.SparseSet;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
@@ -54,7 +54,7 @@ public class StrongConnectivityFinderR2 {
     //    private Iterator<IntTuple2> iter;
     private TLongIterator iter;
 
-    private IntTuple2 nodePair;
+    private IntPair nodePair;
     private static int INT_SIZE = 32;
 
     private RSetPartition partion;
@@ -85,7 +85,7 @@ public class StrongConnectivityFinderR2 {
         this.arity = arity;
         this.addArity = arity + 1;
         this.numValues = numValues;
-        nodePair = new IntTuple2(-1, -1);
+        nodePair = new IntPair(-1, -1);
 //        DE = new TIntArrayStack(n);
         DE = new TLongArrayStack(n);
     }
@@ -113,7 +113,7 @@ public class StrongConnectivityFinderR2 {
         this.arity = arity;
         this.addArity = arity + 1;
         this.numValues = numValues;
-        nodePair = new IntTuple2(-1, -1);
+        nodePair = new IntPair(-1, -1);
 //        DE = new TIntArrayStack(n);
         DE = new TLongArrayStack(n);
     }
@@ -695,7 +695,7 @@ public class StrongConnectivityFinderR2 {
         return false;
     }
 
-    public void getNodePair(IntTuple2 vvp, int vvpIdx) {
+    public void getNodePair(IntPair vvp, int vvpIdx) {
         vvp.a = vvpIdx / numValues;
         vvp.b = vvpIdx % numValues + addArity;
     }
@@ -704,7 +704,7 @@ public class StrongConnectivityFinderR2 {
         return x << +a;
     }
 
-    public void getIntTuple2(IntTuple2 vvp, long vvpIdx) {
+    public void getIntTuple2(IntPair vvp, long vvpIdx) {
         vvp.a = (int) (vvpIdx >> INT_SIZE);
         vvp.b = (int) vvpIdx;
     }

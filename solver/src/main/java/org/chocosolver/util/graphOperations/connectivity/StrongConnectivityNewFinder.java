@@ -9,7 +9,7 @@
  */
 package org.chocosolver.util.graphOperations.connectivity;
 
-import org.chocosolver.util.objects.IntTuple2;
+import org.chocosolver.util.objects.IntPair;
 import org.chocosolver.util.objects.graphs.DirectedGraph;
 import org.chocosolver.util.objects.setDataStructures.ISet;
 
@@ -42,7 +42,7 @@ public class StrongConnectivityNewFinder {
     // 由构造函数传入
     // deletedEdge
     // DE存的是边，而cycles存的是nbSCC
-    private ArrayList<IntTuple2> cycles;
+    private ArrayList<IntPair> cycles;
     //    private Stack<IntTuple2> DE;
     private boolean unconnected = false;
     private long numProp = Long.MIN_VALUE;
@@ -73,7 +73,7 @@ public class StrongConnectivityNewFinder {
         cycles = new ArrayList<>();
     }
 
-    public StrongConnectivityNewFinder(DirectedGraph graph, Stack<IntTuple2> deletedEdges) {
+    public StrongConnectivityNewFinder(DirectedGraph graph, Stack<IntPair> deletedEdges) {
         this.graph = graph;
         this.n = graph.getNbMaxNodes();
         //
@@ -118,7 +118,7 @@ public class StrongConnectivityNewFinder {
     }
 
     //!!这里改成boolean,表示提前退出propagation
-    public boolean findAllSCCWithEarlyDetection(Stack<IntTuple2> deletedEdges) {
+    public boolean findAllSCCWithEarlyDetection(Stack<IntPair> deletedEdges) {
         numProp++;
         ISet nodes = graph.getNodes();
         for (int i = 0; i < n; i++) {
@@ -169,7 +169,7 @@ public class StrongConnectivityNewFinder {
 //        return false;
 //    }
 
-    public boolean findAllSCCOfWithEarlyDetection(BitSet restriction, Stack<IntTuple2> deletedEdges) {
+    public boolean findAllSCCOfWithEarlyDetection(BitSet restriction, Stack<IntPair> deletedEdges) {
         inStack.clear();
         for (int i = 0; i < n; i++) {
             dfsNumOfNode[i] = -1;
@@ -283,7 +283,7 @@ public class StrongConnectivityNewFinder {
 
     // return true DE已删光，本propagator不用再运行
     // return false DE未删光， propagator仍要运行
-    private boolean findSCCWithEarlyDetection(int start, int k, BitSet restriction, int[] stack, int[] p, int[] inf, int[] nodeOfDfsNum, int[] dfsNumOfNode, BitSet inStack, Stack<IntTuple2> deletedEdges) {
+    private boolean findSCCWithEarlyDetection(int start, int k, BitSet restriction, int[] stack, int[] p, int[] inf, int[] nodeOfDfsNum, int[] dfsNumOfNode, BitSet inStack, Stack<IntPair> deletedEdges) {
         int nb = restriction.cardinality();
         // trivial case
         if (nb == 1) {
@@ -391,8 +391,8 @@ public class StrongConnectivityNewFinder {
 
 
     private void addCycles(int a, int b) {
-        Iterator<IntTuple2> iter = cycles.iterator();
-        IntTuple2 t;
+        Iterator<IntPair> iter = cycles.iterator();
+        IntPair t;
         while (iter.hasNext()) {
             t = iter.next();
             if (t.overlap(a, b)) {
@@ -410,12 +410,12 @@ public class StrongConnectivityNewFinder {
 //                return;
 //            }
 //        }
-        cycles.add(new IntTuple2(a, b));
+        cycles.add(new IntPair(a, b));
         System.out.println("cycles: " + cycles);
     }
 
-    private boolean inCycles(IntTuple2 t) {
-        for (IntTuple2 tt : cycles) {
+    private boolean inCycles(IntPair t) {
+        for (IntPair tt : cycles) {
             System.out.println("inCycles: (" + t.a + ", " + t.b + ") , = (" + dfsNumOfNode[t.a] + ", " + dfsNumOfNode[t.b] + ") =" + (tt.cover(dfsNumOfNode[t.a]) && tt.cover(dfsNumOfNode[t.b])));
 //            if (tt.cover(dfsNumOfNode[t.a], dfsNumOfNode[t.b])) {
 //                return true;
