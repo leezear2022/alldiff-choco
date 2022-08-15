@@ -130,7 +130,9 @@ public class AlgoAllDiffAC_WordRamWordRam {
 //    protected boolean isSkiped = false;
 
     //for bit
-    protected INaiveBitSet[] B, D;
+//    protected INaiveBitSet[] B;
+    protected INaiveBitSet[] D;
+    protected INaiveBitSet[] RD;
     protected INaiveBitSet needVisitValues;
     protected IStateBitSet activeVars;
 
@@ -212,11 +214,11 @@ public class AlgoAllDiffAC_WordRamWordRam {
         }
         onValRem = makeProcedure();
 
-        // for bit, 初始化都为0然后在fillB和D中填充
-        B = new INaiveBitSet[numValues];
-        for (int i = 0; i < numValues; ++i) {
-            B[i] = INaiveBitSet.makeBitSet(arity, false);
-        }
+//        // for bit, 初始化都为0然后在fillB和D中填充
+//        B = new INaiveBitSet[numValues];
+//        for (int i = 0; i < numValues; ++i) {
+//            B[i] = INaiveBitSet.makeBitSet(arity, false);
+//        }
 
         D = new INaiveBitSet[arity];
         for (int i = 0; i < arity; ++i) {
@@ -278,24 +280,6 @@ public class AlgoAllDiffAC_WordRamWordRam {
         }
 
     }
-
-//    protected void fillBandD() {
-//        for (int i = 0; i < numValues; ++i) {
-//            B[i].clear();
-//        }
-//
-////        IntVar v;
-//        // 填充B和D
-//        for (int i = 0; i < arity; ++i) {
-//            D[i].clear();
-//            IntVar v = vars[i];
-//            for (int j = v.getLB(), ub = v.getUB(); j <= ub; j = v.nextValue(j)) {
-//                int valIdx = val2Idx.get(j);
-//                D[i].set(valIdx);
-//                B[valIdx].set(i);
-//            }
-//        }
-//    }
 
     void printDoms() {
         for (var v : vars) {

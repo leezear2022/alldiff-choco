@@ -61,7 +61,7 @@ public class NQueenGlobal {
 //        String name = "NQueen";
         // algorithms
         String[] algorithms = ExpConfig.algorithms;
-        int[] numQueens = {4};
+        int[] numQueens = {80};
 //        int[] numQueens = {4, 8, 12, 16, 20};
         for (String algorithm : algorithms) {
             for (int n : numQueens) {
