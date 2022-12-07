@@ -9,6 +9,7 @@
  */
 package org.chocosolver.solver.constraints.nary.alldifferent;
 
+import org.chocosolver.memory.IEnvironment;
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC;
@@ -37,7 +38,7 @@ public class PropAllDiffAC20 extends Propagator<IntVar> {
     // VARIABLES
     //***********************************************************************************
 
-//    protected AlgoAllDiffAC_Gent20 filter;
+    //    protected AlgoAllDiffAC_Gent20 filter;
     protected AlgoAllDiffAC20 filter;
 
     //***********************************************************************************
@@ -52,7 +53,7 @@ public class PropAllDiffAC20 extends Propagator<IntVar> {
      */
     public PropAllDiffAC20(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-        filter = new AlgoAllDiffAC20(variables, this);
+        filter = new AlgoAllDiffAC20(variables, this, getModel());
 //        filter = new AlgoAllDiffAC_Gent20(variables, this, this.getModel());
     }
 
