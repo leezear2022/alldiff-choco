@@ -227,40 +227,17 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
     //***********************************************************************************
 
     public boolean propagate() throws ContradictionException {
-//        System.out.println(" propagate: " + (++numCall) + "----------------");
         ++numCall;
-//        System.out.printf("cid: %d, propagate: %d--------\n", id, numCall);
-//        if (numCall <= 696 && numCall >= 693) {
-//            printDomains();
-//        }
-
         boolean filter = false;
-//        instVar.clear();
-//        if (numCall == 24)
-//            System.out.println(partition);
-//        changedVars.clear();
         Measurer.enterProp();
-//        System.out.println(partition);
         if (initialPropagation) {
-//            triggeringVals.fill();
-//            triggeringVars.fill();
-//            updatedVars.fill();
-//            updatedVals.fill();
             startTime = System.nanoTime();
             deltaUpdate();
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
-//            if (numCall == 694)
-//                System.out.println("matching: " + Arrays.toString(var2ValR));
 
             startTime = System.nanoTime();
 
-//            A.setNegAnd(matchedValuesR, validValuesR);
-//            System.out.println("freeNodes:\t" + A);
-//            System.out.println("freeNodesR:\t" + freeNodesR);
-//            if (!A.eq(freeNodesR)) {
-//                System.out.println("free nodes error!!");
-//            }
             // for Zhang18
             // 有freeNodes才执行。在gamma区中过滤
             A.set(freeNodesR);
@@ -282,27 +259,17 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
 //            System.out.println(partition);
             initialPropagation = false;
         } else {
+            //matching
             startTime = System.nanoTime();
             deltaUpdate();
-//            checkDomains();
             filter |= propagate_SCC_Match();
-//            if (numCall == 694)
-//                System.out.println("matching: " + Arrays.toString(var2ValR));
             Measurer.matchingTime += System.nanoTime() - startTime;
+            //filtering
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
             Measurer.filterTime += System.nanoTime() - startTime;
         }
-//        dealChanges();
-//        checkDomains();
-//        if (numCall == 683) {
-//            printDomains();
-//        }
-//        System.out.println(partition);
-//        if (numCall <= 696 && numCall >= 693) {
-//            System.out.println("----after----");
-//            printDomains();
-//        }
+
         return filter;
     }
 

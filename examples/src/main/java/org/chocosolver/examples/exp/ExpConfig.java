@@ -13,6 +13,7 @@ public interface ExpConfig {
 
     String[] algorithms = new String[]{
             "WordRamGent",
+            "AC20",
             "WordRamWordRam",
             "ACZhang18",
             "WordRamZhang20",

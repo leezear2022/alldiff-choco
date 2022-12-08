@@ -39,17 +39,12 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
     // VARIABLES
     //***********************************************************************************
 
-    // 约束的个数
-    static public int num = 0;
-
-
     // 约束的编号
-    protected int id;
-    protected long numCall = -1;
+//    protected long numCall = -1;
 
-    protected int arity;
-    protected IntVar[] vars;
-    protected ICause aCause;
+//    protected int arity;
+//    protected IntVar[] vars;
+//    protected ICause aCause;
 
     // 新增一点（视为变量）
     protected int addArity;
@@ -96,7 +91,7 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
     protected int[] variable_visited_from_;
     protected long startTime;
     //
-    IEnvironment env;
+//    IEnvironment env;
 
     // for bit DFS Tarjan
 
@@ -134,7 +129,7 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
     protected SparseSet varsTmp;
     protected SparseSet valsTmp;
 
-    //    protected boolean initialPropagation = true
+    protected boolean initialPropagation = true;
     private TIntArrayList[] deletedValues;
     private TLongArrayStack DE;
     private TLongArrayList cycles;
@@ -155,6 +150,10 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
 
         // initial numRB
         numRB = new IStateInt[numValues];
+        for (int i = 0; i < numValues; i++) {
+            numRB[i] = env.makeInt(0);
+        }
+
         for (int i = 0; i < arity; ++i) {
             IntVar v = vars[i];
             for (int val = v.getLB(), ub = v.getUB(); val <= ub; val = v.nextValue(val)) {
@@ -301,19 +300,13 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
 
     public boolean propagate() throws ContradictionException {
         isSkiped = false;
-        numCall++;
-//        if (numCall<20) {
-//        System.out.println("----------------" + id + " propagate: " + numCall + "----------------");
-//            printDoms();
-//        }
+        ++numCall;
         boolean filter = false;
         Measurer.enterProp();
-//        long startTime;
 
-        if (numCall == 0) {
+        if (initialPropagation) {
             // initial
             restriction.set(0, numNodes);
-            triggeringVars.fill();
             varsTmp.fill();
             // matching
             startTime = System.nanoTime();
@@ -327,18 +320,11 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
             findAllSCC(restriction, varsTmp);
             filter = filterDomains(varsTmp, valsTmp);
             Measurer.filterTime += System.nanoTime() - startTime;
-
+            initialPropagation = false;
         } else {
-            // initial
-            triggeringVars.clear();
-            for (int i = 0; i < arity; ++i) {
-                monitors[i].freeze();
-                monitors[i].forEachRemVal(onValRem.set(i));
-                monitors[i].unfreeze();
-            }
-
             //matching
             startTime = System.nanoTime();
+            deltaUpdate();
             filter |= propagate_SCC_Match();
             Measurer.matchingTime += System.nanoTime() - startTime;
             //filtering
@@ -350,6 +336,7 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
         if (isSkiped) {
             Measurer.enterSkip();
         }
+
         return filter;
     }
 
@@ -366,17 +353,17 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
     protected boolean propagate_SCC_Match() throws ContradictionException {
         boolean res = false;
         IntVar x, y;
+        // 匹配值清空
         changedSCCStartIndex.clear();
         triggeringVars.iterateValid();
         while (triggeringVars.hasNextValid()) {
             int xIdx = triggeringVars.next();
             int valIdx = var2ValR[xIdx].get();
-            int val = idx2Val[valIdx];
-//            int xVal = idx2Val[valIdx];
+
             int sccStartIdx = partition.getSCCStartIndexByElement(xIdx);
             x = vars[xIdx];
 
-            if (valIdx == -1 || x.contains(val)) {
+            if (valIdx == -1 || x.contains(idx2Val[valIdx])) {
                 repairMatching(sccStartIdx);
             }
 
@@ -388,12 +375,9 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
                 }
 
                 //parition s into s1 s2 , from now on s = s2
-//                System.out.println("partition remove: " + xIdx + " " + (val2Idx.get(xVal) + addArity));
-//                System.out.println(partition);
                 partition.remove(xIdx);
                 partition.remove(var2ValR[xIdx].get() + addArity);
-//                System.out.println(xIdx + " is isInstantiated to: " + xVal);
-//                System.out.println(partition);
+
                 partition.setIteratorIndexBySCCStartIndex(sccStartIdx);
                 do {
                     int yIdx = partition.getValid();

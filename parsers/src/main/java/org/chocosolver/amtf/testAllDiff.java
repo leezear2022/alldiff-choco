@@ -69,7 +69,8 @@ public class testAllDiff {
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml",
 //                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-09-a3.xml",
 //                "C:\\exp\\AllDiffBench\\Kakuro\\Kakuro-hard-038-sumdiff.xml",
-                "C:\\exp\\AllDiffBench\\AllInterval\\AllInterval-035.xml",
+                "C:\\exp\\AllDiffBench-1\\Queens-m1-s1\\Queens-0008-m1.xml",
+//                "C:\\exp\\AllDiffBench\\AllInterval\\AllInterval-035.xml",
         };
         XCSPParser parser = new XCSPParser();
 //        String[] algorithms = new String[]{
@@ -137,6 +138,8 @@ public class testAllDiff {
 //                "ACNaiveR",
 //                "ACNaiveNew",
                 "ACSimple",
+                "WordRamZhang20",
+                "AC20",
 //                "ACSimpleRegin",
 //                "ACSimpleGent",
 //                "ACSimpleGentZhang18",
@@ -173,7 +176,7 @@ public class testAllDiff {
                     Solver solver = model.getSolver();
 //                    solver.setSearch(Search.defaultSearch(model));
 //                    solver.setSearch(Search.VarH.DEFAULT.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.RAND.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.DOM.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
@@ -181,7 +184,7 @@ public class testAllDiff {
 //                    solver.setSearch(new ImpactBased(decVars, true));
 //                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
-//                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
 //                  solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
 //                  solver.setSearch(intVarSearch();
