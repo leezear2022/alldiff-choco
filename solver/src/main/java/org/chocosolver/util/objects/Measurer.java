@@ -20,6 +20,7 @@ public class Measurer {
     public static long numP1AndP2;
     public static long numAllDiff;
     public static long maxAllDiffArity;
+    public static long numFindSCC = 0l;
 
     //    public static boolean HASNOTNONE;
     private static boolean HASNONE;
@@ -55,6 +56,10 @@ public class Measurer {
             numNone++;
             HASNONE = true;
         }
+    }
+
+    public static void enterPropForACSimple() {
+        numProp++;
     }
 
     public static void enterSkip() {
@@ -159,6 +164,7 @@ public class Measurer {
         numP2 = 0;
         numP1AndP2 = 0;
         maxAllDiffArity = 0;
+        numFindSCC = 0l;
         resetPropState();
     }
 

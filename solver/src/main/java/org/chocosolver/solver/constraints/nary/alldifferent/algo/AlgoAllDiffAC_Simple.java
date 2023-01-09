@@ -10,6 +10,7 @@ import org.chocosolver.solver.variables.IntVar;
 import org.chocosolver.util.objects.IStateBitSetPartition;
 import org.chocosolver.util.objects.IStateLongPartition;
 import org.chocosolver.util.objects.IStatePartition;
+import org.chocosolver.util.objects.Measurer;
 
 import java.util.BitSet;
 
@@ -37,6 +38,8 @@ public abstract class AlgoAllDiffAC_Simple {
     protected int[] idx2Val;
     // 索引到值
     protected TIntIntHashMap val2Idx;
+    // 判断传播类型
+    protected int propTypeMask = 0;
     // Xc-Γ(A)
 //    private SparseSet notGamma;
     // Dc-A
@@ -196,7 +199,7 @@ public abstract class AlgoAllDiffAC_Simple {
     }
 
 
-//    protected static void clear(long a) {
+    //    protected static void clear(long a) {
 //        a = 0;
 //    }
 //
@@ -204,13 +207,17 @@ public abstract class AlgoAllDiffAC_Simple {
 //        a = lastMask;
 //    }
 //
-//    protected static void set(long a, int e) {
-//        a |= (1 << e);
-//    }
-//
-//    protected static void clear(long a, int e) {
-//        a &= (~(1 << e));
-//    }
+    protected static void set(long a, int e) {
+        a |= (1 << e);
+    }
+
+    protected static void set(int a, int e) {
+        a |= (1 << e);
+    }
+
+    protected static void clear(long a, int e) {
+        a &= (~(1 << e));
+    }
 
     protected static boolean get(IStateLong a, int e) {
         return (a.get() & (1L << e)) != 0;
@@ -244,6 +251,59 @@ public abstract class AlgoAllDiffAC_Simple {
         if (pos >= BITS_PER_WORD || word.get() == 0L)
             return INDEX_OVERFLOW;
         return Long.numberOfTrailingZeros(word.get() & -1L << pos);
+    }
+
+    protected void enterP1() {
+        set(propTypeMask, 0);
+    }
+//
+//    protected void enterP1AndP2() {
+//        set(propTypeMask, 1);
+//    }
+
+    protected void enterP2() {
+        set(propTypeMask, 1);
+    }
+
+    protected void enterSkip() {
+        set(propTypeMask, 2);
+    }
+
+    protected enum propType {
+        P1,
+        P2,
+        P1AndP2,
+        Skip,
+        None,
+        Error,
+    }
+
+    void resetPropType() {
+        propTypeMask = 0;
+    }
+
+    protected propType getAndStatisticPropType() {
+        Measurer.numFindSCC++;
+        switch (propTypeMask) {
+            case 0b0:
+                Measurer.numNone++;
+                return propType.None;
+            case 0b1:
+                Measurer.numP1++;
+                return propType.P1;
+            case 0b11:
+                Measurer.numP1AndP2++;
+                return propType.P1AndP2;
+            case 0b10:
+                Measurer.numP2++;
+                return propType.P2;
+            case 0b100:
+                Measurer.numSkip++;
+                return propType.Skip;
+            default:
+                System.out.println("propType error" + Integer.toBinaryString(propTypeMask));
+                return propType.Error;
+        }
     }
 
     protected static long initLastMask(int size) {

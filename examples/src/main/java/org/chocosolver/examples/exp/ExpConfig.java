@@ -17,6 +17,7 @@ public interface ExpConfig {
             "WordRamWordRam",
             "ACZhang18",
             "WordRamZhang20",
+            "ACNaive",
             "ACSimple",
             "BC",
     };
