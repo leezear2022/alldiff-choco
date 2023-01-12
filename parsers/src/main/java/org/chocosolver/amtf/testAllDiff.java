@@ -57,10 +57,11 @@ public class testAllDiff {
 //                "C:\\exp\\AllDiffBench\\SchurrLemma\\SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-11-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
-//                "/Users/leezear/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
+                "/home/lee/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/Queens-m1-s1/Queens-0004-m1.xml",
+//                "/home/lee/exp/AllDiffBench-1/Queens-m1-s1/Queens-0012-m1.xml",
 //                "/Users/leezear/exp/AllDiffBench/CostasArray/CostasArray-12.xml",
 //                "C:\\exp\\AllDiffBench\\CostasArray\\CostasArray-10.xml",
 //                "/Users/leezear/exp/AllDiffBench/GracefulGraph/GracefulGraph-K03-P04.xml",
@@ -69,7 +70,7 @@ public class testAllDiff {
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml",
 //                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-09-a3.xml",
 //                "C:\\exp\\AllDiffBench\\Kakuro\\Kakuro-hard-038-sumdiff.xml",
-                "C:\\exp\\AllDiffBench-1\\Queens-m1-s1\\Queens-0008-m1.xml",
+//                "C:\\exp\\AllDiffBench-1\\Queens-m1-s1\\Queens-0008-m1.xml",
 //                "C:\\exp\\AllDiffBench\\AllInterval\\AllInterval-035.xml",
         };
         XCSPParser parser = new XCSPParser();
@@ -105,6 +106,7 @@ public class testAllDiff {
 //                "AC",
 //                "AC_ZHANG",
                 "ACFair",
+                "ACFair",
 //                "AC_REGIN",
 //                "ACChen",
 //                "ACZhang20Bit",
@@ -133,7 +135,7 @@ public class testAllDiff {
 //                "WordRamZhang20BitBIS4",
 //                "WordRamZhang20BitBIS4",
 //                "WordRamZhang20BitBIS4",
-//                "ACNaive",
+                "ACNaive",
 //                "ACNaive",
 //                "ACNaiveR",
 //                "ACNaiveNew",
@@ -214,6 +216,7 @@ public class testAllDiff {
                         out.println("numP1: " + Measurer.numP1);
                         out.println("numP2: " + Measurer.numP2);
                         out.println("numP1AndP2: " + Measurer.numP1AndP2);
+                        out.println("numFindSCC: " + Measurer.numFindSCC);
 //                        solver.printStatistics();
                     }
                 }

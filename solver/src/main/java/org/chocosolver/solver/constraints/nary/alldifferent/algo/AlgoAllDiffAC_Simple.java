@@ -207,12 +207,12 @@ public abstract class AlgoAllDiffAC_Simple {
 //        a = lastMask;
 //    }
 //
-    protected static void set(long a, int e) {
-        a |= (1 << e);
+    protected static long set(long a, int e) {
+        return a | (1 << e);
     }
 
-    protected static void set(int a, int e) {
-        a |= (1 << e);
+    protected static int set(int a, int e) {
+        return a = (1 << e);
     }
 
     protected static void clear(long a, int e) {
@@ -254,7 +254,8 @@ public abstract class AlgoAllDiffAC_Simple {
     }
 
     protected void enterP1() {
-        set(propTypeMask, 0);
+//        System.out.println("P1");
+        propTypeMask = set(propTypeMask, 0);
     }
 //
 //    protected void enterP1AndP2() {
@@ -262,11 +263,13 @@ public abstract class AlgoAllDiffAC_Simple {
 //    }
 
     protected void enterP2() {
-        set(propTypeMask, 1);
+//        System.out.println("P2");
+        propTypeMask= set(propTypeMask, 1);
     }
 
     protected void enterSkip() {
-        set(propTypeMask, 2);
+//        System.out.println("Skip");
+        propTypeMask= set(propTypeMask, 2);
     }
 
     protected enum propType {
@@ -283,6 +286,7 @@ public abstract class AlgoAllDiffAC_Simple {
     }
 
     protected propType getAndStatisticPropType() {
+//        System.out.println(Integer.toBinaryString(propTypeMask));
         Measurer.numFindSCC++;
         switch (propTypeMask) {
             case 0b0:
