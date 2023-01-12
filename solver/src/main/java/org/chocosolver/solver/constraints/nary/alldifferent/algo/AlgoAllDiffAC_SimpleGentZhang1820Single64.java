@@ -349,6 +349,10 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
 
             if (vars[varIdx].isInstantiated()) {
                 clear(activeVars, varIdx);
+                int valIdx = RD[varIdx].nextSetBit(0);
+                var2ValR[varIdx].set(valIdx);
+                val2VarR[valIdx].set(varIdx);
+                matchedValuesR.set(valIdx);
             }
         }
     }

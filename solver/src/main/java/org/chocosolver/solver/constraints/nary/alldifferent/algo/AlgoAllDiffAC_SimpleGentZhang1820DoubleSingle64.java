@@ -353,6 +353,10 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
 
             if (vars[varIdx].isInstantiated()) {
                 clear(activeVars, varIdx);
+                int valIdx = nextSetBit(RD[varIdx], 0);
+                var2ValR[varIdx].set(valIdx);
+                val2VarR[valIdx].set(varIdx);
+                matchedValuesR.set(valIdx);
             }
         }
     }

@@ -61,18 +61,18 @@ public class expAllDiff4 {
 //                "WordRam"
 //        };
         String[] algorithms = new String[]{
-//                "AC",
-//                "WordRamGent",
+                "WordRamGent",
                 "WordRamWordRam",
                 "ACZhang18",
-                "WordRamZhang20",
+                "AC20",
+                "ACNaive",
                 "ACSimple",
                 "BC",
         };
 
         int runNum = 1;
         long node = 0;
-        float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity;
+        float time, matchingTime, filterTime, numDelValuesP1, numDelValuesP2, numProp, numNone, numSkip, numP1, numP2, numP1AndP2, maxArity, numFindSCC;
         float IN_SEC = 1000 * 1000 * 1000f;
 
         for (String s : series) {
@@ -81,7 +81,7 @@ public class expAllDiff4 {
                 BufferedWriter bw = new BufferedWriter(new FileWriter(csv, false));
                 bw.write("instance");
                 for (int i = 0; i < algorithms.length; i++) {
-                    bw.write(",algorithm,node,time,matchingTime,filterTime,numDelValuesP1,numDelValuesP2,numProp,numNone,numSkip,numP1,numP2,numP1AndP2,maxArity");
+                    bw.write(",algorithm,node,time,matchingTime,filterTime,numDelValuesP1,numDelValuesP2,numProp,numNone,numSkip,numP1,numP2,numP1AndP2,numFindSCC,maxArity");
 //                    bw.write(",node,time");
                 }
                 bw.newLine();
@@ -112,6 +112,7 @@ public class expAllDiff4 {
                         numP2 = 0f;
                         numP1AndP2 = 0f;
                         maxArity = 0f;
+                        numFindSCC = 0f;
                         dateTime = LocalDateTime.now().format(dateTimeFormatter);
                         out.println(algorithm + " [" + dateTime + "]======>");
                         for (int i = 0; i < runNum; i++) {
@@ -144,7 +145,7 @@ public class expAllDiff4 {
 //                                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
 //                                    break;
 //                                case 2:
-//                                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                            solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
 //                                    break;
 //                                case 3:
 //                                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
@@ -154,7 +155,7 @@ public class expAllDiff4 {
 //                                    break;
 //                            }
 
-                            solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
+//                            solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
 //                            solver.setSearch(Search.defaultSearch(model));
                             solver.solve();
                             // if (solver.solve()) {
@@ -176,11 +177,11 @@ public class expAllDiff4 {
                             numP1 += Measurer.numP1 / runNum;
                             numP2 += Measurer.numP2 / runNum;
                             numP1AndP2 += Measurer.numP1AndP2 / runNum;
+                            numFindSCC += Measurer.numFindSCC / runNum;
                             maxArity += Measurer.maxAllDiffArity / runNum;
-
                         }
                         bw.write("," + algorithm + "," + node + "," + time + "," + matchingTime + "," + filterTime + "," + numDelValuesP1 + "," + numDelValuesP2 + "," + numProp
-                                + "," + numNone + "," + numSkip + "," + numP1 + "," + numP2 + "," + numP1AndP2 + "," + maxArity);
+                                + "," + numNone + "," + numSkip + "," + numP1 + "," + numP2 + "," + numP1AndP2 + "," + numFindSCC + "," + maxArity);
 //                        System.out.println("," + algorithm + "," + node + "," + time + "," + matchingTime + "," + filterTime + "," + numDelValuesP1 + "," + numDelValuesP2 + "," + numProp
 //                                + "," + numNone + "," + numSkip + "," + numP1 + "," + numP2 + "," + numP1AndP2 + "," + numP1AndP2 + "," + maxArity);
 //                        bw.write("," + node + "," + time);

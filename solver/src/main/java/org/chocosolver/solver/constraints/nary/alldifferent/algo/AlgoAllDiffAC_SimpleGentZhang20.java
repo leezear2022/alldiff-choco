@@ -418,6 +418,10 @@ public class AlgoAllDiffAC_SimpleGentZhang20 extends AlgoAllDiffAC_Simple {
 
             if (vars[varIdx].isInstantiated()) {
                 activeVars.clear(varIdx);
+                int valIdx = RD[varIdx].nextSetBit(0);
+                var2ValR[varIdx].set(valIdx);
+                val2VarR[valIdx].set(varIdx);
+                matchedValuesR.set(valIdx);
             }
         }
     }
