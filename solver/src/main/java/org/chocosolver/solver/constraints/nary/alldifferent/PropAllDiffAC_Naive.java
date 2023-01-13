@@ -63,11 +63,11 @@ public class PropAllDiffAC_Naive extends Propagator<IntVar> {
 //        if (vars.length <= 32) {
 //            this.filter = new AlgoAllDiffAC_Naive32(variables, this);
 //        } else
-//        if (vars.length <= 64) {
-//            this.filter = new AlgoAllDiffAC_Naive64(variables, this);
-//        } else {
+        if (vars.length <= 64) {
+            this.filter = new AlgoAllDiffAC_Naive64(variables, this);
+        } else {
             this.filter = new AlgoAllDiffAC_NaiveBitSet(variables, this);
-//        }
+        }
 //        Measurer.numAllDiff++;
     }
 

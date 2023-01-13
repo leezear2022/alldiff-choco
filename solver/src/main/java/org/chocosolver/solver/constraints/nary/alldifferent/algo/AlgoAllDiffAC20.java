@@ -546,7 +546,6 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
 //        // !! 可做增量
 //        freeNode.fill();
         for (int varIdx = 0; varIdx < arity; varIdx++) {
-//            for (int varIdx = activeVars.nextSetBit(0); varIdx >=0 ; varIdx = activeVars.nextSetBit(varIdx + 1)) {
             if (var2ValR[varIdx].get() == -1) {
                 visitedValues.clear();
                 unVisitedVariables.set();
@@ -572,22 +571,21 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
             int varIdx = filterVars.next();
             IntVar v = vars[varIdx];
             if (!v.isInstantiated()) {
-                filterVals.iterateValid();
-                while (filterVals.hasNextValid()) {
-                    int valIdx = filterVals.next();
-                    int k = idx2Val[valIdx];
-//                int ub = v.getUB();
-//                for (int k = v.getLB(); k <= ub; k = v.nextValue(k)) {
-//                    int valIdx = val2Idx.get(k);
-                    if (!partition.inSameSCC(varIdx, valIdx + addArity)) {
-                        Measurer.enterP2();
-                        if (valIdx == var2ValR[varIdx].get()) {
-                            int valNum = v.getDomainSize();
-                            Measurer.numDelValuesP2 += valNum - 1;
-                            filter |= v.instantiateTo(k, aCause);
-                        } else {
-                            ++Measurer.numDelValuesP2;
-                            filter |= v.removeValue(k, aCause);
+                if (!v.isInstantiated()) {
+                    for (int k = v.getLB(), ub = v.getUB(); k <= ub; k = v.nextValue(k)) {
+                        int valIdx = val2Idx.get(k);
+                        if (!partition.inSameSCC(varIdx, valIdx + addArity)) {
+                            Measurer.enterP2();
+                            if (valIdx == var2ValR[varIdx].get()) {
+                                int valNum = v.getDomainSize();
+                                Measurer.numDelValuesP2 += valNum - 1;
+                                ++Measurer.numP2;
+                                filter |= v.instantiateTo(k, aCause);
+                            } else {
+                                ++Measurer.numDelValuesP2;
+                                ++Measurer.numP2;
+                                filter |= v.removeValue(k, aCause);
+                            }
                         }
                     }
                 }
@@ -597,8 +595,6 @@ public class AlgoAllDiffAC20 extends AlgoAllDiffAC_Simple {
     }
 
     protected void resetData(SparseSet resetVars, SparseSet resetVals, boolean containsSink) {
-//        maxDFS = 0;
-//        cycles.clear();
         DE.clear();
         hasSCCSplit = false;
 

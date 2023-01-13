@@ -74,7 +74,7 @@ public class IStateLongPartition extends IStatePartition {
 
     @Override
     String maskStr() {
-        return sccMask.toString();
+        return Long.toBinaryString(sccMask.get());
     }
 }
 

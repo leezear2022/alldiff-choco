@@ -222,47 +222,30 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
 
     public boolean propagate() throws ContradictionException {
 //        System.out.printf("cid: %d, propagate: %d--------\n", id, ++numCall);
-//        printDomains();
         boolean filter = false;
-//        Measurer.enterProp();
         Measurer.enterPropForACSimple();
-//        printDomains();
-//        printRD();
-//        changedVars.clear();
-//        System.out.println(partition);
         if (initialPropagation) {
             resetPropType();
-//            triggeringVals.fill();
             triggeringVars.fill();
-//            updatedVars.fill();
-//            updatedVals.fill();
-//            System.out.println(Long.toBinaryString(activeVars.get()));
             startTime = System.nanoTime();
             deltaUpdate();
-//            printRD();
-//            System.out.println(Long.toBinaryString(activeVars.get()));
-//            System.out.println("matching: " + Arrays.toString(var2ValR));
             findMaximumMatching();
             Measurer.matchingTime += System.nanoTime() - startTime;
-//            System.out.println("matching: " + Arrays.toString(var2ValR));
             startTime = System.nanoTime();
             initiateMatrix(0);
             filter = filterDomainsPartition(0);
             Measurer.filterTime += System.nanoTime() - startTime;
-//            System.out.println(partition);
             getAndStatisticPropType();
             initialPropagation = false;
         } else {
             startTime = System.nanoTime();
             deltaUpdate();
             filter |= propagate_SCC_Match();
-//            System.out.println("matching: " + Arrays.toString(var2ValR));
             Measurer.matchingTime += System.nanoTime() - startTime;
             startTime = System.nanoTime();
             filter |= propagate_SCC_filter();
             Measurer.filterTime += System.nanoTime() - startTime;
         }
-//        dealChanges();
         return filter;
     }
 
@@ -290,8 +273,6 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
     private void deltaUpdate() throws ContradictionException {
         // 触发队列和更新队列
         triggeringVars.clear();
-
-//        for (int varIdx = 0; varIdx < arity; varIdx++) {
         for (int varIdx = nextSetBit(activeVars, 0); varIdx >= 0; varIdx = nextSetBit(activeVars, varIdx + 1)) {
             monitors[varIdx].freeze();
             int numDeltaSize = monitors[varIdx].sizeApproximation();
@@ -309,10 +290,6 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
             // 这里还能做优化处理
             if (vars[varIdx].isInstantiated()) {
                 clear(activeVars, varIdx);
-                int valIdx = nextSetBit(RD[varIdx], 0);
-                var2ValR[varIdx].set(valIdx);
-                val2VarR[valIdx].set(varIdx);
-                set(matchedValuesR, valIdx);
             }
         }
     }
@@ -425,31 +402,21 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
     }
 
     private void findMaximumMatching() throws ContradictionException {
-//        // !! 可做增量
-//        activeVars.set(lastMask);
-//        for (int varIdx = 0; varIdx < arity; varIdx++) {
-//            System.out.println(Long.toBinaryString(activeVars.get()));
-        for (int varIdx = nextSetBit(activeVars, 0); varIdx >= 0; varIdx = nextSetBit(activeVars, varIdx + 1)) {
+        for (int varIdx = 0; varIdx < arity; varIdx++) {
             if (var2ValR[varIdx].get() == -1) {
-//                clear(visitedValues);
                 visitedValues = 0;
-//                set(unVisitedVariables);
                 unVisitedVariables = lastMask;
                 MakeAugmentingPath(varIdx);
             }
             if (var2ValR[varIdx].get() == -1) {
                 // No augmenting path exists.
-//                System.out.println("error: "+varIdx);
                 vars[0].instantiateTo(vars[0].getLB() - 1, aCause);
             }
         }
-//        System.out.println(Arrays.toString(var2Val));
-//        System.out.println(Arrays.toString(val2Var));
     }
 
     protected void repairMatching(int SCCStartIndex) throws ContradictionException {
         // repair max matching.
-
         partition.setIteratorIndexBySCCStartIndex(SCCStartIndex);
         while (partition.hasNext()) {
             int varIdx = partition.next();
@@ -617,7 +584,7 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
 
     private boolean filterDomainsPartition(int sccStartIndex) throws ContradictionException {
         boolean filter = false;
-//        System.out.println(varIdx2 + "," + partition);
+//        System.out.println(partition);
 //        if (numCall == 328) {
 //        System.out.println(partition);
 //        }
@@ -628,75 +595,63 @@ public class AlgoAllDiffAC_SimpleGentZhang20Single64 extends AlgoAllDiffAC_Simpl
 //            System.out.println("pop: " + varIdx);
             // varIdx 只可能在两个子分区中，checked和unknown
             IntVar v = vars[varIdx];
-            if (!v.isInstantiated()) {
-                int matchedVal = var2ValR[varIdx].get();
-                int k = idx2Val[matchedVal];
-                // 先验证匹配值，再验证其它值
-                if (!checkSCC(varIdx, matchedVal)) {
-//                    Measurer.enterP2();
-//                    int valNum = v.getDomainSize();
-//                    Measurer.numDelValuesP2 += valNum - 1;
+//            if (!v.isInstantiated()) {
+            int matchedVal = var2ValR[varIdx].get();
+            int k = idx2Val[matchedVal];
+            // 先验证匹配值，再验证其它值
+            if (!checkSCC(varIdx, matchedVal)) {
+                partition.removeCurrentToTail();
+                if (!v.isInstantiated()) {
                     enterP2();
-                    filter |= v.instantiateTo(k, aCause);
                     instantiateToR(varIdx, matchedVal);
-//                    recordInstVar(varIdx, matchedVal);
-                    partition.removeCurrentToTail();
-//                    System.out.println("instantiate  : " + varIdx + ", " + matchedVal);
-                } else {
-                    // 匹配值在SCC中，表示变量论域至少两个值，且至少有一个值在SCC中
-                    partition.setCurrentConnected();
-                    // 再验证其它值
+                    filter |= v.instantiateTo(k, aCause);
+                }
+//                System.out.println("instantiate  : " + varIdx + ", " + matchedVal);
+            } else {
+                // 匹配值在SCC中，表示变量论域至少两个值，且至少有一个值在SCC中
+                partition.setCurrentConnected();
+                // 再验证其它值
 //                    for (int valIdx = RD[varIdx].nextSetBit(0); valIdx >= 0; valIdx = RD[varIdx].nextSetBit(valIdx + 1)) {
-                    for (int valIdx = nextSetBit(RD[varIdx], 0); valIdx >= 0;
-                         valIdx = nextSetBit(RD[varIdx], valIdx + 1)) {
-                        // valIdx 可能在三个子分区内：connected，unknown和moved
-                        // 在connected分区中不用验证，
-                        // 在unknown分区中的需要检测scc
-                        // 在moved分区中的直接移除
-                        int varIdx2 = val2VarR[valIdx].get();
-                        if (varIdx != varIdx2) {
-                            k = idx2Val[valIdx];
-                            if (partition.varInUnknown(varIdx2)) {
-                                // 在Unknown分区中，需检查，能连通就加入Connected，不通连通就放入Moved分区
-                                if (!checkSCC(varIdx, valIdx)) {
-//                                    Measurer.enterP2();
-//                                    ++Measurer.numDelValuesP2;
-                                    enterP2();
-                                    filter |= v.removeValue(k, aCause);
-                                    removeValueR(varIdx, valIdx);
-//                                    recordRemoveVal(varIdx, valIdx);
-                                    // varIdx2未分裂，将varIdx2移入tmp分区中
-                                    partition.addMoved(varIdx2);
-//                                    System.out.println("second delete1:\t" + varIdx + ", " + valIdx);
-                                } else {
-                                    partition.addConnected(varIdx2);
-                                }
-                            } else if (partition.varInMoved(varIdx2)) {
-                                // var2在moved子分区,
-//                                Measurer.enterP2();
-//                                ++Measurer.numDelValuesP2;
+                for (int valIdx = nextSetBit(RD[varIdx], 0); valIdx >= 0;
+                     valIdx = nextSetBit(RD[varIdx], valIdx + 1)) {
+                    // valIdx 可能在三个子分区内：connected，unknown和moved
+                    // 在connected分区中不用验证，
+                    // 在unknown分区中的需要检测scc
+                    // 在moved分区中的直接移除
+                    int varIdx2 = val2VarR[valIdx].get();
+                    if (varIdx != varIdx2) {
+                        k = idx2Val[valIdx];
+                        if (partition.varInUnknown(varIdx2)) {
+                            // 在Unknown分区中，需检查，能连通就加入Connected，不通连通就放入Moved分区
+                            if (!checkSCC(varIdx, valIdx)) {
                                 enterP2();
                                 filter |= v.removeValue(k, aCause);
                                 removeValueR(varIdx, valIdx);
-//                                recordRemoveVal(varIdx, valIdx);
-//                                System.out.println("second delete2:\t" + varIdx + ", " + valIdx);
                                 // varIdx2未分裂，将varIdx2移入tmp分区中
-                            } else if (partition.varNotInSameSCC(varIdx2)) {
-//                                System.out.println(varIdx2 + "," + partition);
-                                // var2在moved子分区,
-//                                Measurer.enterP2();
-//                                ++Measurer.numDelValuesP2;
-                                enterP2();
-                                filter |= v.removeValue(k, aCause);
-                                removeValueR(varIdx, valIdx);
-//                                recordRemoveVal(varIdx, valIdx);
-//                                System.out.println("second delete3:\t" + varIdx + ", " + valIdx);
+                                partition.addMoved(varIdx2);
+//                                System.out.println("second delete1:\t" + varIdx + ", " + valIdx);
+                            } else {
+                                partition.addConnected(varIdx2);
                             }
-                            // 如果在Connected分区或在其它SCC中，跳过该值
+                        } else if (partition.varInMoved(varIdx2)) {
+                            // var2在moved子分区,
+                            enterP2();
+                            filter |= v.removeValue(k, aCause);
+                            removeValueR(varIdx, valIdx);
+//                            System.out.println("second delete2:\t" + varIdx + ", " + valIdx);
+                            // varIdx2未分裂，将varIdx2移入tmp分区中
+                        } else if (partition.varNotInSameSCC(varIdx2)) {
+                            // var2其它分区,
+                            enterP2();
+                            filter |= v.removeValue(k, aCause);
+                            removeValueR(varIdx, valIdx);
+//                            System.out.println("second delete3:\t" + varIdx + ", " + valIdx);
                         }
+                        // 如果在Connected分区或在其它SCC中，跳过该值
                     }
                 }
             }
+//            }
         }
         partition.disposeSCCIterator();
         return filter;

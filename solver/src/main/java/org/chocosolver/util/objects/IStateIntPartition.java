@@ -72,6 +72,6 @@ public class IStateIntPartition extends IStatePartition {
 
     @Override
     String maskStr() {
-        return sccMask.toString();
+        return Integer.toBinaryString(sccMask.get());
     }
 }
