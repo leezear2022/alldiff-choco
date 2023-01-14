@@ -60,11 +60,12 @@ public class testAllDiff {
 //                "/home/lee/exp/AllDiffBench-1/SchurrLemma/SchurrLemma-012-9-mod.xml",
 //                "/home/lee/exp/AllDiffBench-1/Ortholatin/",
 //                "/home/lee/exp/AllDiffBench-1/NumberPartitioning/NumberPartitioning-008.xml",
-//                "C:/exp/AllDiffBench-1/NumberPartitioning/NumberPartitioning-008.xml",
+                "/home/lee/exp/AllDiffBench-1/NumberPartitioning/NumberPartitioning-032.xml",
 //                "C:/exp/AllDiffBench-1/Kakuro/Kakuro-hard-070-sumdiff.xml",
 //                "C:/exp/AllDiffBench-1/NumberPartitioning/NumberPartitioning-010.xml",
 //                "C:/exp/AllDiffBench-1/CryptoPuzzle/CryptoPuzzle-black-green-orange.xml",
-                "C:/exp/AllDiffBench-1/SportsScheduling/SportsScheduling-06.xml",
+//                "/home/lee/exp/AllDiffBench-1/SportsScheduling/SportsScheduling-06.xml",
+//                "/home/lee/exp/AllDiffBench/AllInterval/AllInterval-035.xml",
 
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
@@ -113,8 +114,8 @@ public class testAllDiff {
         String[] algorithms = new String[]{
 //                "AC",
 //                "AC_ZHANG",
-                "ACFast",
-                "ACFast",
+//                "ACFast",
+//                "ACFast",
 //                "ACFair",
 //                "AC_REGIN",
 //                "ACChen",
@@ -193,10 +194,10 @@ public class testAllDiff {
 //                    solver.setSearch(Search.activityBasedSearch(decVars));
 //                    solver.setSearch(Search.minDomLBSearch(decVars));
 //                    solver.setSearch(new ImpactBased(decVars, true));
-//                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
+                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
 //                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
-                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
-//                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+//                    solver.setSearch(Search.VarH.CHS.make (solver, decVars, Search.ValH.MIN, true));
 //                  solver.setSearch(intVarSearch(new FirstFail(model), new IntDomainMin(), decVars));
 //                  solver.setSearch(intVarSearch();
 
