@@ -803,16 +803,16 @@ public class AlgoAllDiffAC_SimpleGentZhang1820Single64 extends AlgoAllDiffAC_Sim
             del.iterateValid();
             while (del.hasNextValid()) {
                 int valIdx = del.next();
-//                if (!validValuesR.get(valIdx) || A.get(valIdx)) {
-//                    return false;
-//                }
-                if (!validValuesR.get(valIdx)) {
+                if (!validValuesR.get(valIdx) || A.get(valIdx)) {
                     return false;
                 }
-
-                if (A.get(valIdx)) {
-                    continue;
-                }
+//                if (!validValuesR.get(valIdx)) {
+//                    return false;
+//                }
+//
+//                if (A.get(valIdx)) {
+//                    continue;
+//                }
 
 //                System.out.println("ED: check: " + varIdx + ", " + valIdx);
 //                if (!A.get(valIdx) && validValuesR.get(valIdx)) {

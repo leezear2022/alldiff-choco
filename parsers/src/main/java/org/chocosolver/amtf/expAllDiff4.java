@@ -136,16 +136,18 @@ public class expAllDiff4 {
                             Arrays.sort(decVars, Comparator.comparingInt(IntVar::getId));
                             Solver solver = model.getSolver();
                             solver.limitTime("1200s");
+//                            solver.setSearch(Search.defaultSearch(model));
+//                            solver.setSearch(Search.minDomLBSearch(model.getVars()));
 //                            solver.setSearch(activityBasedSearch(decVars));
 //                            switch (heuIdx) {
 //                                case 0:
-//                                    solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
+//                            solver.setSearch(Search.VarH.ABS.make(solver, decVars, Search.ValH.MIN, true));
 //                                    break;
 //                                case 1:
 //                                    solver.setSearch(Search.VarH.IBS.make(solver, decVars, Search.ValH.MIN, true));
 //                                    break;
 //                                case 2:
-                            solver.setSearch(Search.VarH.DOMWDEG.make(solver, decVars, Search.ValH.MIN, true));
+                            solver.setSearch(Search.VarH.DOM.make(solver, decVars, Search.ValH.MIN, true));
 //                                    break;
 //                                case 3:
 //                                    solver.setSearch(Search.VarH.CHS.make(solver, decVars, Search.ValH.MIN, true));
@@ -156,6 +158,7 @@ public class expAllDiff4 {
 //                            }
 
 //                            solver.setSearch(Search.VarH.INPUT.make(solver, decVars, Search.ValH.MIN, true));
+//                            solver.setSearch(Search.defaultSearch(model));
 //                            solver.setSearch(Search.defaultSearch(model));
                             solver.solve();
                             // if (solver.solve()) {

@@ -807,16 +807,16 @@ public class AlgoAllDiffAC_SimpleGentZhang1820DoubleSingle64 extends AlgoAllDiff
                 int valIdx = del.next();
 //                if (numCall == 694)
 //                System.out.println("ED: check: " + varIdx + ", " + valIdx + ", " + get(validValuesR, valIdx) + ", " + get(A, valIdx));
-//                if (!get(validValuesR, valIdx) || get(A, valIdx)) {
-//                    return false;
-//                }
-
-                if (!get(validValuesR, valIdx)) {
+                if (!get(validValuesR, valIdx) || get(A, valIdx)) {
                     return false;
                 }
-                if (get(A, valIdx)) {
-                    continue;
-                }
+
+//                if (!get(validValuesR, valIdx)) {
+//                    return false;
+//                }
+//                if (get(A, valIdx)) {
+//                    continue;
+//                }
 //
 
 //                if (!A.get(valIdx) && validValuesR.get(valIdx)) {

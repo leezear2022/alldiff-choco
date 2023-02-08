@@ -785,15 +785,15 @@ public class AlgoAllDiffAC_SimpleGentZhang1820 extends AlgoAllDiffAC_Simple {
                 int valIdx = del.next();
 //                if (numCall == 694)
 //                    System.out.println("ED: check: " + varIdx + ", " + valIdx);
-//                if (!validValuesR.get(valIdx) || A.get(valIdx)) {
-//                    return false;
-//                }
-                if (!validValuesR.get(valIdx)) {
+                if (!validValuesR.get(valIdx) || A.get(valIdx)) {
                     return false;
                 }
-                if (A.get(valIdx)) {
-                    continue;
-                }
+//                if (!validValuesR.get(valIdx)) {
+//                    return false;
+//                }
+//                if (A.get(valIdx)) {
+//                    continue;
+//                }
 //                if (!A.get(valIdx) && validValuesR.get(valIdx)) {
                 // 变量varIdx能到值valIdx且变量M(valIdx)能到M(varIdx)==>(varIdx,valIdx)是无效删值
                 if (!checkSCC(varIdx, valIdx) ||
