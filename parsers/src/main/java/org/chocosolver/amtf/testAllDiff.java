@@ -65,7 +65,7 @@ public class testAllDiff {
 //                "C:/exp/AllDiffBench-1/NumberPartitioning/NumberPartitioning-010.xml",
 //                "C:/exp/AllDiffBench-1/CryptoPuzzle/CryptoPuzzle-black-green-orange.xml",
 //                "/home/lee/exp/AllDiffBench-1/SportsScheduling/SportsScheduling-06.xml",
-                "/home/lee/exp/AllDiffBench/AllInterval/AllInterval-009.xml",
+//                "/home/lee/exp/AllDiffBench/AllInterval/AllInterval-009.xml",
 
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-05-a3.xml",
 //                "/Users/leezear/exp/AllDiffBench-1/GolombRuler/GolombRuler-07-a3.xml",
@@ -79,8 +79,8 @@ public class testAllDiff {
 //                "C:/exp/AllDiffBench/CryptoPuzzle/CryptoPuzzle-no-no-yes.xml",
 //                "C:\\exp\\AllDiffBench\\GolombRuler\\GolombRuler-09-a3.xml",
 //                "C:\\exp\\AllDiffBench\\Kakuro\\Kakuro-hard-038-sumdiff.xml",
-//                "C:\\exp\\AllDiffBench-1\\Queens-m1-s1\\Queens-0008-m1.xml",
-//                "C:\\exp\\AllDiffBench\\AllInterval\\AllInterval-035.xml",
+//                "C:\\exp\\AllDiffBench-1\\Queens-m1-s1\\Queens-0012-m1.xml",
+                "C:\\exp\\AllDiffBench\\AllInterval\\AllInterval-035.xml",
         };
         XCSPParser parser = new XCSPParser();
 //        String[] algorithms = new String[]{
@@ -133,8 +133,8 @@ public class testAllDiff {
 //                "WordRam",
 //                "WordRamRegin",
                 "WordRamGent",
-//                "WordRamWordRam",
-//                "WordRamWordRam",
+                "WordRamWordRam",
+                "WordRamWordRam2",
 //                "WordRamWordRam",
 //                "WordRamZhang20",
 //                "WordRamZhang20BIS",

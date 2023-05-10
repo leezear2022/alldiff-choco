@@ -11,6 +11,7 @@ package org.chocosolver.solver.constraints.nary.alldifferent;
 
 import org.chocosolver.solver.constraints.Propagator;
 import org.chocosolver.solver.constraints.PropagatorPriority;
+import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_SimpleWordRam;
 import org.chocosolver.solver.constraints.nary.alldifferent.algo.AlgoAllDiffAC_WordRamWordRamBak2;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
@@ -39,7 +40,7 @@ public class PropAllDiffAC_WordRamWordRam2 extends Propagator<IntVar> {
     // VARIABLES
     //***********************************************************************************
 
-    protected AlgoAllDiffAC_WordRamWordRamBak2 filter;
+    protected AlgoAllDiffAC_SimpleWordRam filter;
 
     //***********************************************************************************
     // CONSTRUCTORS
@@ -53,7 +54,7 @@ public class PropAllDiffAC_WordRamWordRam2 extends Propagator<IntVar> {
      */
     public PropAllDiffAC_WordRamWordRam2(IntVar[] variables) {
         super(variables, PropagatorPriority.QUADRATIC, false);
-        filter = new AlgoAllDiffAC_WordRamWordRamBak2(variables, this, this.getModel());
+        filter = new AlgoAllDiffAC_SimpleWordRam(variables, this, this.getModel());
     }
 
     //***********************************************************************************

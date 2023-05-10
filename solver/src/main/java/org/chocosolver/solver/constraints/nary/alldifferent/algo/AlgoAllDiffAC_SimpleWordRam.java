@@ -454,7 +454,8 @@ public class AlgoAllDiffAC_SimpleWordRam extends AlgoAllDiffAC_Simple {
 //                            System.out.println("remove: " + yIdx + ", " + xVal);
                             res |= y.removeValue(xVal, aCause);
 //                            D[yIdx].clear(val2Idx.get(xVal));
-                            removeValueR(yIdx, val2Idx.get(xVal));
+                            int yValIdx = domIsRegular[yIdx] ? xVal : val2Idx.get(xVal);
+                            removeValueR(yIdx, yValIdx);
                         }
                     }
                 } while (partition.goToNextValid());
@@ -501,7 +502,7 @@ public class AlgoAllDiffAC_SimpleWordRam extends AlgoAllDiffAC_Simple {
             // !! 这里可以修改一下 已赋值 就不参与修改了
             if (v.getDomainSize() == 1) {
                 // 取出变量的唯一值
-                int valIdx = val2Idx.get(v.getValue());
+                int valIdx = domIsRegular[varIdx] ? v.getValue() : val2Idx.get(v.getValue());
 
                 int oldValIdx = var2Val[varIdx];
                 int oldVarIdx = val2Var[valIdx];
@@ -609,8 +610,9 @@ public class AlgoAllDiffAC_SimpleWordRam extends AlgoAllDiffAC_Simple {
             int node = visiting_[num_visited++];
             IntVar v = vars[node];
 
-            for (int value = v.getLB(), ub = v.getUB(); value <= ub; value = v.nextValue(value)) {
-                int valIdx = val2Idx.get(value);
+//            for (int value = v.getLB(), ub = v.getUB(); value <= ub; value = v.nextValue(value)) {
+            for (int valIdx = RD[node].nextSetBit(0); valIdx >= 0; valIdx = RD[node].nextSetBit(valIdx + 1)) {
+//                int valIdx = val2Idx.get(value);
                 if (!unVisitedValues.get(valIdx)) continue;
                 unVisitedValues.clear(valIdx);
                 if (!matchedValues.get(valIdx)) {
@@ -669,7 +671,7 @@ public class AlgoAllDiffAC_SimpleWordRam extends AlgoAllDiffAC_Simple {
 //                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
             if (v.getDomainSize() == 1) {
                 // 取出变量的唯一值
-                int valIdx = val2Idx.get(v.getValue());
+                int valIdx = domIsRegular[varIdx] ? v.getValue() : val2Idx.get(v.getValue());
 //                System.out.println(v.getName() + " : " + varIdx + " is singleton = " + v.getValue() + " : " + valIdx);
 
                 int oldValIdx = var2Val[varIdx];
@@ -1281,9 +1283,9 @@ public class AlgoAllDiffAC_SimpleWordRam extends AlgoAllDiffAC_Simple {
         return x;
     }
 
-//    public int nextSetBit(long words, int bitIndex) {
-//        return Long.numberOfTrailingZeros(words & -1L << bitIndex);
-//    }
+    public static int nextSetBit(long words, int bitIndex) {
+        return Long.numberOfTrailingZeros(words & -1L << bitIndex);
+    }
 
     protected int getTopVarStack() {
         return varStack[varStackIdx - 1];
